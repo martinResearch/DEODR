@@ -9,8 +9,8 @@ import torch
 import copy
 import cv2
 
-from DEODR import differentiablerenderer_cython
-from DEODR.differentiablerenderer import *
+from DEODR import differentiable_renderer_cython
+from DEODR.differentiable_renderer import *
 import copy
 
 
@@ -61,9 +61,7 @@ def create_example_scene():
         scene[key] = np.stack([triangle[key] for triangle in triangles]) 
     scene['image_H'] = SizeH
     scene['image_W'] = SizeW
-    scene['texture'] = material 
-  
-    
+    scene['texture'] = material     
     scene['nbColors'] = 3
     scene['background'] = np.tile(np.array([0.3,0.5,0.7])[None,None,:],(SizeH,SizeW,1))
         
@@ -82,7 +80,7 @@ def main():
     AbufferTarget = np.zeros((scene1.image_H,scene1.image_W,scene1.nbColors))
     
     Zbuffer = np.zeros((scene1.image_H,scene1.image_W))    
-    differentiablerenderer_cython.renderScene(scene1,sigma,AbufferTarget,Zbuffer)
+    differentiable_renderer_cython.renderScene(scene1,sigma,AbufferTarget,Zbuffer)
 
 
     Ntri = len(scene1.depths);

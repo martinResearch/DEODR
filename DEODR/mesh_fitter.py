@@ -103,9 +103,6 @@ class MeshRGBFitter():
         #update vertices
         G = GradData.numpy() + grad_rigidity.numpy()
         
-        
-        
-
         if self.beta==0:
             if self.Hfactorized is None :# it is the allways the same for the moment            
                 self.H = approx_hessian_rigidity+self.gamma*sparse.eye(approx_hessian_rigidity.shape[0])
@@ -208,7 +205,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     
     
 
-class MeshDepthFitter2():
+class MeshDepthFitterPytorchOptim():
     
     def __init__(self,vertices,faces,euler_init,translation_init, cregu=2000,lr=0.8):
         self.energy = MeshDepthFitterEnergy(vertices,faces,euler_init,translation_init, cregu)
@@ -351,7 +348,7 @@ class MeshDepthFitter():
         return Energy,Depth[:,:,0],diffImage    
     
     
-class MeshRGBFitter2():
+class MeshRGBFitterWithPose():
     
     def __init__(self,vertices,faces,euler_init,translation_init,defaultColor,defaultLight,cregu=2000,inertia=0.96,damping=0.05,updateLights=True,updateColor=True):
         self.cregu = cregu

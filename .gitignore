@@ -8,8 +8,8 @@
 *.c~
 *.h~
 .gitignore~
-DEODR/differentiablerenderer_cython.cpp
-DEODR/differentiablerenderer_cython.html
+DEODR/differentiable_renderer_cython.cpp
+DEODR/differentiable_renderer_cython.html
 iterations/
 *.pyd
 examples/images

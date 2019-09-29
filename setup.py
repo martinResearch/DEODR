@@ -2,7 +2,7 @@ from setuptools import setup
 from Cython.Build import cythonize
 import numpy as np
 
-my_modules=cythonize("DEODR/differentiablerenderer_cython.pyx",annotate=True,language="c++")
+my_modules=cythonize("DEODR/differentiable_renderer_cython.pyx",annotate=True,language="c++")
 
 libname="DEODR"
 setup(

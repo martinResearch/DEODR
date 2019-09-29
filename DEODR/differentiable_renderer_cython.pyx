@@ -1,6 +1,6 @@
 # distutils: language=c++
 from libcpp cimport bool
-cimport _differentiablerenderer 
+cimport _differentiable_renderer 
 
 import cython
 # import both numpy and the Cython declarations for numpy
@@ -19,7 +19,7 @@ def renderScene(scene,
 		np.ndarray[double,ndim=3,mode="c"] Aobs=None,
 		np.ndarray[double,ndim=2,mode="c"] ErrBuffer=None):
     
-	cdef _differentiablerenderer.Scene scene_c 	
+	cdef _differentiable_renderer.Scene scene_c 	
 	assert (not(Abuffer is None))
 	assert (not(Zbuffer is None))
 	heigth=Abuffer.shape[0]
@@ -106,7 +106,7 @@ def renderScene(scene,
 			raise BaseException('Aobs_ptr is NULL')
 	
 
-	_differentiablerenderer.renderScene( scene_c,Abuffer_ptr, Zbuffer_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr)
+	_differentiable_renderer.renderScene( scene_c,Abuffer_ptr, Zbuffer_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr)
 	
 @cython.boundscheck(False)
 @cython.wraparound(False)	
@@ -120,7 +120,7 @@ def renderSceneB(scene,
 		np.ndarray[double,ndim=2,mode="c"] ErrBuffer=None,
 		np.ndarray[double,ndim=2,mode="c"] ErrBuffer_b=None):
 
-	cdef _differentiablerenderer.Scene scene_c 
+	cdef _differentiable_renderer.Scene scene_c 
 	
 	assert (not(Abuffer is None))
 	assert (not(Zbuffer is None))
@@ -232,7 +232,7 @@ def renderSceneB(scene,
 		if Abuffer_b_ptr==NULL:
 			raise BaseException('Abuffer_b_ptr is NULL')
 	
-	_differentiablerenderer.renderScene_B( scene_c, Abuffer_ptr, ZBuffer_ptr, Abuffer_b_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr, ErrBuffer_b_ptr)
+	_differentiable_renderer.renderScene_B( scene_c, Abuffer_ptr, ZBuffer_ptr, Abuffer_b_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr, ErrBuffer_b_ptr)
 	scene.uv_b=uv_b_c.reshape(scene.uv_b.shape)
 	scene.ij_b=ij_b_c.reshape(scene.ij_b.shape)
 	scene.shade_b=shade_b_c.reshape(scene.shade_b.shape)

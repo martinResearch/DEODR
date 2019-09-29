@@ -1,5 +1,5 @@
 import obj
-from triangulatedMesh import Mesh
+from triangulated_mesh import Mesh
 from scipy.misc import imread
 import numpy as np
 import differentiablerenderer
@@ -38,7 +38,7 @@ handColor=np.array([200,100,100])/255
 mesh.setVerticesColors(np.tile(handColor, [mesh.nbV,1]))
 
 
-scene=differentiablerenderer.Scene()
+scene=differentiable_renderer.Scene()
 scene.setLight(ligthDirectional=np.array([0.1,0.5,0.5]), ambiantLight=0.3)
 scene.setMesh(mesh)
 #Abuffer,Zbuffer=scene.render(CameraMatrix,resolution=(SizeW,SizeH))
