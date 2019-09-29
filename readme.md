@@ -28,7 +28,7 @@ Notre that an improved version that approach is also described in [7].
 # Installation
 ## Python
 
-###Windows
+### Windows
 
 	pip install git+https://github.com/martinResearch/DEODR.git
 	
@@ -148,10 +148,10 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 ## Other differentiable renderers 
 * [**OpenDR**](https://github.com/mattloper/opendr/wiki) [3] (MIT Licence) is an open source differentiable renderer written in python and make publicly available in 2014. OpenDR calls OpenGL and relies an a python automatic differentiation toolbox by the same author called [chumpy](https://github.com/mattloper/chumpy). Like in our code OpenDR uses a intermediate 2.5D representation of the scene using a set of 2D projected triangles. In contrast to our code OpenDR does not provide a continuous loss function as there is not continuous antialiasing formulation at the occlusion boundaries and the minimised function will have jumps when a pixel at the boundary switch between the front of back object. By providing a continuous differentiable error function using edge-overdraw antialiasing and its exact gradient, our method can lead to better a convergence of continuous optimisation methods..
-* [**Dirt**](https://github.com/pmh47/dirt) (MIT licence) is an open soure differentiable renderer that uses approximations in the gradient computation similar OpenDR but that is interfaced with tensorflow. It makes considerable effort to return correctly-behaving derivatives even in cases of self-occlusion, where other differentiable renderers can fail.
+* [**Dirt**](https://github.com/pmh47/dirt) (MIT licence) is an open soure differentiable renderer that uses approximations in the gradient computation similar OpenDR but that is interfaced with tensorflow. It makes considerable effort to return correctly-behaving derivatives even in cases of self-occlusion, where most other differentiable renderers can fail.
 * [**Neural 3D Mesh Renderer**](https://github.com/hiroharu-kato/neural_renderer) (MIT Licence). Method published in [5]. This method consists in a differentiable render whose gradients are designed to be used in neural networks. It is claimed in the paper that the gradients computed by OpenDR are not adequate for neural network use, but there is unfortunalty no detailed explaination of why the autors came to that conclusion.
 While anterior to this paper, the method in [1] can be used in conjunction with a neural network. 
-* [**tf\_mesh\\_renderer**](https://github.com/google/tf_mesh_renderer) (Apache License 2.0). A differentiable, 3D mesh renderer using TensorFlow. [github](https://github.com/google/tf_mesh_renderer)
+* [**tf\_mesh\_renderer**](https://github.com/google/tf_mesh_renderer) (Apache License 2.0). A differentiable, 3D mesh renderer using TensorFlow. [github](https://github.com/google/tf_mesh_renderer)
 Unlike other differentiable renderer it does not provides suppport for oclusion boundaries in the gradient computation and thus is inadequate for many applications.
 * Code accompanying the paper [6] [github](https://github.com/ndrplz/differentiable-renderer). It renders only silhouettes. 
 
