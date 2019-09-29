@@ -138,12 +138,6 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
      address = {Washington, DC, USA},
     } 
 
-
-
-
-
-
-
 ## Other differentiable renderers 
 * [**OpenDR**](https://github.com/mattloper/opendr/wiki) [3] (MIT Licence) is an open source differentiable renderer written in python and make publicly available in 2014. OpenDR calls OpenGL and relies an a python automatic differentiation toolbox by the same author called [chumpy](https://github.com/mattloper/chumpy). Like in our code OpenDR uses a intermediate 2.5D representation of the scene using a set of 2D projected triangles. In contrast to our code OpenDR does not provide a continuous loss function as there is not continuous antialiasing formulation at the occlusion boundaries and the minimised function will have jumps when a pixel at the boundary switch between the front of back object. By providing a continuous differentiable error function using edge-overdraw antialiasing and its exact gradient, our method can lead to better a convergence of continuous optimisation methods..
 
