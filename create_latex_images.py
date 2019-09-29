@@ -39,11 +39,11 @@ import shutil
 import sys
 
 for arg in sys.argv: 
-    print arg
+    print (arg)
 
 dirpath = tempfile.mkdtemp()
 # ... do stuff with dirpath
-print 'temporary directory for latex compilation = %s'%dirpath
+print ('temporary directory for latex compilation = %s'%dirpath)
 if len(sys.argv)==1:
     texfile='./readme.md'
 elif len(sys.argv)==2: 
@@ -82,16 +82,16 @@ raw = open(texfile)
 filecontent=raw.read()
 
 latex_equations= re.findall(r"""[^\t]!\[latex:(.*?)\]\((.*?)\)""", filecontent)
-print 'found %d equations '%len(latex_equations)
+print ('found %d equations '%len(latex_equations))
 listname=set()
 for eqn in latex_equations:        
     if eqn[1] in listname:
         raise Exception('equation image file %s already used'%eqn[1])
         
     listname.add(eqn[1])
-    print  'creating %s'%eqn[1] 
+    print  ('creating %s'%eqn[1] )
     formula_as_file(eqn[0],eqn[1])
-    print 'done'
+    print ('done')
     
 #shutil.rmtree(dirpath)
-print 'DONE'
+print ('DONE')
