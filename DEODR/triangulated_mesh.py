@@ -1,9 +1,6 @@
-import sys
 from  scipy import sparse
 import numpy as np
 import torch
-
-						
 
 class Mesh():
 	def __init__(self, vertices, faces, computeAdjacencies = True):
@@ -73,12 +70,13 @@ class Mesh():
 		self.Laplacian = sparse.diags([self.DegreeVE],[0],(self.nbV,self.nbV))-self.Adjacency_Vertices
 		self.hasBoundaries = np.any(np.sum(self.Edges_Faces_Ones,axis=1)==1)		
 		assert np.all(self.Laplacian*np.ones((self.nbV))==0)
-		return self.Laplacian
+		return self.Laplacian		
 
-	def computSilhouetteEddges(self, viewpoint):		
-		self.face_visible = (torch.sum(self.faceNormals *(self.vertices[self.faces_torch[:,0],:] -torch.tensor(viewpoint)[None,:]),dim=1)>0).numpy()
-		#% find edge with a single neighboring face oriented toward the camera 		
-		self.edge_bool = ((self.Edges_Faces_Ones*self.face_visible)==1)
-		self.edges_list = np.nonzero(self.edge_bool)
-		self.adjacent_visible_faces = (self.Edges_Faces_Ones * (np.arange(self.nbF) * (self.face_visible)))[self.edges_list]
+def SilhouetteEdges(mesh,viewpoint):
+	"""this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""
+	face_visible = (torch.sum(mesh.faceNormals *(mesh.vertices[self.faces_torch[:,0],:] -torch.tensor(viewpoint)[None,:]),dim=1)>0).numpy()			
+	return ((mesh.Edges_Faces_Ones * face_visible)==1)		
+		
+		
+	
 		

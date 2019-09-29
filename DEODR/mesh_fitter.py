@@ -1,5 +1,4 @@
 from DEODR import Mesh,Scene3D,LaplacianRigidEnergy
-from scipy.misc import imread
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -9,16 +8,12 @@ import torch
 import copy
 import cv2
 
-
 def qrot(q, v):
     qr=q[None,:].repeat(v.shape[0],1)
     qvec = qr[:,:-1]
     uv = torch.cross(qvec, v, dim=1)
     uuv = torch.cross(qvec, uv, dim=1)
     return (v + 2 * (qr[:, [3]] * uv + uuv))
-
-
-
 
 class MeshRGBFitter():
     
@@ -135,9 +130,7 @@ class MeshRGBFitter():
             self.speed_handColor = (1 - self.damping)*(self.speed_handColor * self.inertia + ( 1 - self.inertia ) * step)
             self.handColor = self.handColor + self.speed_handColor
         self.iter += 1
-        return Energy,Abuffer,diffImage
-  
-  
+        return Energy,Abuffer,diffImage  
     
 class MeshDepthFitterEnergy(torch.nn.Module):
 
@@ -157,8 +150,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         self.transformTranslationInit = translation_init
         self.Vertices = torch.nn.Parameter( torch.tensor(self.Vinit, dtype = torch.float64))
         self.quaternion =  torch.nn.Parameter( torch.tensor(self.transformQuaternionInit, dtype=torch.float64))
-        self.translation =   torch.nn.Parameter( torch.tensor(self.transformTranslationInit, dtype=torch.float64))        
-        
+        self.translation =   torch.nn.Parameter( torch.tensor(self.transformTranslationInit, dtype=torch.float64))      
         
     def setMaxDepth(self,maxDepth):  
         self.scene.maxDepth = maxDepth
@@ -197,11 +189,8 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         Energy = EData + E_rigid   
         self.loss = EData + E_rigid          
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy, EData, E_rigid))
-        return self.loss
-
+        return self.loss  
     
-    
-
 class MeshDepthFitterPytorchOptim():
     
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000, lr=0.8):
@@ -285,8 +274,7 @@ class MeshDepthFitter():
         R = np.array([[1,0,0],[0,-1,0],[0,0,-1]])
         T = -R.T.dot(self.cameraCenter)
         self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
-        self.iter = 0
-        
+        self.iter = 0        
    
     def step(self):
         self.vertices = self.vertices-torch.mean(self.vertices, dim=0)[None,:]
@@ -334,12 +322,10 @@ class MeshDepthFitter():
         self.transformQuaternion = self.transformQuaternion/np.linalg.norm(self.transformQuaternion)         
         step_translation = mult_and_clamp( -translation_with_grad.grad.numpy(), self.step_factor_translation, self.step_max_translation)
         self.speed_translation = (1 - self.damping) * (self.speed_translation * self.inertia + ( 1 - self.inertia ) * step_translation)
-        self.transformTranslation = self.transformTranslation + self.speed_translation
-         
+        self.transformTranslation = self.transformTranslation + self.speed_translation         
 
         self.iter += 1
-        return Energy,Depth[:,:,0],diffImage    
-    
+        return Energy,Depth[:,:,0],diffImage        
     
 class MeshRGBFitterWithPose():
     
@@ -371,8 +357,7 @@ class MeshRGBFitterWithPose():
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.setMeshTransformInit(euler = euler_init, translation = translation_init)
-        self.reset()
-        
+        self.reset()        
         
     def setBackgroundColor(self,backgroundColor):        
         self.scene.setBackground(np.tile(backgroundColor[None,None,:], (self.SizeH,self.SizeW,1)))        
@@ -407,8 +392,7 @@ class MeshRGBFitterWithPose():
         R = np.array([[1,0,0],[0,-1,0],[0,0,-1]])
         T = -R.T.dot(self.cameraCenter)
         self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
-        self.iter=0
-        
+        self.iter=0        
    
     def step(self):
         self.vertices = self.vertices - torch.mean(self.vertices, dim = 0)[None,:]
@@ -446,8 +430,7 @@ class MeshRGBFitterWithPose():
         G = GradData + grad_rigidity
         
         def mult_and_clamp(x,a,t):
-            return np.minimum(np.maximum(x * a,-t), t)
-        
+            return np.minimum(np.maximum(x * a,-t), t)        
         
         inertia=self.inertia
    

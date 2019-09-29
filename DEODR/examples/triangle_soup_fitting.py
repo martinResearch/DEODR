@@ -1,20 +1,10 @@
-
+from DEODR import differentiable_renderer_cython
+from DEODR.differentiable_renderer import Scene2D
 from scipy.misc import imread
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import sparse
-import scipy.sparse.linalg
-import scipy.spatial.transform.rotation
-import torch
-import copy
 import cv2
-
-from DEODR import differentiable_renderer_cython
-from DEODR.differentiable_renderer import *
 import copy
-
-
-
 
 def create_example_scene():
     
@@ -63,10 +53,8 @@ def create_example_scene():
     scene['image_W'] = SizeW
     scene['texture'] = material     
     scene['nbColors'] = 3
-    scene['background'] = np.tile(np.array([0.3,0.5,0.7])[None,None,:],(SizeH,SizeW,1))
-        
-    return Scene2D(**scene)
-   
+    scene['background'] = np.tile(np.array([0.3,0.5,0.7])[None,None,:],(SizeH,SizeW,1))        
+    return Scene2D(**scene)   
     
 def main():
     display = True
@@ -82,15 +70,13 @@ def main():
     Zbuffer = np.zeros((scene1.image_H,scene1.image_W))    
     differentiable_renderer_cython.renderScene(scene1,sigma,AbufferTarget,Zbuffer)
 
-
     Ntri = len(scene1.depths);
     scene2 = copy.deepcopy(scene1)
     scale_material = np.array([[scene1.texture.shape[0]-1,0],[0,scene1.texture.shape[1]-1]])
 
     displacement_magnitude_ij = 10
     displacement_magnitude_uv = 0
-    displacement_magnitude_colors = 0
-    
+    displacement_magnitude_colors = 0    
    
     max_uv=np.array(scene1.texture.shape[:2])-1    
 
@@ -98,8 +84,7 @@ def main():
     scene2.uv = scene1.uv+np.random.randn(Ntri,3,2)*displacement_magnitude_uv
     scene2.uv = np.maximum( scene2.uv,0)
     scene2.uv = np.minimum( scene2.uv,max_uv)
-    scene2.colors = scene1.colors+np.random.randn(Ntri,3,3)*displacement_magnitude_colors
-    
+    scene2.colors = scene1.colors+np.random.randn(Ntri,3,3)*displacement_magnitude_colors    
 
     alpha_ij = 0.01
     beta_ij = 0.80
@@ -111,7 +96,6 @@ def main():
     speed_ij = np.zeros((Ntri,3,2))
     speed_uv = np.zeros((Ntri,3,2))
     speed_color = np.zeros((Ntri,3,3))
-
 
     nbMaxIter = 500
     losses=[]

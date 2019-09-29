@@ -1,11 +1,7 @@
-
 from DEODR import readObj, MeshRGBFitter, MeshRGBFitterWithPose
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import sparse
-import scipy.sparse.linalg
-import torch
 import copy
 import cv2
 import time

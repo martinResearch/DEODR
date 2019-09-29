@@ -1,11 +1,7 @@
-from .triangulated_mesh import Mesh
-from scipy.misc import imread
 import numpy as np
 from . import differentiable_renderer_cython
 import torch
 import copy
-from collections import namedtuple
-
 
 class Scene2D():
     def __init__(self, ij, depths, textured, uv, shade, colors, shaded, edgeflags, image_H, image_W, nbColors, texture, background):
@@ -68,7 +64,7 @@ class Scene2D():
             return Abuffer, Zbuffer, diffImage, Err
 
 
-class TorchDifferentiableRendererFunc(torch.autograd.Function):
+class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, ij, colors, scene):
@@ -94,7 +90,7 @@ class TorchDifferentiableRendererFunc(torch.autograd.Function):
         differentiable_renderer_cython.renderSceneB(scene, 1, ctx.Abuffer, ctx.Zbuffer, Abuffer_b.numpy())         
         return torch.tensor(scene.ij_b), torch.tensor(scene.colors_b),None
        
-TorchDifferentiableRenderer = TorchDifferentiableRendererFunc.apply
+TorchDifferentiableRenderer2D = TorchDifferentiableRenderer2DFunc.apply
 
 def camera_project(cameraMatrix,P3D, get_jacobians = False) : 
     if isinstance(P3D,torch.Tensor): 
@@ -140,13 +136,13 @@ class Scene3D():
         colorsV = self.mesh.verticesColors * verticesLuminosity[:,None]
         
         #compute silhouette edges 
-        self.mesh.computSilhouetteEddges(cameraCenter3D)  
+        silhouetteEdges=SilhouetteEddge(mesh,cameraCenter3D)        
         
         # construct triangle soup        
         ij = P2D[self.mesh.faces]
         colors = colorsV[self.mesh.faces]
         self.depths = depths[self.mesh.faces].detach()
-        self.edgeflags = self.mesh.edge_bool[self.mesh.Faces_Edges]
+        self.edgeflags = silhouetteEdges.edge_bool[self.mesh.Faces_Edges]
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF),dtype=np.bool)
         self.shade = np.zeros((self.mesh.nbF,3),dtype=np.bool) # eventually used when using texture
@@ -155,7 +151,7 @@ class Scene3D():
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))
      
-        Abuffer = TorchDifferentiableRenderer(ij,colors,self)
+        Abuffer = TorchDifferentiableRenderer2D(ij,colors,self)
         return Abuffer
     
     def renderDepth(self,CameraMatrix,resolution,depth_scale):
@@ -180,7 +176,7 @@ class Scene3D():
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))
         #colors[:,:,:]=1
-        Abuffer = TorchDifferentiableRenderer(ij,colors,self)
+        Abuffer = TorchDifferentiableRenderer2D(ij,colors,self)
         return Abuffer
     
     def projectionsJacobian(self,CameraMatrix):
