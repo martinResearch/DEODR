@@ -72,11 +72,11 @@ class Mesh():
 		assert np.all(self.Laplacian*np.ones((self.nbV))==0)
 		return self.Laplacian		
 
-def SilhouetteEdges(mesh,viewpoint):
-	"""this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""
-	face_visible = (torch.sum(mesh.faceNormals *(mesh.vertices[self.faces_torch[:,0],:] -torch.tensor(viewpoint)[None,:]),dim=1)>0).numpy()			
-	return ((mesh.Edges_Faces_Ones * face_visible)==1)		
-		
+	def edgeOnSilhouette(self,viewpoint):
+		"""this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""
+		face_visible = (torch.sum(self.faceNormals *(self.vertices[self.faces_torch[:,0],:] -torch.tensor(viewpoint)[None,:]),dim=1)>0).numpy()			
+		return ((self.Edges_Faces_Ones * face_visible)==1)		
+			
 		
 	
 		

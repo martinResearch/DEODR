@@ -1,4 +1,4 @@
-from DEODR import Mesh,Scene3D,LaplacianRigidEnergy
+from DEODR import Mesh, Scene3D, LaplacianRigidEnergy
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
