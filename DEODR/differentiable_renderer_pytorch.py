@@ -31,7 +31,6 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
        
 TorchDifferentiableRenderer2D = TorchDifferentiableRenderer2DFunc.apply
 
-
 class Scene3DPytorch(Scene3D):
     def __init__(self):
         super().__init__()
@@ -53,7 +52,7 @@ class Scene3DPytorch(Scene3D):
         verticesLuminosity = torch.relu(-torch.sum(self.mesh.vertexNormals * self.ligthDirectional, dim = 1)) + self.ambiantLight
         return self.mesh.verticesColors * verticesLuminosity[:,None]      
     
-    def render2D(self,ij,colors):
-        self.depths = self.depths[self.mesh.faces].detach()
+    def render2D(self,ij,colors):   
+        self.depths = self.depths.detach()
         return TorchDifferentiableRenderer2D(ij,colors,self)
     

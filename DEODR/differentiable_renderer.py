@@ -101,12 +101,12 @@ class Scene3D():
         colorsV =  self.computeVerticesColors()
         
         #compute silhouette edges 
-        edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)      
+        edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
         
         # construct triangle soup        
         ij = P2D[self.mesh.faces]
         colors = colorsV[self.mesh.faces]
-        self.depths = depths[self.mesh.faces]
+        self.depths = depths[self.mesh.faces]        
         self.edgeflags = edge_bool
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF),dtype=np.bool)
@@ -114,7 +114,7 @@ class Scene3D():
         self.image_H = resolution[1]
         self.image_W = resolution[0]
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
-        self.texture = np.zeros((0,0))     
+        self.texture = np.zeros((0,0))          
         Abuffer = self.render2D(ij,colors)
         return Abuffer
     
@@ -143,8 +143,8 @@ class Scene3D():
         Abuffer = self.render2D(ij,colors)
         return Abuffer
     
-    def projectionsJacobian(self,CameraMatrix):
-        P2D,depths,J_P2D = camera_project(CameraMatrix, self.mesh.vertices.detach().numpy(), get_jacobians=True) 
-        return J_P2D
+    def projectionsJacobian(self,CameraMatrix, vertices):
+        P2D,depths,J_P2D = self.camera_project(CameraMatrix, vertices, get_jacobians=True) 
+        return J_P2D    
     
 
