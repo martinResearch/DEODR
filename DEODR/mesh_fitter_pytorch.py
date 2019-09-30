@@ -88,8 +88,8 @@ class MeshRGBFitter():
         EData = loss.detach().numpy()        
 
         GradData = V_with_grad.grad        
-
-        E_rigid,grad_rigidity,approx_hessian_rigidity = self.rigidEnergy.eval(self.V)
+ 
+        E_rigid, grad_rigidity,approx_hessian_rigidity = self.rigidEnergy.eval(self.V)
         Energy = EData + E_rigid.numpy()
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy,EData, E_rigid))
 

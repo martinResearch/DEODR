@@ -4,8 +4,7 @@ import copy
 
 class Scene2D():
     """this class is a simple class that contiains a triangles soup with additional field to store the gradients"""
-    def __init__(self, ij, depths, textured, uv, shade, colors, shaded, edgeflags, image_H, image_W, nbColors, texture, background):
-        
+    def __init__(self, ij, depths, textured, uv, shade, colors, shaded, edgeflags, image_H, image_W, nbColors, texture, background):        
         self.ij = ij
         self.depths = depths
         self.textured = textured
@@ -18,50 +17,62 @@ class Scene2D():
         self.image_W = image_W
         self.nbColors = nbColors
         self.texture =  texture
-        self.background = background        
-        # fields to store gradients  
-        self.uv_b = np.zeros(self.uv.shape)
-        self.ij_b = np.zeros(self.ij.shape)
-        self.shade_b = np.zeros(self.shade.shape)
-        self.colors_b = np.zeros(self.colors.shape)         
-
-    def clear_gradients(self):
-        self.uv_b.fill(0)
-        self.ij_b.fill(0)
-        self.shade_b.fill(0)
-        self.colors_b.fill(0)        
+        self.background = background     
         
-    def render_and_compare(self, sigma, Aobs, antialiaseError = False, mask = None, clear_gradients = True):
-    
-        if mask is None:
-            mask = np.ones((Aobs.shape[0],Aobs.shape[1]))
-                
+    def render(self, sigma, Aobs, antialiaseError):
         if antialiaseError:
             Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))
             ErrBuffer = np.sum((Aobs - self.background)**2, axis=2)
             Zbuffer = np.zeros((self.image_H, self.image_W))                 
-            differentiablerenderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer)    
-            ErrBuffer = ErrBuffer * mask    
-            Err = np.sum(ErrBuffer)      
-            ErrBuffer_B = copy.copy(mask)  
-            if clear_gradients:
-                self.clear_gradients()
-            differentiablerenderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer, ErrBuffer_B)
-            return Abuffer, Zbuffer, ErrBuffer, Err
-            
+            differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer) 
+            return Abuffer, Zbuffer, ErrBuffer
         else:
             Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))
             Zbuffer = np.zeros((self.image_H, self.image_W))     
             ErrBuffer = None
-            differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer)               
+            differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer)             
+            return Abuffer, Zbuffer, ErrBuffer
+
+class Scene2DWithBackward(Scene2D):
+    def __init__(self, ij, depths, textured, uv, shade, colors, shaded, edgeflags, image_H, image_W, nbColors, texture, background):
+        super().__init__(ij, depths, textured, uv, shade, colors, shaded, edgeflags, image_H, image_W, nbColors, texture, background)    
+        # fields to store gradients  
+        self.uv_b = np.zeros(self.uv.shape)
+        self.ij_b = np.zeros(self.ij.shape)
+        self.shade_b = np.zeros(self.shade.shape)
+        self.colors_b = np.zeros(self.colors.shape)
+        
+    def clear_gradients(self):
+        self.uv_b.fill(0)
+        self.ij_b.fill(0)
+        self.shade_b.fill(0)
+        self.colors_b.fill(0)    
+    
+    def render_compare_and_backward(self, sigma, Aobs, antialiaseError = False, mask = None, clear_gradients = True, make_copies=True):        
+        if mask is None:
+            mask = np.ones((Aobs.shape[0],Aobs.shape[1]))            
+        Abuffer, Zbuffer, ErrBuffer = self.render(sigma, Aobs, antialiaseError)
+        if clear_gradients:
+            self.clear_gradients()        
+        if antialiaseError:
+            ErrBuffer = ErrBuffer * mask    
+            Err = np.sum(ErrBuffer)      
+            ErrBuffer_B = copy.copy(mask)  
+            if make_copies:
+                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer.copy(), ErrBuffer_B)
+            else: # if we don't make copies the image Abuffer will 
+                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer, ErrBuffer_B)
+            return Abuffer, Zbuffer, ErrBuffer, Err            
+        else:              
             diffImage = (Abuffer - Aobs) * mask[:,:,None]  
             Err = np.sum(diffImage**2)    
-            Abuffer_b = 2*diffImage
-            if clear_gradients:
-                self.clear_gradients()            
+            Abuffer_b = 2 * diffImage          
             ErrBuffer_B = None
-            differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, Abuffer_b, antialiaseError, Aobs, ErrBuffer, ErrBuffer_B)
-            return Abuffer, Zbuffer, diffImage, Err
+            if make_copies: # if we make copies we keep the antialized image unchanged Abuffer along the occlusion boundaries
+                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer.copy(), Zbuffer, Abuffer_b, antialiaseError, Aobs, ErrBuffer, ErrBuffer_B)
+            else:
+                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, Abuffer_b, antialiaseError, Aobs, ErrBuffer, ErrBuffer_B)
+            return Abuffer, Zbuffer, diffImage, Err    
 
 class Scene3D():
     def __init__(self):
@@ -91,8 +102,7 @@ class Scene3D():
             return P2D,depths,J_PD2
         else:           
             return P2D,depths        
-      
-     
+           
     def render(self,CameraMatrix,resolution):
         self.mesh.computeVertexNormals()
         
@@ -116,10 +126,9 @@ class Scene3D():
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))          
         Abuffer = self.render2D(ij,colors)
-        return Abuffer
+        return Abuffer    
     
-    def renderDepth(self,CameraMatrix,resolution,depth_scale):
-        
+    def renderDepth(self,CameraMatrix,resolution,depth_scale):        
         P2D, depths = self.camera_project(CameraMatrix, self.mesh.vertices)        
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3])        
     
@@ -145,6 +154,13 @@ class Scene3D():
     
     def projectionsJacobian(self,CameraMatrix, vertices):
         P2D,depths,J_P2D = self.camera_project(CameraMatrix, vertices, get_jacobians=True) 
-        return J_P2D    
-    
+        return J_P2D        
 
+class Scene3DWithBackward(Scene3D):
+    def __init__(self):
+        super().__init__()        
+    def clear_gradients():
+        pass
+    def render_compare_and_backward():
+        pass
+        

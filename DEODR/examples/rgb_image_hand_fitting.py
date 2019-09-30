@@ -46,9 +46,9 @@ def main():
     for iter in range(maxIter):        
         Energy, Abuffer, diffImage = handFitter.step()
         Energies.append(Energy)
-        durations.append( time.time() -start  )
+        durations.append( time.time() - start  )
         combinedIMage = np.column_stack((handImage,Abuffer.detach().numpy(),np.tile(diffImage.detach().numpy()[:,:,None],(1,1,3))))
-        cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1],None,fx=2,fy=2)) 
+        cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
         imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1)  
     plt.plot(Energies)
@@ -57,7 +57,7 @@ def main():
        
     # save convergence curve 
     with open(os.path.join(iterfolder,'rgb_image_fitting_result_%s.json'%str(datetime.datetime.now()).replace(':','_')),'w') as f:
-        json.dump({'durations':durations,'energies':Energies},f,indent=4)
+        json.dump({'durations':durations,'energies':Energies}, f, indent=4)
     
     # compare with previous runs
     plt.figure()

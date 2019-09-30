@@ -15,8 +15,8 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         scene.colors = colors.detach() 
         differentiable_renderer_cython.renderScene(scene, 1, Abuffer, Zbuffer)
         ctx.save_for_backward(ij, colors)
-        ctx.Abuffer = Abuffer
-        ctx.Zbuffer = Zbuffer
+        ctx.Abuffer = Abuffer # this make a copy, we could try to avoid that 
+        ctx.Zbuffer = Zbuffer # this make a copy, we could try to avoid that 
         return torch.tensor(Abuffer)
     
     @staticmethod
