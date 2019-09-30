@@ -80,7 +80,7 @@ class Scene3D():
         ij = P2D[self.mesh.faces]
         colors = colorsV[self.mesh.faces]
         self.depths = depths[self.mesh.faces].detach()
-        self.edgeflags = edge_bool[self.mesh.Faces_Edges]
+        self.edgeflags = edge_bool
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF),dtype=np.bool)
         self.shade = np.zeros((self.mesh.nbF,3),dtype=np.bool) # eventually used when using texture
@@ -105,7 +105,7 @@ class Scene3D():
         ij = P2D[self.mesh.faces]
         colors = depths[self.mesh.faces][:,:,None]*depth_scale
         self.depths = depths[self.mesh.faces].detach()
-        self.edgeflags = edge_bool[self.mesh.Faces_Edges]
+        self.edgeflags = edge_bool
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF), dtype = np.bool)
         self.shade = np.zeros((self.mesh.nbF,3), dtype = np.bool) # eventually used when using texture

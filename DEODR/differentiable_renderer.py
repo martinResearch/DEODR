@@ -1,6 +1,5 @@
 import numpy as np
 from . import differentiable_renderer_cython
-import torch
 import copy
 
 class Scene2D():

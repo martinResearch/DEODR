@@ -1,4 +1,5 @@
-from DEODR import Mesh, Scene3D, LaplacianRigidEnergy
+from DEODR import Scene3D, LaplacianRigidEnergyPytorch
+from DEODR import TriMeshPytorch as TriMesh
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -27,14 +28,14 @@ class MeshRGBFitter():
         self.defaultLight = defaultLight  
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = Mesh(vertices, faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
-        self.cameraCenter = objectCenter+np.array([0,0,9])*objectRadius        
+        self.cameraCenter = objectCenter+np.array([0,0,9]) * objectRadius        
         self.scene = Scene3D()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh,cregu)
-        self.Vinit = copy.copy(self.mesh.vertices)        
+        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.Vinit = copy.copy(vertices)        
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.reset()
@@ -136,13 +137,13 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
     def __init__(self, vertices, faces, euler_init, translation_init, cregu = 2000): 
         super(MeshDepthFitterEnergy, self).__init__()
-        self.mesh = Mesh(vertices, faces[:,::-1].copy())#we do a copy to avoid negative stride not supported by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not supported by pytorch 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter+np.array([-0.5,0,5])*objectRadius      
         self.scene = Scene()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh,cregu)
+        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(self.mesh.vertices)        
         self.Hfactorized = None
         self.Hpreconditioner = None
@@ -230,15 +231,15 @@ class MeshDepthFitter():
         self.step_factor_translation= 0.00005
         self.step_max_translation = 0.1     
         
-        self.mesh = Mesh(vertices, faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis = 0))
         self.cameraCenter = objectCenter+np.array([-0.5,0,5]) * objectRadius  
         
         self.scene = Scene3D()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy=LaplacianRigidEnergy(self.mesh,cregu)
-        self.vertices_init = copy.copy(self.mesh.vertices)        
+        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.vertices_init = torch.tensor(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.setMeshTransformInit(euler=euler_init, translation=translation_init)
@@ -250,7 +251,7 @@ class MeshDepthFitter():
         
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)      
-        self.speed_vertices = np.zeros(self.vertices.shape)
+        self.speed_vertices = np.zeros(self.vertices_init.shape)
         self.transformQuaternion = copy.copy(self.transformQuaternionInit)
         self.transformTranslation = copy.copy(self.transformTranslationInit)
         self.speed_translation = np.zeros(3)
@@ -277,7 +278,7 @@ class MeshDepthFitter():
         self.iter = 0        
    
     def step(self):
-        self.vertices = self.vertices-torch.mean(self.vertices, dim=0)[None,:]
+        self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None,:]
         vertices_with_grad = torch.tensor(self.vertices, dtype = torch.float64, requires_grad=True)
         vertices_with_grad_centered = vertices_with_grad-torch.mean(vertices_with_grad, dim = 0)[None,:]
         quaternion_with_grad = torch.tensor(self.transformQuaternion, dtype = torch.float64, requires_grad = True)
@@ -300,7 +301,7 @@ class MeshDepthFitter():
 
         GradData = vertices_with_grad.grad
         
-        E_rigid,grad_rigidity,approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
+        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
         Energy = EData + E_rigid.numpy()
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy,EData,E_rigid))
 
@@ -345,15 +346,15 @@ class MeshRGBFitterWithPose():
         self.defaultLight = defaultLight          
         self.updateLights = updateLights
         self.updateColor = updateColor        
-        self.mesh = Mesh(vertices, faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter + np.array([0,0,9]) * objectRadius    
         
         self.scene = Scene3D()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy=LaplacianRigidEnergy(self.mesh,cregu)
-        self.vertices_init = copy.copy(self.mesh.vertices)        
+        self.rigidEnergy=LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.vertices_init = torch.tensor(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.setMeshTransformInit(euler = euler_init, translation = translation_init)
