@@ -23,7 +23,6 @@ def main():
 
     euler_init = np.zeros((3))
     translation_init = np.zeros(3)
-
     
     handFitter = MeshRGBFitterWithPose(vertices,faces,defaultColor = defaultColor, defaultLight = defaultLight,  
                                 updateLights =  True, updateColor= True, euler_init = euler_init, translation_init = translation_init, cregu=1000)   

@@ -5,4 +5,4 @@ from .triangulated_mesh_pytorch import *
 from .obj import *
 from .laplacian_rigid_energy import *
 from .laplacian_rigid_energy_pytorch import *
-from .mesh_fitter import *
+from .mesh_fitter_pytorch import *

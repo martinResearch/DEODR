@@ -1,4 +1,4 @@
-from DEODR import Scene3D, LaplacianRigidEnergyPytorch
+from DEODR import Scene3DPytorch, LaplacianRigidEnergyPytorch
 from DEODR import TriMeshPytorch as TriMesh
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ class MeshRGBFitter():
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter+np.array([0,0,9]) * objectRadius        
-        self.scene = Scene3D()
+        self.scene = Scene3DPytorch()
         self.scene.setMesh(self.mesh)
         self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(vertices)        
@@ -120,8 +120,7 @@ class MeshRGBFitter():
         if self.updateLights:
             step = - ligthDirectional_with_grad.grad.numpy() * 0.0001 
             self.speed_ligthDirectional = (1 - self.damping) * (self.speed_ligthDirectional * self.inertia+ ( 1 - self.inertia ) * step)
-            self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional
-    
+            self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional    
             step = - ambiantLight_with_grad.grad.numpy() * 0.0001
             self.speed_ambiantLight = (1-self.damping)*(self.speed_ambiantLight * self.inertia+ ( 1 - self.inertia ) * step)
             self.ambiantLight = self.ambiantLight + self.speed_ambiantLight
@@ -236,7 +235,7 @@ class MeshDepthFitter():
         objectRadius = np.max(np.std(vertices,axis = 0))
         self.cameraCenter = objectCenter+np.array([-0.5,0,5]) * objectRadius  
         
-        self.scene = Scene3D()
+        self.scene = Scene3DPytorch()
         self.scene.setMesh(self.mesh)
         self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.vertices_init = torch.tensor(copy.copy(vertices))        
@@ -351,7 +350,7 @@ class MeshRGBFitterWithPose():
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter + np.array([0,0,9]) * objectRadius    
         
-        self.scene = Scene3D()
+        self.scene = Scene3DPytorch()
         self.scene.setMesh(self.mesh)
         self.rigidEnergy=LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.vertices_init = torch.tensor(copy.copy(vertices))        
