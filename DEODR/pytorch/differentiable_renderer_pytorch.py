@@ -1,8 +1,8 @@
 import numpy as np
-from . import differentiable_renderer_cython
+from .. import differentiable_renderer_cython
 import torch
 import copy
-from .differentiable_renderer import Scene3D
+from ..differentiable_renderer import Scene3D
 
 class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
     @staticmethod
@@ -29,7 +29,7 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         differentiable_renderer_cython.renderSceneB(scene, 1, ctx.Abuffer, ctx.Zbuffer, Abuffer_b.numpy())         
         return torch.tensor(scene.ij_b), torch.tensor(scene.colors_b),None
        
-TorchDifferentiableRenderer2D = TorchDifferentiableRenderer2DFunc.apply
+TorchDifferentiableRender2D = TorchDifferentiableRenderer2DFunc.apply
 
 class Scene3DPytorch(Scene3D):
     def __init__(self):
@@ -54,5 +54,5 @@ class Scene3DPytorch(Scene3D):
     
     def render2D(self,ij,colors):   
         self.depths = self.depths.detach()
-        return TorchDifferentiableRenderer2D(ij,colors,self)
+        return TorchDifferentiableRender2D(ij,colors,self)
     

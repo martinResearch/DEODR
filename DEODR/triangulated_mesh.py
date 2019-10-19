@@ -32,12 +32,21 @@ class TriMeshAdjacencies():
 		tris = vertices[self.faces,:]
 		n = np.cross( tris[::,1 ] - tris[::,0] , tris[::,2 ] - tris[::,0] )
 		l = ((n**2).sum(dim = 1)).sqrt()
-		return n/l[:,None]
+		normals = n/l[:,None]
+		return normals
 	
 	def computeVertexNormals(self,faceNormals):
 		n = self.Vertices_Faces * faceNormals
 		l = ((n**2).sum(dim = 1)).sqrt()
-		return  n/l[:,None]	
+		normals = n/l[:,None]
+		return normals  
+	
+	def computeFaceNormals_backard(self, faceNormals, normals_grad):
+		
+		faceNormals_grad = self.Vertices_Faces.T* n_grad
+		# = self.Vertices_Faces * 
+		return faceNormals_grad
+	
 
 class TriMesh():
 	def __init__(self, faces):

@@ -1,7 +1,8 @@
 from  scipy import sparse
 import numpy as np
 import torch
-from .triangulated_mesh import *
+from ..triangulated_mesh import *
+
 
 class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 	def __init__(self,faces):

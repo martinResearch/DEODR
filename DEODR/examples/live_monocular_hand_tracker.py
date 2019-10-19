@@ -1,5 +1,5 @@
 
-import PyDR
+import DEODR
 from scipy.misc import imread
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,11 +16,11 @@ def main():
     w=200
     h=200
     objFile='hand.obj'
-    faces,vertices=PyDR.readObj(objFile)   
+    faces,vertices=DEODR.readObj(objFile)   
     
     defaultColor=np.array([200,150,110])/255
     defaultLight={'directional':np.array([0.1,-0.5,0.5]),'ambiant':np.array([0.3])}
-    handFitter=PyDR.meshRGBFitter(vertices,faces,defaultColor,defaultLight,cregu=4000)
+    handFitter=DEODR.MeshRGBFitter(vertices,faces,defaultColor,defaultLight,cregu=4000)
 
     started=False
 

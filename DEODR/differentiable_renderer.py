@@ -128,6 +128,9 @@ class Scene3D():
         Abuffer = self.render2D(ij,colors)
         return Abuffer    
     
+    def gather_faces(self,X):
+        return X[self.mesh.faces]
+    
     def renderDepth(self,CameraMatrix,resolution,depth_scale):        
         P2D, depths = self.camera_project(CameraMatrix, self.mesh.vertices)        
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3])        
@@ -137,9 +140,9 @@ class Scene3D():
         edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
     
         # construct triangle soup        
-        ij = P2D[self.mesh.faces]
-        colors = depths[self.mesh.faces][:,:,None]*depth_scale
-        self.depths = depths[self.mesh.faces]
+        ij = self.gather_faces(P2D)
+        colors = self.gather_faces(depths)[:,:,None]*depth_scale
+        self.depths = self.gather_faces(depths)
         self.edgeflags = edge_bool
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF), dtype = np.bool)

@@ -1,4 +1,5 @@
-from DEODR import readObj, MeshRGBFitter, MeshRGBFitterWithPose
+from DEODR import readObj
+from DEODR.pytorch import MeshRGBFitter, MeshRGBFitterWithPose
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt

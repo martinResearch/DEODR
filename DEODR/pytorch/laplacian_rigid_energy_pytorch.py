@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from .laplacian_rigid_energy import LaplacianRigidEnergy
+from ..laplacian_rigid_energy import LaplacianRigidEnergy
 
 def scipySparseToTorch(sparse_matrix):
     coo = sparse_matrix.tocoo()   

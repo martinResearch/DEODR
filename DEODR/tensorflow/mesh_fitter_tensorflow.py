@@ -1,20 +1,20 @@
-from DEODR import Scene3DPytorch, LaplacianRigidEnergyPytorch
-from DEODR import TriMeshPytorch as TriMesh
+from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow
+from DEODR.tensorflow import TriMeshTensorflow as TriMesh
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
-import torch
 import copy
 import cv2
+import tensorflow as tf
 
 def qrot(q, v):
-    qr=q[None,:].repeat(v.shape[0],1)
+    qr=tf.tile(q[None,:], (v.shape[0],1))
     qvec = qr[:,:-1]
-    uv = torch.cross(qvec, v, dim=1)
-    uuv = torch.cross(qvec, uv, dim=1)
-    return (v + 2 * (qr[:, [3]] * uv + uuv))
+    uv = tf.linalg.cross(qvec, v)
+    uuv = tf.linalg.cross(qvec, uv)
+    return (v + 2 * (qr[:,3][None,0] * uv + uuv))
 
 class MeshRGBFitter():
     
@@ -28,13 +28,13 @@ class MeshRGBFitter():
         self.defaultLight = defaultLight  
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by Tensorflow 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter+np.array([0,0,9]) * objectRadius        
-        self.scene = Scene3DPytorch()
+        self.scene = Scene3DTensorflow()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.rigidEnergy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(vertices)        
         self.Hfactorized = None
         self.Hpreconditioner = None
@@ -75,7 +75,7 @@ class MeshRGBFitter():
         self.mesh.setVerticesColors(handColor_with_grad.repeat( [self.mesh.nbV,1]))
 
         Abuffer = self.scene.render(self.CameraMatrix,resolution=(self.SizeW,self.SizeH))
-        projJac = self.scene.projectionsJacobian(self.CameraMatrix)
+        projJac = self.scene.projectionsJacobian(self.CameraMatrix,self.V)
         #projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
         i = np.tile((np.arange(projJac.shape[0])[:,None] * projJac.shape[1] + np.arange(projJac.shape[1])[None,:])[:,:,None], (1, 1, projJac.shape[2]))
         j = np.tile((np.arange(projJac.shape[0])[:,None] * projJac.shape[2] + np.arange(projJac.shape[2])[None,:])[:,:,None], (1, projJac.shape[1], 1))
@@ -132,17 +132,17 @@ class MeshRGBFitter():
         self.iter += 1
         return Energy,Abuffer,diffImage  
     
-class MeshDepthFitterEnergy(torch.nn.Module):
+class MeshDepthFitterEnergy():
 
     def __init__(self, vertices, faces, euler_init, translation_init, cregu = 2000): 
         super(MeshDepthFitterEnergy, self).__init__()
-        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not supported by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not supported by Tensorflow 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter+np.array([-0.5,0,5])*objectRadius      
         self.scene = Scene()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.rigidEnergy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(self.mesh.vertices)        
         self.Hfactorized = None
         self.Hpreconditioner = None
@@ -191,7 +191,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy, EData, E_rigid))
         return self.loss  
     
-class MeshDepthFitterPytorchOptim():
+class MeshDepthFitterTensorflowOptim():
     
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000, lr=0.8):
         self.energy = MeshDepthFitterEnergy(vertices, faces, euler_init, translation_init, cregu)
@@ -230,15 +230,15 @@ class MeshDepthFitter():
         self.step_factor_translation= 0.00005
         self.step_max_translation = 0.1     
         
-        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by Tensorflow 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis = 0))
         self.cameraCenter = objectCenter+np.array([-0.5,0,5]) * objectRadius  
         
-        self.scene = Scene3DPytorch()
+        self.scene = Scene3DTensorflow()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
-        self.vertices_init = torch.tensor(copy.copy(vertices))        
+        self.rigidEnergy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
+        self.vertices_init = tf.constant(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.setMeshTransformInit(euler=euler_init, translation=translation_init)
@@ -277,28 +277,42 @@ class MeshDepthFitter():
         self.iter = 0        
    
     def step(self):
-        self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None,:]
-        vertices_with_grad = torch.tensor(self.vertices, dtype = torch.float64, requires_grad=True)
-        vertices_with_grad_centered = vertices_with_grad-torch.mean(vertices_with_grad, dim = 0)[None,:]
-        quaternion_with_grad = torch.tensor(self.transformQuaternion, dtype = torch.float64, requires_grad = True)
-        translation_with_grad = torch.tensor(self.transformTranslation, dtype = torch.float64, requires_grad = True)        
+        self.vertices = self.vertices - tf.reduce_mean(self.vertices, axis=0)[None,:] # centervertices because we have another paramter to control translations
+        x = tf.ones((2, 2))
         
-        q_normalized = quaternion_with_grad/quaternion_with_grad.norm() # that will lead to a gradient that is in the tangeant space
-        vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered)+translation_with_grad
-      
-        self.mesh.setVertices(vertices_with_grad_transformed)
-
-        depth_scale = 1 * self.depthScale
-        Depth = self.scene.renderDepth(self.CameraMatrix,resolution=(self.SizeW,self.SizeH),depth_scale=depth_scale)
-        Depth = torch.clamp(Depth,0,self.scene.maxDepth)
+        with tf.GradientTape() as tape:
+            
+            vertices_with_grad = tf.constant(self.vertices)   
+            quaternion_with_grad = tf.constant(self.transformQuaternion)
+            translation_with_grad = tf.constant(self.transformTranslation)   
+            
+            tape.watch(vertices_with_grad)
+            tape.watch(quaternion_with_grad)
+            tape.watch(translation_with_grad)
+            
+            vertices_with_grad_centered = vertices_with_grad-tf.reduce_mean(vertices_with_grad, axis = 0)[None,:]
+            
+            q_normalized = quaternion_with_grad/tf.norm(quaternion_with_grad) # that will lead to a gradient that is in the tangeant space
+            vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered)+translation_with_grad
+            
+            self.mesh.setVertices(vertices_with_grad_transformed)
+    
+            depth_scale = 1 * self.depthScale
+            Depth = self.scene.renderDepth(self.CameraMatrix,resolution=(self.SizeW,self.SizeH),depth_scale=depth_scale)
+            Depth = tf.clip_by_value(Depth,0,self.scene.maxDepth)
+            
+            diffImage = tf.reduce_sum((Depth-tf.constant(self.handImage[:,:,None]))**2,axis=2)
+            loss = tf.reduce_sum(diffImage)
         
-        diffImage = torch.sum((Depth-torch.tensor(self.handImage[:,:,None]))**2,dim=2)
-        loss = torch.sum(diffImage)
+        
+        trainable_variables=[vertices_with_grad,quaternion_with_grad,translation_with_grad]
+        vertices_grad,quaternion_grad,translation_grad = tape.gradient(loss,trainable_variables)
 
-        loss.backward()
-        EData = loss.detach().numpy()        
+        
+        
+        EData = loss.numpy()        
 
-        GradData = vertices_with_grad.grad
+        GradData = vertices_grad
         
         E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
         Energy = EData + E_rigid.numpy()
@@ -313,14 +327,14 @@ class MeshDepthFitter():
         #update vertices
         step_vertices = mult_and_clamp(-G.numpy(), self.step_factor_vertices, self.step_max_vertices)        
         self.speed_vertices = (1 - self.damping) * (self.speed_vertices * self.inertia+ ( 1 - self.inertia ) * step_vertices)
-        self.vertices = self.vertices + torch.tensor(self.speed_vertices) 
+        self.vertices = self.vertices + tf.constant(self.speed_vertices) 
         #update rotation
-        step_quaternion = mult_and_clamp(-quaternion_with_grad.grad.numpy(), self.step_factor_quaternion, self.step_max_quaternion)  
+        step_quaternion = mult_and_clamp(-quaternion_grad.numpy(), self.step_factor_quaternion, self.step_max_quaternion)  
         self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * self.inertia + ( 1 - self.inertia ) * step_quaternion)   
         self.transformQuaternion =  self.transformQuaternion + self.speed_quaternion
         #update translation
         self.transformQuaternion = self.transformQuaternion/np.linalg.norm(self.transformQuaternion)         
-        step_translation = mult_and_clamp( -translation_with_grad.grad.numpy(), self.step_factor_translation, self.step_max_translation)
+        step_translation = mult_and_clamp( -translation_grad.numpy(), self.step_factor_translation, self.step_max_translation)
         self.speed_translation = (1 - self.damping) * (self.speed_translation * self.inertia + ( 1 - self.inertia ) * step_translation)
         self.transformTranslation = self.transformTranslation + self.speed_translation         
 
@@ -345,14 +359,14 @@ class MeshRGBFitterWithPose():
         self.defaultLight = defaultLight          
         self.updateLights = updateLights
         self.updateColor = updateColor        
-        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by pytorch 
+        self.mesh = TriMesh(faces[:,::-1].copy())#we do a copy to avoid negative stride not support by Tensorflow 
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices,axis=0))
         self.cameraCenter = objectCenter + np.array([0,0,9]) * objectRadius    
         
-        self.scene = Scene3DPytorch()
+        self.scene = Scene3DTensorflow()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy=LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.rigidEnergy=LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
         self.vertices_init = torch.tensor(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
