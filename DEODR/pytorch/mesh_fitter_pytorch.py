@@ -130,7 +130,7 @@ class MeshRGBFitter():
             self.speed_handColor = (1 - self.damping)*(self.speed_handColor * self.inertia + ( 1 - self.inertia ) * step)
             self.handColor = self.handColor + self.speed_handColor
         self.iter += 1
-        return Energy,Abuffer,diffImage  
+        return Energy, Abuffer.detach().numpy(), diffImage.detach().numpy()  
     
 class MeshDepthFitterEnergy(torch.nn.Module):
 
@@ -215,7 +215,7 @@ class MeshDepthFitterPytorchOptim():
             return loss        
         self.optimizer.step(closure)
         #self.iter += 1
-        return self.energy.loss, self.energy.Depth[:,:,0], self.energy.diffImage    
+        return self.energy.loss, self.energy.Depth[:,:,0].detach().numpy(), self.energy.diffImage.detach().numpy()    
     
 class MeshDepthFitter():
     
@@ -325,7 +325,7 @@ class MeshDepthFitter():
         self.transformTranslation = self.transformTranslation + self.speed_translation         
 
         self.iter += 1
-        return Energy,Depth[:,:,0].detach(),diffImage.detach()        
+        return Energy, Depth[:,:,0].detach().numpy(), diffImage.detach().numpy()        
     
 class MeshRGBFitterWithPose():
     
@@ -461,4 +461,4 @@ class MeshRGBFitterWithPose():
         self.handColor = self.handColor + self.speed_handColor         
 
         self.iter += 1
-        return Energy,Abuffer,diffImage        
+        return Energy, Abuffer.detach().numpy(), diffImage.detach().numpy()        

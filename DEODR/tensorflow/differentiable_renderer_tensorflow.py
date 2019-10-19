@@ -63,8 +63,8 @@ class Scene3DTensorflow(Scene3D):
         super().__init__()
     
     def setLight(self, ligthDirectional, ambiantLight):
-        if not(isinstance(ligthDirectional, torch.Tensor)):
-            ligthDirectional = torch.tensor(ligthDirectional)        
+        if not(isinstance(ligthDirectional, tf.Tensor)):
+            ligthDirectional = tf.constant(ligthDirectional)        
         self.ligthDirectional = ligthDirectional
         self.ambiantLight = ambiantLight    
             
@@ -79,7 +79,7 @@ class Scene3DTensorflow(Scene3D):
         return tf.gather(X,self.mesh.faces)    
  
     def computeVerticesColors(self):
-        verticesLuminosity = tf.nn.relu(-tf.sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1)) + self.ambiantLight
+        verticesLuminosity = tf.nn.relu(-tf.reduce_sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1)) + self.ambiantLight
         return self.mesh.verticesColors * verticesLuminosity[:,None]      
     
     def render2D(self,ij,colors):   

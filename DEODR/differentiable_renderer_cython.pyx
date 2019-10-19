@@ -25,10 +25,31 @@ def renderScene(scene,
 	heigth=Abuffer.shape[0]
 	width =Abuffer.shape[1]
 	nbColors=Abuffer.shape[2]
+	nbTriangles=scene.depths.shape[0]
+		
+	assert(scene.colors.ndim==3)
+	assert(scene.uv.ndim==3)
+	assert(scene.ij.ndim==3)
+	assert(scene.shade.ndim==2)
+	assert(scene.edgeflags.ndim==2)
+	assert(scene.textured.ndim==1)
+	assert(scene.shaded.ndim==1)		
+	assert(scene.uv.shape[0]==nbTriangles)
+	assert(scene.uv.shape[1]==3)
+	assert(scene.uv.shape[2]==2)	
+	assert(scene.ij.shape[0]==nbTriangles)
+	assert(scene.ij.shape[1]==3)
+	assert(scene.ij.shape[2]==2)
+	assert(scene.shade.shape[0]==nbTriangles)
+	assert(scene.shade.shape[1]==3)
+	assert(scene.colors.shape[0]==nbTriangles)
+	assert(scene.colors.shape[1]==3)
+	assert(scene.colors.shape[2] == nbColors)
+	assert(scene.edgeflags.shape[0]==nbTriangles)
+	assert(scene.edgeflags.shape[1]==3)
+	assert(scene.textured.shape[0]==nbTriangles)
+	assert(scene.shaded.shape[0]==nbTriangles)	
 	
-		
-		
-	assert(nbColors==scene.colors.shape[2])
 	
 	
 	assert Zbuffer.shape[0]==heigth 
@@ -49,15 +70,9 @@ def renderScene(scene,
 	cdef np.ndarray[np.double_t, mode="c"] texture_c= np.ascontiguousarray(scene.texture.flatten(), dtype=np.double)
 	cdef np.ndarray[np.double_t, mode="c"] background_c= np.ascontiguousarray(scene.background.flatten(), dtype=np.double)
 	
-	nbTriangles=scene.depths.shape[0]
-	assert(scene.uv.shape[0]==nbTriangles)
-	assert(scene.uv.shape[0]==nbTriangles)
-	assert(scene.ij.shape[0]==nbTriangles)
-	assert(scene.shade.shape[0]==nbTriangles)
-	assert(scene.colors.shape[0]==nbTriangles)
-	assert(scene.edgeflags.shape[0]==nbTriangles)
-	assert(scene.textured.shape[0]==nbTriangles)
-	assert(scene.shaded.shape[0]==nbTriangles)
+	
+	
+
 
 
 	scene_c.image_H=<int> scene.image_H
@@ -137,9 +152,47 @@ def renderSceneB(scene,
 	assert Zbuffer.shape[0]==heigth 
 	assert Zbuffer.shape[1]==width 
 
-
-
+	nbTriangles=scene.depths.shape[0]
 	
+	
+	assert(scene.colors.ndim==3)
+	assert(scene.uv.ndim==3)
+	assert(scene.uv_b.ndim==3)
+	assert(scene.ij.ndim==3)
+	assert(scene.ij_b.ndim==3)
+	assert(scene.shade.ndim==2)
+	assert(scene.shade_b.ndim==2)
+	assert(scene.edgeflags.ndim==2)
+	assert(scene.textured.ndim==1)
+	assert(scene.shaded.ndim==1)		
+	assert(scene.uv.shape[0]==nbTriangles)
+	assert(scene.uv.shape[1]==3)
+	assert(scene.uv.shape[2]==2)	
+	assert(scene.uv_b.shape[0]==nbTriangles)
+	assert(scene.uv_b.shape[1]==3)
+	assert(scene.uv_b.shape[2]==2)
+	assert(scene.ij.shape[0]==nbTriangles)
+	assert(scene.ij.shape[1]==3)
+	assert(scene.ij.shape[2]==2)
+	assert(scene.ij_b.shape[0]==nbTriangles)
+	assert(scene.ij_b.shape[1]==3)
+	assert(scene.ij_b.shape[2]==2)
+	assert(scene.shade.shape[0]==nbTriangles)
+	assert(scene.shade.shape[1]==3)
+	assert(scene.shade_b.shape[0]==nbTriangles)
+	assert(scene.shade_b.shape[1]==3)
+	assert(scene.colors.shape[0]==nbTriangles)
+	assert(scene.colors.shape[1]==3)
+	assert(scene.colors.shape[2] == nbColors)
+	assert(scene.colors_b.shape[0]==nbTriangles)
+	assert(scene.colors_b.shape[1]==3)
+	assert(scene.colors_b.shape[2] == nbColors)
+	assert(scene.edgeflags.shape[0]==nbTriangles)
+	assert(scene.edgeflags.shape[1]==3)
+	assert(scene.textured.shape[0]==nbTriangles)
+	assert(scene.shaded.shape[0]==nbTriangles)
+	
+		
 	scene_c.nbColors=nbColors
 	cdef np.ndarray[np.double_t, mode="c"] depths_c= np.ascontiguousarray(scene.depths.flatten(), dtype=np.double)	
 	cdef np.ndarray[np.double_t, mode="c"] uv_c= np.ascontiguousarray(scene.uv.flatten(), dtype=np.double)
@@ -156,21 +209,6 @@ def renderSceneB(scene,
 	cdef np.ndarray[np.double_t, mode="c"] texture_c= np.ascontiguousarray(scene.texture.flatten(), dtype=np.double)
 	cdef np.ndarray[np.double_t, mode="c"] background_c= np.ascontiguousarray(scene.background.flatten(), dtype=np.double)
 	
-	nbTriangles=scene.depths.shape[0]
-	assert(scene.uv.shape[0]==nbTriangles)
-	assert(scene.uv.shape[0]==nbTriangles)
-	assert(scene.ij.shape[0]==nbTriangles)
-	assert(scene.ij_b.shape[0]==nbTriangles)
-	assert(scene.uv_b.shape[0]==nbTriangles)
-	
-	assert(scene.shade.shape[0]==nbTriangles)
-	assert(scene.shade_b.shape[0]==nbTriangles)
-	
-	assert(scene.colors.shape[0]==nbTriangles)
-	assert(scene.colors_b.shape[0]==nbTriangles)
-	assert(scene.edgeflags.shape[0]==nbTriangles)
-	assert(scene.textured.shape[0]==nbTriangles)
-	assert(scene.shaded.shape[0]==nbTriangles)
 
 
 	scene_c.image_H=<int> scene.image_H

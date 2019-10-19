@@ -114,9 +114,9 @@ class Scene3D():
         edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
         
         # construct triangle soup        
-        ij = P2D[self.mesh.faces]
-        colors = colorsV[self.mesh.faces]
-        self.depths = depths[self.mesh.faces]        
+        ij = self.gather_faces(P2D)
+        colors = self.gather_faces(colorsV)
+        self.depths = self.gather_faces(depths)       
         self.edgeflags = edge_bool
         self.uv = np.zeros((self.mesh.nbF,3,2))
         self.textured = np.zeros((self.mesh.nbF),dtype=np.bool)

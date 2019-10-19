@@ -1,5 +1,6 @@
 from DEODR import readObj
-from DEODR.pytorch import MeshRGBFitter, MeshRGBFitterWithPose
+#from DEODR.pytorch import MeshRGBFitter, MeshRGBFitterWithPose
+from DEODR.tensorflow import  MeshRGBFitterWithPose
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,7 +49,7 @@ def main():
         Energy, Abuffer, diffImage = handFitter.step()
         Energies.append(Energy)
         durations.append( time.time() - start  )
-        combinedIMage = np.column_stack((handImage,Abuffer.detach().numpy(),np.tile(diffImage.detach().numpy()[:,:,None],(1,1,3))))
+        combinedIMage = np.column_stack((handImage,Abuffer,np.tile(diffImage[:,:,None],(1,1,3))))
         cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
         imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1)  
