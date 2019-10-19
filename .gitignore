@@ -7,6 +7,7 @@
 *.pyx~
 *.c~
 *.h~
+build/
 .gitignore~
 DEODR/differentiable_renderer_cython.cpp
 DEODR/differentiable_renderer_cython.html
@@ -14,6 +15,9 @@ iterations/
 *.pyd
 examples/images
 Matlab/matlabAutoDiff
-build/temp.win-amd64-3.6/Release/DEODR/differentiablerenderer_cython.cp36-win_amd64.exp
-build/temp.win-amd64-3.6/Release/DEODR/differentiablerenderer_cython.cp36-win_amd64.lib
-build/temp.win-amd64-3.6/Release/DEODR/differentiablerenderer_cython.obj
+build/temp.win-amd64-3.6/Release/
+DEODR/differentiablerenderer_cython.cp36-win_amd64.exp
+
+DEODR/differentiablerenderer_cython.cp36-win_amd64.lib
+
+DEODR/differentiablerenderer_cython.obj
