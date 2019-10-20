@@ -1,6 +1,5 @@
 from DEODR import readObj
-#from DEODR.pytorch import MeshDepthFitter
-from DEODR.tensorflow import MeshDepthFitter
+
 from scipy.misc import imread,imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,7 +10,15 @@ import datetime
 import os
 import json
 
-def main():
+
+def example_depth_image_hand_fitting(dl_library = 'pytorch', plot_curves = True,save_images = True):
+    if dl_library=='pytorch':
+        from DEODR.pytorch import MeshDepthFitter
+    elif dl_library == 'tensorflow':
+        from DEODR.tensorflow import MeshDepthFitter
+    else: 
+        raise BaseException(f"unkown deep learning library {dl_library}")
+    
     depth_image = np.fliplr(np.fromfile('depth.bin', dtype = np.float32).reshape(240,320).astype(np.float))
     depth_image = depth_image[20:-20,60:-60]
     max_depth = 450
@@ -44,30 +51,32 @@ def main():
         Energy,syntheticDepth,diffImage = handFitter.step()
         Energies.append(Energy)
         durations.append(time.time() - start)
-        combinedIMage = np.column_stack((depth_image, syntheticDepth.numpy(), 3*diffImage.numpy()))
+        combinedIMage = np.column_stack((depth_image, syntheticDepth, 3*diffImage))
         cv2.imshow('animation', cv2.resize(combinedIMage, None, fx = 2, fy = 2)) 
-        imsave(os.path.join(iterfolder, f'depth_hand_iter_{iter}.png'), combinedIMage)
+        if save_images:
+            imsave(os.path.join(iterfolder, f'depth_hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1) 
         
     with open(os.path.join(iterfolder, 'depth_image_fitting_result_%s.json'%str(datetime.datetime.now()).replace(':','_')), 'w') as f:
         json.dump({'durations':durations, 'energies':Energies}, f , indent = 4)
-    
-    plt.figure()
-    for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
-        with open(file,'r') as fp:
-            json_data = json.load(fp)   
-            plt.plot(json_data['durations'], json_data['energies'], label = file)
-    plt.legend()        
-    plt.figure()
-    for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
-        with open(file,'r') as fp:
-            json_data = json.load(fp)               
-            plt.plot(json_data['energies'], label = file)
-    plt.legend()
-    plt.show()    
+    if plot_curves:
+        plt.figure()
+        for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
+            with open(file,'r') as fp:
+                json_data = json.load(fp)   
+                plt.plot(json_data['durations'], json_data['energies'], label = file)
+        plt.legend()        
+        plt.figure()
+        for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
+            with open(file,'r') as fp:
+                json_data = json.load(fp)               
+                plt.plot(json_data['energies'], label = file)
+        plt.legend()
+        plt.show()    
  
 if __name__ == "__main__":   
-  main()
+  example_depth_image_hand_fitting(dl_library='pytorch', plot_curves=False, save_images = False)
+  example_depth_image_hand_fitting(dl_library='tensorflow', plot_curves=False, save_images = False)
 
     
 

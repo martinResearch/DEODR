@@ -1,5 +1,6 @@
 from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow
 from DEODR.tensorflow import TriMeshTensorflow as TriMesh
+from DEODR import LaplacianRigidEnergy
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -36,7 +37,7 @@ class MeshDepthFitter():
         
         self.scene = Scene3DTensorflow()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
+        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = tf.constant(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
@@ -74,7 +75,7 @@ class MeshDepthFitter():
         T = -R.T.dot(self.cameraCenter)
         self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
         self.iter = 0        
-   
+    
     def step(self):
         self.vertices = self.vertices - tf.reduce_mean(self.vertices, axis=0)[None,:] # centervertices because we have another paramter to control translations
         x = tf.ones((2, 2))
@@ -112,8 +113,8 @@ class MeshDepthFitter():
 
         GradData = vertices_grad
         
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
-        Energy = EData + E_rigid.numpy()
+        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices.numpy())
+        Energy = EData + E_rigid
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy,EData,E_rigid))
 
         #update v

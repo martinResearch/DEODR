@@ -5,29 +5,31 @@ import copy
 from ..differentiable_renderer import Scene3D
 
 class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
-    @staticmethod
+    
+    @staticmethod    
     def forward(ctx, ij, colors, scene):
         nbColorChanels = colors.shape[2]
-        Abuffer = np.zeros((scene.image_H, scene.image_W, nbColorChanels))
-        Zbuffer = np.zeros((scene.image_H, scene.image_W))
+        Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
+        Zbuffer = np.empty((scene.image_H, scene.image_W))
         ctx.scene = scene
-        scene.ij = ij.detach()#should automatically detached according to https://pytorch.org/docs/master/notes/extending.html
-        scene.colors = colors.detach() 
+        scene.ij = ij.detach().numpy() #should automatically detached according to https://pytorch.org/docs/master/notes/extending.html
+        scene.colors = colors.detach().numpy() 
         differentiable_renderer_cython.renderScene(scene, 1, Abuffer, Zbuffer)
         ctx.save_for_backward(ij, colors)
-        ctx.Abuffer = Abuffer # this make a copy, we could try to avoid that 
-        ctx.Zbuffer = Zbuffer # this make a copy, we could try to avoid that 
-        return torch.tensor(Abuffer)
+        ctx.Abuffer = Abuffer.copy() # making a copy to keep the antializaed image for visualization , could be optional
+        ctx.Zbuffer = Zbuffer  
+        return torch.as_tensor(Abuffer)
     
-    @staticmethod
+    @staticmethod    
     def backward(ctx, Abuffer_b):
         scene = ctx.scene   
         scene.uv_b = np.zeros(scene.uv.shape)
         scene.ij_b = np.zeros(scene.ij.shape)
         scene.shade_b = np.zeros(scene.shade.shape)
-        scene.colors_b = np.zeros(scene.colors.shape)         
+        scene.colors_b = np.zeros(scene.colors.shape) 
+        scene.texture_b = np.zeros(scene.texture.shape) 
         differentiable_renderer_cython.renderSceneB(scene, 1, ctx.Abuffer, ctx.Zbuffer, Abuffer_b.numpy())         
-        return torch.tensor(scene.ij_b), torch.tensor(scene.colors_b),None
+        return torch.as_tensor(scene.ij_b), torch.as_tensor(scene.colors_b),None
        
 TorchDifferentiableRender2D = TorchDifferentiableRenderer2DFunc.apply
 

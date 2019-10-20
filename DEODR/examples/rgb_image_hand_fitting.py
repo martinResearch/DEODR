@@ -1,6 +1,4 @@
-from DEODR import readObj
-#from DEODR.pytorch import MeshRGBFitter, MeshRGBFitterWithPose
-from DEODR.tensorflow import  MeshRGBFitterWithPose
+from DEODR import readObj 
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,8 +10,14 @@ import glob
 import json
 import os
 
-def main():
-    use_pytotch_optimizer = True
+def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
+    if dl_library == 'pytorch':
+        from  DEODR.pytorch import MeshRGBFitterWithPose
+    elif dl_library == 'tensorflow':
+        from  DEODR.tensorflow import MeshRGBFitterWithPose  
+    else: 
+        raise BaseException(f"unkown deep learning library {dl_library}")
+    
     handImage = imread('hand.png').astype(np.double)/255
     w = handImage.shape[1]
     h = handImage.shape[0]
@@ -62,20 +66,25 @@ def main():
         json.dump({'durations':durations,'energies':Energies}, f, indent=4)
     
     # compare with previous runs
-    plt.figure()
-    for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
-        with open(file,'r') as fp:
-            json_data = json.load(fp)   
-            plt.plot(json_data['durations'], json_data['energies'], label = file)
-    plt.legend()        
-    plt.figure()
-    for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
-        with open(file,'r') as fp:
-            json_data = json.load(fp)               
-            plt.plot(json_data['energies'],label = file)
-    plt.legend()   
-    plt.show()  
+    if plot_curves:
+        plt.figure()
+        for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
+            with open(file,'r') as fp:
+                json_data = json.load(fp)   
+                plt.plot(json_data['durations'], json_data['energies'], label = file)
+                plt.xlabel('duration in seconds')
+                plt.ylabel ('energies')
+        plt.legend()        
+        plt.figure()
+        for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
+            with open(file,'r') as fp:
+                json_data = json.load(fp)               
+                plt.plot(json_data['energies'],label = file)
+                plt.xlabel('interations')
+                plt.ylabel ('energies')            
+        plt.legend()   
+        plt.show()  
 
 if __name__ == "__main__":
-    main()
-
+    example_rgb_hand_fitting(dl_library='pytorch',plot_curves=False)
+    example_rgb_hand_fitting(dl_library='tensorflow')

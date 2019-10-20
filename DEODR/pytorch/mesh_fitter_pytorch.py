@@ -1,4 +1,5 @@
 from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch
+from DEODR import LaplacianRigidEnergy
 from DEODR.pytorch import TriMeshPytorch as TriMesh
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ def qrot(q, v):
 
 class MeshRGBFitter():
     
-    def __init__(self,vertices,faces,defaultColor,defaultLight,cregu=2000,gamma=0.01,beta=0.01,inertia=0.9,damping=0.1,updateLights=True,updateColor=True):
+    def __init__(self, vertices, faces, defaultColor, defaultLight, cregu=2000, gamma=0.01, beta=0.01, inertia=0.9, damping=0.1, updateLights=True, updateColor=True):
         self.cregu = cregu
         self.gamma = gamma
         self.beta = beta
@@ -237,7 +238,7 @@ class MeshDepthFitter():
         
         self.scene = Scene3DPytorch()
         self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
+        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = torch.tensor(copy.copy(vertices))        
         self.Hfactorized = None
         self.Hpreconditioner = None
@@ -275,10 +276,11 @@ class MeshDepthFitter():
         T = -R.T.dot(self.cameraCenter)
         self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
         self.iter = 0        
-   
+    
     def step(self):
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None,:]
-        vertices_with_grad = torch.tensor(self.vertices, dtype = torch.float64, requires_grad=True)
+        #vertices_with_grad = self.vertices.clone().requires_grad(True)
+        vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)        
         vertices_with_grad_centered = vertices_with_grad-torch.mean(vertices_with_grad, dim = 0)[None,:]
         quaternion_with_grad = torch.tensor(self.transformQuaternion, dtype = torch.float64, requires_grad = True)
         translation_with_grad = torch.tensor(self.transformTranslation, dtype = torch.float64, requires_grad = True)        
@@ -298,10 +300,10 @@ class MeshDepthFitter():
         loss.backward()
         EData = loss.detach().numpy()        
 
-        GradData = vertices_with_grad.grad
+        GradData = vertices_with_grad.grad.numpy()
         
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
-        Energy = EData + E_rigid.numpy()
+        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices.numpy())
+        Energy = EData + E_rigid
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy,EData,E_rigid))
 
         #update v
@@ -311,7 +313,7 @@ class MeshDepthFitter():
             return np.minimum(np.maximum(x*a,-t),t)
    
         #update vertices
-        step_vertices = mult_and_clamp(-G.numpy(), self.step_factor_vertices, self.step_max_vertices)        
+        step_vertices = mult_and_clamp(-G ,self.step_factor_vertices, self.step_max_vertices)        
         self.speed_vertices = (1 - self.damping) * (self.speed_vertices * self.inertia+ ( 1 - self.inertia ) * step_vertices)
         self.vertices = self.vertices + torch.tensor(self.speed_vertices) 
         #update rotation

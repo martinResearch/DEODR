@@ -41,12 +41,14 @@ class Scene2DWithBackward(Scene2D):
         self.ij_b = np.zeros(self.ij.shape)
         self.shade_b = np.zeros(self.shade.shape)
         self.colors_b = np.zeros(self.colors.shape)
+        self.texture_b = np.zeros(self.texture.shape)
         
     def clear_gradients(self):
         self.uv_b.fill(0)
         self.ij_b.fill(0)
         self.shade_b.fill(0)
-        self.colors_b.fill(0)    
+        self.colors_b.fill(0)  
+        self.texture_b.fill(0)  
     
     def render_compare_and_backward(self, sigma, Aobs, antialiaseError = False, mask = None, clear_gradients = True, make_copies=True):        
         if mask is None:
@@ -90,7 +92,7 @@ class Scene3D():
         
     def setBackground(self,backgroundImage):
         self.background = backgroundImage
-        
+    
     def camera_project(self,cameraMatrix,P3D, get_jacobians = False) : 
         r = np.column_stack((P3D, np.ones((P3D.shape[0],1), dtype = np.double))).dot(cameraMatrix.T)
         depths = r[:,2]
@@ -136,7 +138,7 @@ class Scene3D():
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3])        
     
         #compute silhouette edges 
-        self.mesh.computeVertexNormals()
+        self.mesh.computeFaceNormals()
         edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
     
         # construct triangle soup        

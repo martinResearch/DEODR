@@ -5,7 +5,7 @@ import scipy.sparse
 
 class LaplacianRigidEnergy():
     def __init__(self,mesh,vertices,cregu):
-        self.cT = scipy.sparse.kron(mesh.adjacencies.Laplacian.T*mesh.adjacencies.Laplacian,scipy.sparse.eye(3))
+        self.cT = scipy.sparse.kron(mesh.adjacencies.Laplacian.T*mesh.adjacencies.Laplacian,scipy.sparse.eye(3)).tocsr()
         self.Vref = copy.copy(vertices)
         self.mesh=mesh
         self.cregu=cregu      

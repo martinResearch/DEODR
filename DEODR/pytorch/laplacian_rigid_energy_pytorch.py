@@ -15,17 +15,18 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
     def __init__(self, mesh, vertices, cregu):
         super().__init__(mesh, vertices, cregu)
         self.cT_torch = scipySparseToTorch(self.cT)
-
+    
     def eval(self,V, return_grad=True,return_hessian=True,refresh_rotations=True):
         assert( isinstance(V ,torch.Tensor))
         if  V.requires_grad:            
             diff=(V-self.Vref).flatten()
-            gradV = self.cregu*(self.cT_torch.mm(diff[:,None])).reshape_as(V)
+            gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
             E= 0.5*diff.dot(gradV.flatten())
             return E
         else:
             diff=(V - torch.tensor(self.Vref)).flatten()
-            gradV = self.cregu*(self.cT_torch.mm(diff[:,None])).reshape_as(V)
+            #gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V) #40x slower than scipy !
+            gradV = torch.tensor(self.cregu*(self.cT*(diff[:,None].numpy())).reshape(V.shape))
             E= 0.5*diff.dot(gradV.flatten())
             if not(return_grad):
                 assert(not(return_hessian))

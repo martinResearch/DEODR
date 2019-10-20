@@ -22,10 +22,10 @@ def renderScene(scene,
 	cdef _differentiable_renderer.Scene scene_c 	
 	assert (not(Abuffer is None))
 	assert (not(Zbuffer is None))
-	heigth=Abuffer.shape[0]
-	width =Abuffer.shape[1]
-	nbColors=Abuffer.shape[2]
-	nbTriangles=scene.depths.shape[0]
+	heigth = Abuffer.shape[0]
+	width = Abuffer.shape[1]
+	nbColors = Abuffer.shape[2]
+	nbTriangles = scene.depths.shape[0]
 		
 	assert(scene.colors.ndim==3)
 	assert(scene.uv.ndim==3)
@@ -50,14 +50,13 @@ def renderScene(scene,
 	assert(scene.textured.shape[0]==nbTriangles)
 	assert(scene.shaded.shape[0]==nbTriangles)	
 	
-	
+	if scene.texture.size>0:
+		assert(scene.texture.ndim==3)
+		assert(scene.texture.shape[2]==nbColors)
 	
 	assert Zbuffer.shape[0]==heigth 
 	assert Zbuffer.shape[1]==width 
 
-
-
-	
 	scene_c.nbColors=nbColors
 	cdef np.ndarray[np.double_t, mode="c"] depths_c= np.ascontiguousarray(scene.depths.flatten(), dtype=np.double)	
 	cdef np.ndarray[np.double_t, mode="c"] uv_c= np.ascontiguousarray(scene.uv.flatten(), dtype=np.double)
@@ -70,11 +69,6 @@ def renderScene(scene,
 	cdef np.ndarray[np.double_t, mode="c"] texture_c= np.ascontiguousarray(scene.texture.flatten(), dtype=np.double)
 	cdef np.ndarray[np.double_t, mode="c"] background_c= np.ascontiguousarray(scene.background.flatten(), dtype=np.double)
 	
-	
-	
-
-
-
 	scene_c.image_H=<int> scene.image_H
 	scene_c.image_W=<int> scene.image_W
 	scene_c.nbTriangles=nbTriangles
@@ -191,8 +185,12 @@ def renderSceneB(scene,
 	assert(scene.edgeflags.shape[1]==3)
 	assert(scene.textured.shape[0]==nbTriangles)
 	assert(scene.shaded.shape[0]==nbTriangles)
-	
-		
+	if scene.texture.size>0:
+		assert(scene.texture.ndim==3)
+		assert(scene.texture_b.ndim==3)		
+		assert(scene.texture.shape[0]==scene.texture_b.shape[0])
+		assert(scene.texture.shape[1]==scene.texture_b.shape[1])
+		assert(scene.texture.shape[2]==nbColors)	
 	scene_c.nbColors=nbColors
 	cdef np.ndarray[np.double_t, mode="c"] depths_c= np.ascontiguousarray(scene.depths.flatten(), dtype=np.double)	
 	cdef np.ndarray[np.double_t, mode="c"] uv_c= np.ascontiguousarray(scene.uv.flatten(), dtype=np.double)
@@ -207,6 +205,7 @@ def renderSceneB(scene,
 	cdef np.ndarray[np.uint8_t, mode="c"] textured_c= np.ascontiguousarray(scene.textured.flatten(), dtype=np.uint8)
 	cdef np.ndarray[np.uint8_t, mode="c"] shaded_c= np.ascontiguousarray(scene.shaded.flatten(), dtype=np.uint8)
 	cdef np.ndarray[np.double_t, mode="c"] texture_c= np.ascontiguousarray(scene.texture.flatten(), dtype=np.double)
+	cdef np.ndarray[np.double_t, mode="c"] texture_b_c= np.ascontiguousarray(scene.texture_b.flatten(), dtype=np.double)
 	cdef np.ndarray[np.double_t, mode="c"] background_c= np.ascontiguousarray(scene.background.flatten(), dtype=np.double)
 	
 
@@ -227,6 +226,7 @@ def renderSceneB(scene,
 	scene_c.textured=<bool*> textured_c.data
 	scene_c.shaded=<bool*> shaded_c.data
 	scene_c.texture=<double*> texture_c.data
+	scene_c.texture_b=<double*> texture_b_c.data
 	scene_c.background=<double*> background_c.data
 	scene_c.texture_H=scene.texture.shape[0]
 	scene_c.texture_W=scene.texture.shape[1]
@@ -275,4 +275,5 @@ def renderSceneB(scene,
 	scene.ij_b=ij_b_c.reshape(scene.ij_b.shape)
 	scene.shade_b=shade_b_c.reshape(scene.shade_b.shape)
 	scene.colors_b=colors_b_c.reshape(scene.colors_b.shape)
+	scene.texture_b=texture_b_c.reshape(scene.texture_b.shape)
 	

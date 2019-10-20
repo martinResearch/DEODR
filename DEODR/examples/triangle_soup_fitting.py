@@ -48,7 +48,7 @@ def create_example_scene():
            
     scene = {}
     for key in triangles[0].keys(): 
-        scene[key] = np.stack([triangle[key] for triangle in triangles]) 
+        scene[key] = np.squeeze(np.stack([triangle[key] for triangle in triangles])) 
     scene['image_H'] = SizeH
     scene['image_W'] = SizeW
     scene['texture'] = material     

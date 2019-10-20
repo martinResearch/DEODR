@@ -47,7 +47,7 @@ void get_xrange_from_ineq(double ineq[12], int SizeW, int y, int &x_begin, int &
 inline void render_part_interpolated(double* Abuffer, double* Zbuffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA);
 inline void render_part_interpolated_B(double* Abuffer, double* Abuffer_B, double* Zbuffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA);
 inline  void render_part_textured_gouraud(double* Abuffer, double* Zbuffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA, double* Texture, int* Texture_size);
-inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, double* Zbuffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA, double* Texture, int* Texture_size);
+inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, double* Zbuffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA, double* Texture, double* Texture_B, int* Texture_size);
 
 struct Scene {
 	double* depths;
@@ -62,7 +62,7 @@ struct Scene {
 	int     image_H;
 	int     image_W;
 	int     nbColors;
-	double* texture;
+	double* texture;	
 	int  texture_H;
 	int  texture_W;
 	double* background;
@@ -71,6 +71,7 @@ struct Scene {
 	double* ij_b;
 	double* shade_b;
 	double* colors_b;
+	double* texture_b;
 };
 
 
@@ -434,7 +435,7 @@ template <class T> void bilinear_sample(T* A, T I[], int* I_size, double p[2], i
 
 
 
-template <class T> void bilinear_sample_B(T* A, T* A_B, T I[], int* I_size, double p[2], double p_B[2], int sizeA)
+template <class T> void bilinear_sample_B(T* A, T* A_B, T I[],T I_B[], int* I_size, double p[2], double p_B[2], int sizeA)
 {
 
 	// compute integer part and fractional part
@@ -486,6 +487,10 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[], int* I_size, doub
 		double t2_B = A_B[k] * e[1];
 		e_B[0] += t1_B * (I[indx10 + k] - I[indx00 + k]);
 		e_B[0] += t2_B * (I[indx11 + k] - I[indx01 + k]);
+		I_B[indx00+k] = (1-e[0])*(1-e[1]) * A_B[k];
+		I_B[indx10+k] = e[0]*(1-e[1]) * A_B[k];
+		I_B[indx01+k] = (1-e[0]) *e[1] * A_B[k];
+		I_B[indx11+k] = e[0] *e[1] * A_B[k];
 	}
 
 
@@ -840,7 +845,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 
 
 
-template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double Zbuffer[], T Abuffer[], T Abuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, int* Texture_size)
+template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double Zbuffer[], T Abuffer[], T Abuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, T* Texture_B,int* Texture_size)
 {
 	int     y_begin[2], y_end[2];
 
@@ -878,7 +883,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 		}
 
 	for (int k = 0; k < 2; k++)
-		render_part_textured_gouraud_B(Abuffer, Abuffer_B, Zbuffer, y_begin[k], y_end[k], xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], SizeW, SizeH, sizeA, Texture, Texture_size);
+		render_part_textured_gouraud_B(Abuffer, Abuffer_B, Zbuffer, y_begin[k], y_end[k], xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], SizeW, SizeH, sizeA, Texture, Texture_B, Texture_size);
 
 	for (short int i = 0; i < 2; i++)
 		for (short int j = 0; j < 3; j++)
@@ -984,7 +989,7 @@ inline  void render_part_textured_gouraud(double* Abuffer, double* Zbuffer, int 
 
 
 
-inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, double* Zbuffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA, double* Texture, int* Texture_size)
+inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, double* Zbuffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int SizeW, int SizeH, int sizeA, double* Texture, double* Texture_B, int* Texture_size)
 {
 	double t[3];
 	double L0y;
@@ -1060,7 +1065,7 @@ inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, 
 					A_B[k] += Abuffer_B[sizeA*indx + k] * L;
 					L_B += Abuffer_B[sizeA*indx + k] * A[k];
 				}
-				bilinear_sample_B(A, A_B, Texture, Texture_size, UV, UV_B, sizeA);
+				bilinear_sample_B(A, A_B, Texture, Texture_B, Texture_size, UV, UV_B, sizeA);
 				for (int k = 0; k < 2; k++)
 				{ //UV[k]=UV0y[k]+xy1_to_UV[3*k]*x;
 					UV0y_B[k] += UV_B[k];
@@ -1549,7 +1554,7 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 
 
 
-template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], Te Abuffer[], Te Abuffer_B[], int SizeH, int SizeW, int sizeA, Te* Texture, int* Texture_size, double sigma)
+template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], Te Abuffer[], Te Abuffer_B[], int SizeH, int SizeW, int sizeA, Te* Texture,Te* Texture_B, int* Texture_size, double sigma)
 
 {
 	double  xy1_to_bary[6];
@@ -1655,7 +1660,7 @@ template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], doub
 					Abuffer_B[sizeA*indx + k] *= T;
 				}
 				double  UV_B[2] = { 0 };
-				bilinear_sample_B(A, A_B, Texture, Texture_size, UV, UV_B, sizeA);
+				bilinear_sample_B(A, A_B, Texture, Texture_B, Texture_size, UV, UV_B, sizeA);
 				for (int k = 0; k < 2; k++)
 				{ //UV[k]=UV0y[k]+xy1_to_UV[3*k]*x;
 					UV0y_B[k] += UV_B[k];
@@ -1803,7 +1808,7 @@ template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], d
 
 
 
-template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, int* Texture_size, double sigma)
+template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, T* Texture_B, int* Texture_size, double sigma)
 
 {
 	double  xy1_to_bary[6];
@@ -1926,7 +1931,7 @@ template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2],
 
 				double  UV_B[2] = { 0 };
 
-				bilinear_sample_B(A, A_B, Texture, Texture_size, UV, UV_B, sizeA);
+				bilinear_sample_B(A, A_B, Texture, Texture_B, Texture_size, UV, UV_B, sizeA);
 				for (int k = 0; k < 2; k++)
 				{ //UV[k]=UV0y[k]+xy1_to_UV[3*k]*x;
 					UV0y_B[k] += UV_B[k];
@@ -2511,9 +2516,9 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 									shade_b[i] = scene.shade_b[k * 3 + sub[i]];
 								}
 								if (antialiaseError)
-									rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma);
+									rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma);
 								else
-									rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma);
+									rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma);
 								for (int i = 0; i < 2; i++)
 									for (int j = 0; j < 2; j++)
 									{
@@ -2580,7 +2585,7 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 						uv_b[i][j] = scene.uv_b[6 * k + i * 2 + j];
 					}
 
-				rasterize_triangle_textured_gouraud_B(ij, ij_b, scene.depths + k * 3, uv, uv_b, scene.shade + k * 3, scene.shade_b + k * 3, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size);
+				rasterize_triangle_textured_gouraud_B(ij, ij_b, scene.depths + k * 3, uv, uv_b, scene.shade + k * 3, scene.shade_b + k * 3, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size);
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
