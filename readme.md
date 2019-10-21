@@ -1,6 +1,6 @@
 # DEODR
 
-DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** (Pytorch) and **Matlab** bindings. It provides a rendering backward differentiation function that will provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
+DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** and **Matlab** bindings. The python code provides interfaces with **Pytorch** and **Tensorflow**. It provides a rendering backward differentiation function that will provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
 The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projection are computed in either PyTorch or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. Unlike most other differentiable renderers, the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries. 
 
 # Features
@@ -8,23 +8,24 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * linearly interpolated color triangles with arbitray number of color chanels
 * textured triangles with gouraud shading
 * derivatives with respect to triangles vertices positions, triangles colors and lights. 
+* derivatives with respect to the texture pixel intensities
+* derivatives with respect to the texture UV coordinates
 * derivatives along occlusion boundaries
 * differentiability of the rendering function 
 * exact gradient of the rendering function
 
 Some unsuported features:
 
-* derivatives with respect to the texture
 * differentiable handling of seams at visible self intersections
 * GPU acceleration
 * self-collision detection to prevent interpenetrations
-* texture mip-mapping 
+* texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiabl would be chalenging)
  
-#Using texture triangles
+# Using texture triangles
 
 Keeping the rendering differentiable everywhere when using texture is challenging: if you use textured triangles you will need to make sure there no adjacent triangles in the 3D mesh are simultaneously visibles while disconected in the UV map, i.e that there is no visible seam. Otherwise the rendering won't in general be continuous with respect to the 3D vertices positions due to the texture discontinuity along the seam. Depending on the shape of your object, you might not be able to  define continuous UV mapping over the entire mesh and will need to define the UV texture coordinates in a very specific manner described in Figure 3 in [1], with some contraints on the texture intensities so that the continuity of the rendering is still garanteed along edges between disconected triangles in the UV map after texture bilinear interpolation.
-Notre that an improved version that approach is also described in [7].
+Note that an improved version that approach is also described in [7].
 
 # Installation
 ## Python
