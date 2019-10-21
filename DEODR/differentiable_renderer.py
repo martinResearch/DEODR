@@ -19,7 +19,7 @@ class Scene2D():
         self.texture =  texture
         self.background = background     
         
-    def render(self, sigma, Aobs, antialiaseError):
+    def render(self, sigma = 1, antialiaseError = False, Aobs = None):
         if antialiaseError:
             Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))
             ErrBuffer = np.sum((Aobs - self.background)**2, axis=2)
@@ -50,10 +50,10 @@ class Scene2DWithBackward(Scene2D):
         self.colors_b.fill(0)  
         self.texture_b.fill(0)  
     
-    def render_compare_and_backward(self, sigma, Aobs, antialiaseError = False, mask = None, clear_gradients = True, make_copies=True):        
+    def render_compare_and_backward(self, Aobs, sigma = 1, antialiaseError = False, mask = None, clear_gradients = True, make_copies=True):        
         if mask is None:
             mask = np.ones((Aobs.shape[0],Aobs.shape[1]))            
-        Abuffer, Zbuffer, ErrBuffer = self.render(sigma, Aobs, antialiaseError)
+        Abuffer, Zbuffer, ErrBuffer = self.render(sigma, antialiaseError, Aobs)
         if clear_gradients:
             self.clear_gradients()        
         if antialiaseError:
