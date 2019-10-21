@@ -8,17 +8,18 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * linearly interpolated color triangles with arbitray number of color chanels
 * textured triangles with gouraud shading
 * derivatives with respect to triangles vertices positions, triangles colors and lights. 
+* derivatives with respect to the texture pixel intensities
+* derivatives with respect to the texture UV coordinates
 * derivatives along occlusion boundaries
 * differentiability of the rendering function 
 * exact gradient of the rendering function
 
 Some unsuported features:
 
-* derivatives with respect to the texture
 * differentiable handling of seams at visible self intersections
 * GPU acceleration
 * self-collision detection to prevent interpenetrations
-* texture mip-mapping 
+* texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiabl would be chalenging)
  
 # Using texture triangles
