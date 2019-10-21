@@ -21,10 +21,10 @@ Some unsuported features:
 * texture mip-mapping 
 * shadow casting (making it differentiabl would be chalenging)
  
-#Using texture triangles
+# Using texture triangles
 
 Keeping the rendering differentiable everywhere when using texture is challenging: if you use textured triangles you will need to make sure there no adjacent triangles in the 3D mesh are simultaneously visibles while disconected in the UV map, i.e that there is no visible seam. Otherwise the rendering won't in general be continuous with respect to the 3D vertices positions due to the texture discontinuity along the seam. Depending on the shape of your object, you might not be able to  define continuous UV mapping over the entire mesh and will need to define the UV texture coordinates in a very specific manner described in Figure 3 in [1], with some contraints on the texture intensities so that the continuity of the rendering is still garanteed along edges between disconected triangles in the UV map after texture bilinear interpolation.
-Notre that an improved version that approach is also described in [7].
+Note that an improved version that approach is also described in [7].
 
 # Installation
 ## Python
