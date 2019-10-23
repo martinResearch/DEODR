@@ -48,10 +48,16 @@ def renderScene(scene,
 	assert(scene.edgeflags.shape[0]==nbTriangles)
 	assert(scene.edgeflags.shape[1]==3)
 	assert(scene.textured.shape[0]==nbTriangles)
-	assert(scene.shaded.shape[0]==nbTriangles)	
+	assert(scene.shaded.shape[0]==nbTriangles)
+	assert(scene.background.ndim==3)
+	assert(scene.background.shape[0]==heigth)
+	assert(scene.background.shape[1]==width)
+	assert(scene.background.shape[2]==nbColors)
 	
 	if scene.texture.size>0:
 		assert(scene.texture.ndim==3)
+		assert(scene.texture.shape[0]>0)
+		assert(scene.texture.shape[1]>0)
 		assert(scene.texture.shape[2]==nbColors)
 	
 	assert Zbuffer.shape[0]==heigth 
@@ -185,12 +191,19 @@ def renderSceneB(scene,
 	assert(scene.edgeflags.shape[1]==3)
 	assert(scene.textured.shape[0]==nbTriangles)
 	assert(scene.shaded.shape[0]==nbTriangles)
+	assert(scene.background.ndim == 3)
+	assert(scene.background.shape[0]==heigth)
+	assert(scene.background.shape[1]==width)
+	assert(scene.background.shape[2]==nbColors)
 	if scene.texture.size>0:
 		assert(scene.texture.ndim==3)
-		assert(scene.texture_b.ndim==3)		
+		assert(scene.texture_b.ndim==3)	
+		assert(scene.texture.shape[0]>0)
+		assert(scene.texture.shape[1]>0)		
 		assert(scene.texture.shape[0]==scene.texture_b.shape[0])
 		assert(scene.texture.shape[1]==scene.texture_b.shape[1])
 		assert(scene.texture.shape[2]==nbColors)	
+		assert(scene.texture_b.shape[2]==nbColors)
 	scene_c.nbColors=nbColors
 	cdef np.ndarray[np.double_t, mode="c"] depths_c= np.ascontiguousarray(scene.depths.flatten(), dtype=np.double)	
 	cdef np.ndarray[np.double_t, mode="c"] uv_c= np.ascontiguousarray(scene.uv.flatten(), dtype=np.double)
@@ -231,7 +244,9 @@ def renderSceneB(scene,
 	scene_c.texture_H=scene.texture.shape[0]
 	scene_c.texture_W=scene.texture.shape[1]
 	
-
+	
+	if scene_c.background==NULL:
+		raise BaseException('scene_c.background is NULL')
 
 	cdef double* Aobs_ptr = NULL
 	cdef double* ErrBuffer_ptr = NULL

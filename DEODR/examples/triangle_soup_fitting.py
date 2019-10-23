@@ -103,7 +103,7 @@ def main():
         nbMaxIter = 500
         losses = []
         for iter in range(nbMaxIter):
-            Image, depth, lossImage, loss = scene_iter.render_compare_and_backward(sigma, AbufferTarget, antialiaseError);
+            Image, depth, lossImage, loss = scene_iter.render_compare_and_backward(sigma, antialiaseError, AbufferTarget );
             
             #imsave(os.path.join(iterfolder,f'soup_{iter}.png'), combinedIMage)
             key = cv2.waitKey(1) 
@@ -125,8 +125,9 @@ def main():
                 scene_iter.uv = scene_iter.uv + speed_uv
                 scene_iter.uv = max( scene_iter.uv, 0)
                 scene_iter.uv = min( scene_iter.uv, max_uv)
-        plt.plot(losses)
-    
+        plt.plot(losses,label='antialiaseError=%d'%antialiaseError)
+        
+    plt.legend()
     plt.show()
 
 if __name__ == "__main__":

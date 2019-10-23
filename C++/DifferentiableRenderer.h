@@ -415,9 +415,9 @@ template <class T> void bilinear_sample(T* A, T I[], int* I_size, double p[2], i
 		{
 			fp[k] = 0; e[k] = 0;
 		}
-		if (fp[k] > I_size[k] - 1)
+		if (fp[k] > I_size[k] - 2)
 		{
-			fp[k] = I_size[k] - 1;
+			fp[k] = I_size[k] - 2;
 			e[k] = 1;
 		}
 	}
@@ -459,9 +459,9 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[],T I_B[], int* I_si
 		{
 			out[k] = true; fp[k] = 0; e[k] = 0;
 		}
-		if (fp[k] > I_size[k] - 1)
+		if (fp[k] > I_size[k] - 2)
 		{
-			out[k] = true; fp[k] = I_size[k] - 1;
+			out[k] = true; fp[k] = I_size[k] - 2;
 			e[k] = 1;
 		}
 	}
@@ -493,7 +493,7 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[],T I_B[], int* I_si
 		I_B[indx11+k] = e[0] *e[1] * A_B[k];
 	}
 
-
+	
 	for (int k = 0; k < 2; k++)
 	{
 		if (!out[k])
