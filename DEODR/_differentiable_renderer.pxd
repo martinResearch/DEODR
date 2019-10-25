@@ -2,6 +2,8 @@
 from libcpp cimport bool
 cdef extern from "../c++/DifferentiableRenderer.h":
 	ctypedef struct Scene:
+		unsigned int* faces;
+		unsigned int* faces_uv;
 		double* depths
 		double* uv
 		double* ij

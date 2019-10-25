@@ -14,7 +14,9 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
     if dl_library == 'pytorch':
         from  DEODR.pytorch import MeshRGBFitterWithPose
     elif dl_library == 'tensorflow':
-        from  DEODR.tensorflow import MeshRGBFitterWithPose  
+        from  DEODR.tensorflow import MeshRGBFitterWithPose 
+    elif dl_library == 'none':
+        from  DEODR.numpy import MeshRGBFitterWithPose     
     else: 
         raise BaseException(f"unkown deep learning library {dl_library}")
     

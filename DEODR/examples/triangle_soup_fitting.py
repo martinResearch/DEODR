@@ -1,17 +1,19 @@
 from DEODR import differentiable_renderer_cython
-from DEODR.differentiable_renderer import Scene2DWithBackward
+from DEODR.differentiable_renderer import Scene2D
 from scipy.misc import imread
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import copy
+import os
 
 def create_example_scene():
     
     Ntri = 30;
     SizeW = 200;
     SizeH = 200;
-    material = np.double(imread('trefle.jpg'))/255
+    file_folder=os.path.dirname(os.path.abspath(__file__))
+    material = np.double(imread(os.path.join(file_folder,'trefle.jpg')))/255
     Hmaterial = material.shape[0]
     Wmaterial = material.shape[1]
     
@@ -29,17 +31,17 @@ def create_example_scene():
             tmp = np.fliplr(tmp) 
         triangle = {}
         triangle['ij'] = tmp.T
-        triangle['depths'] = np.random.rand(1)*np.ones((3)) # constant depth triangles to avoid collisions
+        triangle['depths'] = np.random.rand(1)*np.ones((3,1)) # constant depth triangles to avoid collisions
         triangle['textured'] = np.random.rand(1)>0.5
         
         if triangle['textured']:
             triangle['uv'] = scale_material.dot(np.array([[0,1,0.2],[0,0.2,1]])).T + 1# texture coordinate of the vertices
-            triangle['shade'] = np.random.rand(3) # shade  intensity at each vertex
+            triangle['shade'] = np.random.rand(3,1) # shade  intensity at each vertex
             triangle['colors'] = np.zeros((3,3))
             triangle['shaded'] = True
         else:
             triangle['uv'] = np.zeros((3,2))
-            triangle['shade'] = np.zeros((3)) 
+            triangle['shade'] = np.zeros((3,1)) 
             triangle['colors'] = np.random.rand(3,3) # colors of the vertices (can be gray, rgb color,or even other dimension vectors) when using simple linear interpolation across triangles
             triangle['shaded'] = False
                 
@@ -48,15 +50,23 @@ def create_example_scene():
            
     scene = {}
     for key in triangles[0].keys(): 
-        scene[key] = np.squeeze(np.stack([triangle[key] for triangle in triangles])) 
+        scene[key] = np.squeeze(np.vstack([np.array(triangle[key]) for triangle in triangles])) 
+    scene['faces'] = np.arange(3*Ntri).reshape(-1,3).astype(np.uint32)
+    scene['faces_uv'] = np.arange(3*Ntri).reshape(-1,3).astype(np.uint32)
+    
     scene['image_H'] = SizeH
     scene['image_W'] = SizeW
     scene['texture'] = material     
     scene['nbColors'] = 3
     scene['background'] = np.tile(np.array([0.3,0.5,0.7])[None,None,:], (SizeH, SizeW, 1))        
-    return Scene2DWithBackward(**scene)   
+    return Scene2D(**scene)   
     
 def main():
+    print('process id=%d'%os.getpid())
+   
+    
+    
+    
     display = True
     np.random.seed(2)
     scene_gt = create_example_scene()
@@ -70,7 +80,7 @@ def main():
     Zbuffer = np.zeros((scene_gt.image_H, scene_gt.image_W))    
     differentiable_renderer_cython.renderScene(scene_gt, sigma, AbufferTarget, Zbuffer)
 
-    Ntri = len(scene_gt.depths);
+    Nvertices = len(scene_gt.depths);
     
     displacement_magnitude_ij = 10
     displacement_magnitude_uv = 0
@@ -86,19 +96,19 @@ def main():
     max_uv = np.array(scene_gt.texture.shape[:2]) - 1  
     
     scene_init = copy.deepcopy(scene_gt)    
-    scene_init.ij = scene_gt.ij + np.random.randn(Ntri,3,2) * displacement_magnitude_ij
-    scene_init.uv = scene_gt.uv + np.random.randn(Ntri,3,2) * displacement_magnitude_uv
+    scene_init.ij = scene_gt.ij + np.random.randn(Nvertices,2) * displacement_magnitude_ij
+    scene_init.uv = scene_gt.uv + np.random.randn(Nvertices,2) * displacement_magnitude_uv
     scene_init.uv = np.maximum( scene_init.uv,0)
     scene_init.uv = np.minimum( scene_init.uv,max_uv)
-    scene_init.colors = scene_gt.colors + np.random.randn(Ntri,3,3) * displacement_magnitude_colors        
+    scene_init.colors = scene_gt.colors + np.random.randn(Nvertices,3) * displacement_magnitude_colors        
     
-    for antialiaseError in [True,False]:
+    for antialiaseError in [False,True]:
         np.random.seed(2)
         scene_iter = copy.deepcopy(scene_init)
         
-        speed_ij = np.zeros((Ntri,3,2))
-        speed_uv = np.zeros((Ntri,3,2))
-        speed_color = np.zeros((Ntri,3,3))
+        speed_ij = np.zeros((Nvertices,2))
+        speed_uv = np.zeros((Nvertices,2))
+        speed_color = np.zeros((Nvertices,3))
     
         nbMaxIter = 500
         losses = []
@@ -111,7 +121,7 @@ def main():
             if lossImage.ndim == 2:
                 lossImage = np.broadcast_to(lossImage[:,:,None],Image.shape)
             cv2.imshow('animation', np.column_stack((AbufferTarget,Image,lossImage))[:,:,::-1]) 
-            
+           
             if displacement_magnitude_ij > 0:
                 speed_ij = beta_ij * speed_ij - scene_iter.ij_b * alpha_ij
                 scene_iter.ij = scene_iter.ij + speed_ij

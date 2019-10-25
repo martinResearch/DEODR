@@ -74,9 +74,10 @@ def example_depth_image_hand_fitting(dl_library = 'pytorch', plot_curves = True,
         plt.legend()
         plt.show()    
  
-if __name__ == "__main__":   
-  example_depth_image_hand_fitting(dl_library='pytorch', plot_curves=False, save_images = False)
-  example_depth_image_hand_fitting(dl_library='tensorflow', plot_curves=False, save_images = False)
+if __name__ == "__main__":  
+    example_depth_image_hand_fitting(dl_library='tensorflow', plot_curves=True, save_images = False)
+    example_depth_image_hand_fitting(dl_library='pytorch', plot_curves=True, save_images = False)
+  
 
     
 

@@ -806,6 +806,12 @@ inline void render_part_interpolated_B(double* Abuffer, double* Abuffer_B, doubl
 }
 
 
+
+
+
+
+
+
 template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double Zbuffer[], T Abuffer[], int SizeH, int SizeW, int sizeA, T* Texture, int* Texture_size)
 {
 	int     y_begin[2], y_end[2];
@@ -817,6 +823,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 	double  xy1_to_L[3];
 	double  xy1_to_Z[3];
 	int     left_edge_id[2], right_edge_id[2];
+
 
 
 	//   compute triangle borders equations
@@ -860,7 +867,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 
 	int     left_edge_id[2], right_edge_id[2];
 
-	
+
 
 	//   compute triangle borders equations
 
@@ -954,7 +961,7 @@ inline  void render_part_textured_gouraud(double* Abuffer, double* Zbuffer, int 
 		if (temp_x < x_end) x_end = temp_x;
 
 		// line rasterization
-		
+		assert(false);
 		int indx = y * SizeW + x_begin;
 		for (short int x = x_begin; x <= x_end; x++)
 		{
@@ -2313,7 +2320,8 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 
 			if ((scene.textured[k] && scene.shaded[k]))
 			{
-				unsigned int * face_uv = &scene.faces_uv[k * 3];				
+				unsigned int * face_uv = &scene.faces_uv[k * 3];
+				double ij[3][2];	
 				double shade[3];
 				for (int i = 0; i < 3; i++)
 					shade[i] = scene.shade[face[i]];

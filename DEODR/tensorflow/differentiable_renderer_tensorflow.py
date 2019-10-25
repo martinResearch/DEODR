@@ -10,7 +10,7 @@ def TensorflowDifferentiableRender2D( ij, colors, scene):
     @tf.custom_gradient
     
     def forward(ij, colors):#using inner function as we don't differentate w.r.t scene
-        nbColorChanels = colors.shape[2]
+        nbColorChanels = colors.shape[1]
         Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
         Zbuffer = np.empty((scene.image_H, scene.image_W))
         scene.ij = np.array (ij)#should automatically detached according to https://pytorch.org/docs/master/notes/extending.html

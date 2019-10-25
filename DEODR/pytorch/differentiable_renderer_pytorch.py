@@ -8,7 +8,7 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
     
     @staticmethod    
     def forward(ctx, ij, colors, scene):
-        nbColorChanels = colors.shape[2]
+        nbColorChanels = colors.shape[1]
         Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
         Zbuffer = np.empty((scene.image_H, scene.image_W))
         ctx.scene = scene
