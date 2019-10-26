@@ -5,8 +5,8 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 
 # Features
 
-* linearly interpolated color triangles with arbitray number of color chanels
-* textured triangles with gouraud shading
+* linearly interpolated color triangles with arbitrary number of color channels
+* textured triangles with Gouraud shading
 * derivatives with respect to triangles vertices positions, triangles colors and lights. 
 * derivatives with respect to the texture pixel intensities
 * derivatives with respect to the texture UV coordinates
@@ -14,13 +14,13 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * differentiability of the rendering function 
 * exact gradient of the rendering function
 
-Some unsuported features:
+Some unsupported features:
 
 * differentiable handling of seams at visible self intersections
 * GPU acceleration
 * self-collision detection to prevent interpenetrations
 * texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
-* shadow casting (making it differentiabl would be chalenging)
+* shadow casting (making it differentiable would be challenging)
  
 # Using texture triangles
 
@@ -65,8 +65,8 @@ For this example you will also need to download the automatic differentiation to
  
 # Details
 
-This code implements the core of the differentiable renderer described in [1] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer to appear in the litterature.
-It renders a set of triangles with texture bilinearly interpolated and shaded or with interpolated RGB colour. In contrast with most renderers, the rendered image is differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of from and back triangles with a mixing coefficient that varies continously as the reprojected vertices move in the image (see [1] for more details). This allows us to and capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principeld manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row correspond to a color intensity of a pixel of the rendered image, like done in [3]) but provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
+This code implements the core of the differentiable renderer described in [1] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer to appear in the literature.
+It renders a set of triangles with texture bilinearly interpolated and shaded or with interpolated RGB colour. In contrast with most renderers, the rendered image is differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of from and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1] for more details). This allows us to and capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row correspond to a color intensity of a pixel of the rendered image, like done in [3]) but provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
 
 This can be used to do efficient analysis-by-synthesis computer vision by minimizing the function E that sums the squared difference between a rendered image and a reference observed image I<sub>o</sub> with respect of the scene parameters we aim to estimate.
 
@@ -89,7 +89,6 @@ and
 In combination with automatic differentiation tool this core function allows to obtain the gradient of 
 the error function with respect to the parameters of a complex 3D scene we aim to estimate.
 
-
 The rendering function implemented in C++ can draw image given a list of 2D projected triangles with associated depth (i.e 2.5D scene), where each triangle can have 
 
 * a linearly interpolated color between its three extremities 
@@ -97,12 +96,12 @@ The rendering function implemented in C++ can draw image given a list of 2D proj
 * a texture combined with shading interpolated linearly (gouraud shading)
 
 We provide a functions in Matlab and Python to obtain the 2.5D representation of the scene from a textured 3D mesh, a camera and simple lighting model. This function is used in the example of 3D model hand fitting on image. 
-We kept this function as minimalistic as possible as we did not intend to rewrite an entire rendering pipeline but to focus on the part that is difficult to differentiate and that cannot be differentiated easily using automatic differentiation.
+We kept this function as minimalist as possible as we did not intend to rewrite an entire rendering pipeline but to focus on the part that is difficult to differentiate and that cannot be differentiated easily using automatic differentiation.
 
 Our code provides two methods to handle discontinuities at the occlusion boundaries
 
 * the first method consists in antialiasing the synthetic image before comparing it to the observed image. 
-* the second method consists in antialising the squared residual between the observed image and the synthetized one, and corresponds to the method described in [1]. Note that antialiasing the residual instead of the squared residual is equivalent to do antialiasing on the synthetized image and then subtract the observed image.
+* the second method consists in antialising the squared residual between the observed image and the synthesized one, and corresponds to the method described in [1]. Note that antialiasing the residual instead of the squared residual is equivalent to do antialiasing on the synthetized image and then subtract the observed image.
 
 The choice of the method is done through the Boolean parameter *antialiaseError*. Both approach lead to a differentiable error function after summation of the residuals over the pixels and both lead to similar gradients. The difference is subtle and is only noticeable at the borders after convergence on synthetic antialiased data. The first methods can potentially provide more flexibility for the design of the error function. One can for example use non-local comparison by comparing image moments instead of comparing pixel per pixel.
 
