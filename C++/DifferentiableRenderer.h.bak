@@ -2339,7 +2339,7 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 
 	int list_sub[3][2] = { 1,0,2,1,0,2 };
 
-	
+	int* sub;
 
 	if (antialiaseError)
 	{
@@ -2374,7 +2374,6 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 				if (scene.edgeflags[n + k * 3])
 				{
 					double ij[2][2];
-					int* sub;
 					sub = list_sub[n];
 					for (int i = 0; i < 2; i++)
 						for (int j = 0; j < 2; j++)
@@ -2442,7 +2441,7 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 
 	int list_sub[3][2] = { 1,0,2,1,0,2 };
 
-	
+	int* sub;
 
 	vector<sortdata> sum_depth;
 	sum_depth.resize(scene.nbTriangles);
@@ -2480,7 +2479,6 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 					if (scene.edgeflags[n + k * 3])
 					{	
 						double ij[2][2];
-						int* sub;
 						sub = list_sub[n];						
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)								
@@ -2582,10 +2580,10 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 				for (int j = 0; j < 2; j++)
 					ij_b[i][j] = scene.ij_b[face[i] * 2 + j];
 
-			double depths[3];
-			for (int i = 0; i < 3; i++)
+			double depths[2];
+			for (int i = 0; i < 2; i++)
 			{
-				depths[i] = scene.depths[face[i]];
+				depths[i] = scene.depths[face[sub[i]]];
 			}
 
 			if (scene.textured[k] && scene.shaded[k])
@@ -2598,11 +2596,11 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 				double shade_b[3];
 				
 
-				for (int i = 0; i < 3; i++)
-					shade[i] = scene.shade[face[i]];
+				for (int i = 0; i < 2; i++)
+					shade[i] = scene.shade[face[sub[i]]];
 				
-				for (int i = 0; i < 3; i++)
-					shade_b[i] = scene.shade_b[face[i]];
+				for (int i = 0; i < 2; i++)
+					shade_b[i] = scene.shade_b[face[sub[i]]];
 				
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
@@ -2617,8 +2615,8 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 					{
 						scene.uv_b[face_uv[i] * 2 + j] = uv_b[i][j];
 					}
-				for (int i = 0; i < 3; i++)
-					scene.shade_b[face[i]] = shade_b[i];
+				for (int i = 0; i < 2; i++)
+					scene.shade_b[face[sub[i]]] = shade_b[i];
 			
 			}
 			if (!scene.textured[k])
