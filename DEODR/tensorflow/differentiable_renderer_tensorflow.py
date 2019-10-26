@@ -48,9 +48,7 @@ class Scene3DTensorflow(Scene3D):
         depths = r[:,2]
         P2D = r[:,:2]/depths[:,None]
         return P2D,depths    
-
-    def gather_faces(self,X):
-        return tf.gather(X,self.mesh.faces)    
+   
  
     def computeVerticesColors(self):
         verticesLuminosity = tf.nn.relu(-tf.reduce_sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1)) + self.ambiantLight

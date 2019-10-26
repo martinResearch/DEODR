@@ -23,10 +23,8 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
 		return  n/l[:,None]
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
-		"""this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""	
-		face_visible = (tf.reduce_sum(faceNormals *(tf.gather(vertices,self.faces[:,0]) - tf.constant(viewpoint)[None,:]),axis = 1) > 0).numpy()			
-		edge_bool =  ((self.Edges_Faces_Ones * face_visible)==1)
-		return edge_bool[self.Faces_Edges]		
+		return super().edgeOnSilhouette( vertices.numpy(), faceNormals.numpy(), viewpoint)
+			
 
 class TriMeshTensorflow(TriMesh):
 	def __init__(self, faces):

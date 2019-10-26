@@ -25,10 +25,9 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 		return  n/l[:,None]
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
-		"""this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""	
-		face_visible = (torch.sum(faceNormals *(vertices[self.faces_torch[:,0],:] -torch.tensor(viewpoint)[None,:]),dim=1)>0).numpy()			
-		edge_bool =  ((self.Edges_Faces_Ones * face_visible)==1)
-		return edge_bool[self.Faces_Edges]		
+		return super().edgeOnSilhouette( vertices.detach().numpy(), faceNormals.detach().numpy(), viewpoint)
+	
+		
 
 class TriMeshPytorch(TriMesh):
 	def __init__(self, faces):

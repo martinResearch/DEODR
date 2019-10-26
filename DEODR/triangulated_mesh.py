@@ -41,13 +41,16 @@ class TriMeshAdjacencies():
 		normals = n/l[:,None]
 		return normals  
 	
-	def computeFaceNormals_backard(self, faceNormals, normals_grad):
-		
+	def computeFaceNormals_backard(self, faceNormals, normals_grad):		
 		faceNormals_grad = self.Vertices_Faces.T* n_grad
 		# = self.Vertices_Faces * 
 		return faceNormals_grad
 	
-
+	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):		
+		"""this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""	
+		face_visible = np.sum(faceNormals *(vertices[self.faces[:,0],:] -viewpoint),axis=1)>0		
+		edge_bool =  ((self.Edges_Faces_Ones * face_visible)==1)		
+		return edge_bool[self.Faces_Edges]		
 class TriMesh():
 	def __init__(self, faces):
 		
