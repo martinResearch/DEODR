@@ -140,8 +140,8 @@ class Scene3D():
         r = np.column_stack((P3D, np.ones((P3D.shape[0],1), dtype = np.double))).dot(cameraMatrix.T)
         depths = r[:,2]
         #P2D = r[:,:2]/depths[:,None]
-        r_b = np.column_stack((P2D_b/depths[:,None], -P2D_b*r[:,:2]/(depths[:,None]**2))) 
-        P3D_b = r.dot(cameraMatrix[:,:3])
+        r_b = np.column_stack((P2D_b/depths[:,None], -np.sum(P2D_b*r[:,:2],axis=1)/(depths**2))) 
+        P3D_b = r_b.dot(cameraMatrix[:,:3])
         return P3D_b        
         
     def computeVerticesColorsWithIllumination(self):
@@ -154,12 +154,12 @@ class Scene3D():
         directional = np.maximum(0,-np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1))
         verticesLuminosity = directional + self.ambiantLight
         
-        verticesLuminosity_b = self.mesh.verticesColors * colors_b
+        verticesLuminosity_b = np.sum(self.mesh.verticesColors * colors_b,axis=1)
         self.mesh.verticesColors_b = colors_b * verticesLuminosity[:,None]
         self.ambiantLight_b = np.sum(verticesLuminosity_b)
         directional_b = verticesLuminosity_b 
-        self.lightDirectional_b = np.sum((directional_b*(directional>0)[:,None]) * self.mesh.vertexNormals,axis=0)
-        self.vertexNormals_b = (directional_b*(directional>0)[:,None]) * self.ligthDirectional
+        self.lightDirectional_b = -np.sum(((directional_b*(directional>0))[:,None]) * self.mesh.vertexNormals,axis=0)
+        self.vertexNormals_b = -((directional_b*(directional>0))[:,None]) * self.ligthDirectional
     
     def render2D(self,ij,colors):   
         nbColorChanels = colors.shape[1]

@@ -51,7 +51,7 @@ class Scene3DPytorch(Scene3D):
         return P2D,depths     
  
     def computeVerticesColorsWithIllumination(self):
-        verticesLuminosity = torch.relu(-torch.sum(self.mesh.vertexNormals * self.ligthDirectional, dim = 1)) + self.ambiantLight
+        verticesLuminosity = torch.relu(-torch.sum(self.mesh.vertexNormals * self.ligthDirectional, dim = 1)) + self.ambiantLight      
         return self.mesh.verticesColors * verticesLuminosity[:,None]      
     
     def render2D(self,ij,colors):   

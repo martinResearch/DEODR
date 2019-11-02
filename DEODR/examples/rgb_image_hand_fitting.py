@@ -28,6 +28,7 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
     
     defaultColor = np.array([0.4,0.3,0.25])
     defaultLight = {'directional':np.array([0.1,0.5,0.4]),'ambiant':np.array([0.6])} 
+    #defaultLight = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])} 
 
     euler_init = np.zeros((3))
     translation_init = np.zeros(3)
@@ -88,6 +89,10 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         plt.show()  
 
 if __name__ == "__main__":
-    example_rgb_hand_fitting(dl_library='none',plot_curves=False)
     example_rgb_hand_fitting(dl_library='pytorch',plot_curves=False)
+    example_rgb_hand_fitting(dl_library='none',plot_curves=False)
+    
+    
+    
+    
     example_rgb_hand_fitting(dl_library='tensorflow')

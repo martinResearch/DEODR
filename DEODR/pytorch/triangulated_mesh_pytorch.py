@@ -3,6 +3,13 @@ import numpy as np
 import torch
 from ..triangulated_mesh import *
 
+
+def print_grad(name):
+	def hook(grad):
+		print(f'grad {name} = {grad}')
+	return hook
+
+
 class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 	def __init__(self,faces):
 		super().__init__(faces)
@@ -16,11 +23,18 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 		tris = vertices[self.faces_torch,:]
 		n = torch.cross( tris[::,1 ] - tris[::,0], tris[::,2 ] - tris[::,0] )
 		l = ((n**2).sum(dim = 1)).sqrt()
+		vertices.register_hook(print_grad('vertices'))	
+		tris.register_hook(print_grad('tris'))	
 		return n/l[:,None]
 		
 	def computeVertexNormals(self,faceNormals):
 		n = self.Vertices_Faces_torch.mm(faceNormals)
-		l = ((n**2).sum(dim = 1)).sqrt()
+		l2= ((n**2).sum(dim = 1))
+		l =l2.sqrt()
+		n.register_hook(print_grad('l2'))
+		n.register_hook(print_grad('n'))
+		l.register_hook(print_grad('l'))
+		faceNormals.register_hook(print_grad('faceNormals'))	
 		return  n/l[:,None]
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
