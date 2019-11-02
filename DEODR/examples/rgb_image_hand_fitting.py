@@ -16,7 +16,7 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
     elif dl_library == 'tensorflow':
         from  DEODR.tensorflow import MeshRGBFitterWithPose 
     elif dl_library == 'none':
-        from  DEODR.numpy import MeshRGBFitterWithPose     
+        from  DEODR.mesh_fitter import MeshRGBFitterWithPose     
     else: 
         raise BaseException(f"unkown deep learning library {dl_library}")
     
@@ -37,7 +37,7 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
     #        handFitter = MeshRGBFitter(vertices,faces,defaultColor,defaultLight,  updateLights =  True, updateColor= True,cregu=1000)
     
     handFitter.reset()
-    maxIter = 100
+    maxIter = 10
     
     backgroundColor = np.median(np.row_stack((handImage[:10,:10,:].reshape(-1,3),handImage[-10:,:10,:].reshape(-1,3),handImage[-10:,-10:,:].reshape(-1,3),handImage[:10,-10:,:].reshape(-1,3))),axis=0)
     backgroundColor = np.array([0.5,0.6,.7])
@@ -88,5 +88,6 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         plt.show()  
 
 if __name__ == "__main__":
+    example_rgb_hand_fitting(dl_library='none',plot_curves=False)
     example_rgb_hand_fitting(dl_library='pytorch',plot_curves=False)
     example_rgb_hand_fitting(dl_library='tensorflow')

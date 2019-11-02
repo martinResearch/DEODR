@@ -12,6 +12,7 @@ import json
 
 
 def example_depth_image_hand_fitting(dl_library = 'pytorch', plot_curves = True,save_images = True):
+    
     if dl_library=='pytorch':
         from DEODR.pytorch import MeshDepthFitter
     elif dl_library == 'tensorflow':

@@ -1,6 +1,8 @@
 from  scipy import sparse
 import numpy as np
 
+from .tools import *
+
 
 class TriMeshAdjacencies():
 	"""this class stores adjacency matrices and methods that use this adjacencies. Unlike the TriMesh class there are no vertices stored in this class"""
@@ -30,27 +32,41 @@ class TriMeshAdjacencies():
 	
 	def computeFaceNormals(self,vertices):
 		tris = vertices[self.faces,:]
-		n = np.cross( tris[::,1 ] - tris[::,0] , tris[::,2 ] - tris[::,0] )
-		l = ((n**2).sum(dim = 1)).sqrt()
-		normals = n/l[:,None]
+		u = tris[::,1 ] - tris[::,0]
+		v = tris[::,2 ] - tris[::,0]
+		n = np.cross(u ,v )
+		normals = normalize(n, axis = 1)
 		return normals
+	
+	def computeFaceNormals_backward(self,vertices,normals_b):
+		tris = vertices[self.faces,:]
+		u = tris[:,:,1 ] - tris[:,:,0]
+		v = tris[:,:,2 ] - tris[:,:,0]
+		n = np.cross(u ,v )
+		n_b = normalize_backward(n, normals_b, axis = 1)
+		u_b,v_b = cross_backward(u,v,n_b)
+		tris_b = np.dstack((-u_b-v_b,u_b,v_b))
+		vertices_b = np.zeros(vertices.shape)
+		np.add.at(vertices_b, self.faces,tris_b) 
+		return vertices_b
 	
 	def computeVertexNormals(self,faceNormals):
 		n = self.Vertices_Faces * faceNormals
-		l = ((n**2).sum(dim = 1)).sqrt()
-		normals = n/l[:,None]
+		normals = normalize(n, axis =1)
 		return normals  
 	
-	def computeFaceNormals_backard(self, faceNormals, normals_grad):		
-		faceNormals_grad = self.Vertices_Faces.T* n_grad
-		# = self.Vertices_Faces * 
-		return faceNormals_grad
+	def computeVertexNormals_backward(self,  faceNormals, normals_b):
+		n = self.Vertices_Faces * faceNormals
+		n_b = normalize_backward(n, normals_b, axis = 1)		
+		faceNormals_b = self.Vertices_Faces.T* n_b		
+		return faceNormals_b
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):		
 		"""this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""	
 		face_visible = np.sum(faceNormals *(vertices[self.faces[:,0],:] -viewpoint),axis=1)>0		
 		edge_bool =  ((self.Edges_Faces_Ones * face_visible)==1)		
-		return edge_bool[self.Faces_Edges]		
+		return edge_bool[self.Faces_Edges]	
+	
 class TriMesh():
 	def __init__(self, faces):
 		
@@ -79,7 +95,11 @@ class TriMesh():
 	def computeVertexNormals(self):
 		if self.faceNormals is None:
 			self.computeFaceNormals()		
-		self.vertexNormals = self.adjacencies.computeVertexNormals(self.faceNormals)				
+		self.vertexNormals = self.adjacencies.computeVertexNormals(self.faceNormals)	
+		
+	def computeVertexNormals_backward(self,vertexNormals_b):				
+		self.faceNormals_b = self.adjacencies.computeVertexNormals_backward(self.faceNormals, vertexNormals_b)
+		self.vertices_b = self.adjacencies.computeFaceNormals_backward(self.vertices,self.faceNormals_b)
 
 	def edgeOnSilhouette(self,viewpoint):
 		"""this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""

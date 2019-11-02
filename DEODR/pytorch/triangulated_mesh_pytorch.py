@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from ..triangulated_mesh import *
 
-
 class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 	def __init__(self,faces):
 		super().__init__(faces)
@@ -25,9 +24,7 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 		return  n/l[:,None]
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
-		return super().edgeOnSilhouette( vertices.detach().numpy(), faceNormals.detach().numpy(), viewpoint)
-	
-		
+		return super().edgeOnSilhouette( vertices.detach().numpy(), faceNormals.detach().numpy(), viewpoint)	
 
 class TriMeshPytorch(TriMesh):
 	def __init__(self, faces):
