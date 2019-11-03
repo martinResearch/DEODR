@@ -60,13 +60,11 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
         imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1)  
-    plt.plot(Energies)
-    plt.figure()
-    plt.plot(durations,Energies)
+
        
     # save convergence curve 
     with open(os.path.join(iterfolder,'rgb_image_fitting_result_%s.json'%str(datetime.datetime.now()).replace(':','_')),'w') as f:
-        json.dump({'durations':durations,'energies':Energies}, f, indent=4)
+        json.dump({'label':f'{dl_library} {datetime.datetime.now()}','durations':durations,'energies':Energies}, f, indent=4)
     
     # compare with previous runs
     if plot_curves:
@@ -74,7 +72,7 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
             with open(file,'r') as fp:
                 json_data = json.load(fp)   
-                plt.plot(json_data['durations'], json_data['energies'], label = file)
+                plt.plot(json_data['durations'], json_data['energies'], label = json_data['label'])
                 plt.xlabel('duration in seconds')
                 plt.ylabel ('energies')
         plt.legend()        
@@ -82,13 +80,13 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
             with open(file,'r') as fp:
                 json_data = json.load(fp)               
-                plt.plot(json_data['energies'],label = file)
+                plt.plot(json_data['energies'],label = json_data['label'])
                 plt.xlabel('interations')
                 plt.ylabel ('energies')            
         plt.legend()   
         plt.show()  
 
 if __name__ == "__main__":
-    example_rgb_hand_fitting(dl_library='none',plot_curves=False)
-    example_rgb_hand_fitting(dl_library='pytorch',plot_curves=False)    
+    example_rgb_hand_fitting(dl_library='none', plot_curves = False)
+    example_rgb_hand_fitting(dl_library='pytorch', plot_curves = False)    
     example_rgb_hand_fitting(dl_library='tensorflow')
