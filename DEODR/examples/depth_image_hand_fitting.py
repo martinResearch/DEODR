@@ -17,7 +17,9 @@ def example_depth_image_hand_fitting(dl_library = 'pytorch', plot_curves = True,
         from DEODR.pytorch import MeshDepthFitter
     elif dl_library == 'tensorflow':
         from DEODR.tensorflow import MeshDepthFitter
-    else: 
+    elif dl_library == 'none':
+        from  DEODR.mesh_fitter import MeshDepthFitter     
+    else:  
         raise BaseException(f"unkown deep learning library {dl_library}")
     
     depth_image = np.fliplr(np.fromfile('depth.bin', dtype = np.float32).reshape(240,320).astype(np.float))
@@ -59,24 +61,26 @@ def example_depth_image_hand_fitting(dl_library = 'pytorch', plot_curves = True,
         key = cv2.waitKey(1) 
         
     with open(os.path.join(iterfolder, 'depth_image_fitting_result_%s.json'%str(datetime.datetime.now()).replace(':','_')), 'w') as f:
-        json.dump({'durations':durations, 'energies':Energies}, f , indent = 4)
+        json.dump({'label':f'{dl_library} {datetime.datetime.now()}','durations':durations,'energies':Energies}, f, indent=4)      
+        
     if plot_curves:
         plt.figure()
         for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
             with open(file,'r') as fp:
                 json_data = json.load(fp)   
-                plt.plot(json_data['durations'], json_data['energies'], label = file)
+                plt.plot(json_data['durations'], json_data['energies'], label = json_data['label'])
         plt.legend()        
         plt.figure()
         for file in glob.glob(os.path.join(iterfolder, "depth_image_fitting_result_*.json")):
             with open(file,'r') as fp:
                 json_data = json.load(fp)               
-                plt.plot(json_data['energies'], label = file)
+                plt.plot(json_data['energies'], label = json_data['label'])
         plt.legend()
         plt.show()    
  
 if __name__ == "__main__":  
-    example_depth_image_hand_fitting(dl_library='tensorflow', plot_curves=True, save_images = False)
+    example_depth_image_hand_fitting(dl_library='none', plot_curves=False, save_images = False)
+    example_depth_image_hand_fitting(dl_library='tensorflow', plot_curves=False, save_images = False)
     example_depth_image_hand_fitting(dl_library='pytorch', plot_curves=True, save_images = False)
   
 

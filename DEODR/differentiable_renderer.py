@@ -107,7 +107,7 @@ class Scene3D():
         self.uv_b = np.zeros((self.mesh.nbV,2))
         self.ij_b = np.zeros((self.mesh.nbV,2))
         self.shade_b = np.zeros((self.mesh.nbV))
-        self.colors_b = np.zeros((self.mesh.nbV,3))
+        self.colors_b = np.zeros(self.colors.shape)
         self.texture_b =  np.zeros((0,0)) 
     
     def setLight(self, ligthDirectional, ambiantLight):  
@@ -169,7 +169,7 @@ class Scene3D():
         self.colors = np.array (colors)  
         differentiable_renderer_cython.renderScene(self, self.sigma, Abuffer, Zbuffer) 
         self.Buffers = (Abuffer, Zbuffer)
-        return Abuffer, Zbuffer
+        return Abuffer
     
     def render2D_backward(self,Abuffer_b):  
         Abuffer,Zbuffer = self.Buffers
@@ -210,7 +210,7 @@ class Scene3D():
         
 
     def renderDepth(self,CameraMatrix,resolution,depth_scale):        
-        P2D, depths = self.camera_project(CameraMatrix, self.mesh.vertices)        
+        P2D, depths = self.cameraProject(CameraMatrix, self.mesh.vertices)        
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3])        
     
         #compute silhouette edges 
@@ -235,8 +235,12 @@ class Scene3D():
         Abuffer = self.render2D(ij,colors)
         return Abuffer
     
-    def renderDepth_backward():
-        pass
+    def renderDepth_backward(self,CameraMatrix, Depth_b):
+        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
+        ij_b, colors_b = self.render2D_backward(Depth_b)        
+        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
+          
     
+
 
 

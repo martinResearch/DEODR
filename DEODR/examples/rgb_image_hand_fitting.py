@@ -10,7 +10,7 @@ import glob
 import json
 import os
 
-def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
+def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True, save_images=True):
     if dl_library == 'pytorch':
         from  DEODR.pytorch import MeshRGBFitterWithPose
     elif dl_library == 'tensorflow':
@@ -58,7 +58,8 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True):
         durations.append( time.time() - start  )
         combinedIMage = np.column_stack((handImage,Abuffer,np.tile(diffImage[:,:,None],(1,1,3))))
         cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
-        imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
+        if save_images:
+            imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1)  
 
        
