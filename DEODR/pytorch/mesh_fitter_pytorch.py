@@ -327,8 +327,9 @@ class MeshDepthFitter():
         step_quaternion = mult_and_clamp(-quaternion_with_grad.grad.numpy(), self.step_factor_quaternion, self.step_max_quaternion)  
         self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * self.inertia + ( 1 - self.inertia ) * step_quaternion)   
         self.transformQuaternion =  self.transformQuaternion + self.speed_quaternion
+        self.transformQuaternion = self.transformQuaternion/np.linalg.norm(self.transformQuaternion)
         #update translation
-        self.transformQuaternion = self.transformQuaternion/np.linalg.norm(self.transformQuaternion)         
+                 
         step_translation = mult_and_clamp( -translation_with_grad.grad.numpy(), self.step_factor_translation, self.step_max_translation)
         self.speed_translation = (1 - self.damping) * (self.speed_translation * self.inertia + ( 1 - self.inertia ) * step_translation)
         self.transformTranslation = self.transformTranslation + self.speed_translation         
