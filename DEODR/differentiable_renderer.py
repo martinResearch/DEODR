@@ -205,7 +205,7 @@ class Scene3D():
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
         ij_b, colors_b = self.render2D_backward(Abuffer_b)
         self.computeVerticescolorsWithIllumination_backward(colors_b)
-        vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
+        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
         self.mesh.computeVertexNormals_backward(self.vertexNormals_b)
         
 

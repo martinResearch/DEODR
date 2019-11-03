@@ -10,11 +10,18 @@ import torch
 import copy
 import cv2
 
+def print_grad(name):
+    # to visualize the gradient of a variable use variable_name.register_hook(print_grad('variable_name'))
+    def hook(grad):
+        print(f'grad {name} = {grad}')
+    return hook
+
+
 def qrot(q, v):
     qr=q[None,:].repeat(v.shape[0],1)
     qvec = qr[:,:-1]
     uv = torch.cross(qvec, v, dim=1)
-    uuv = torch.cross(qvec, uv, dim=1)
+    uuv = torch.cross(qvec, uv, dim=1)    
     return (v + 2 * (qr[:, [3]] * uv + uuv))
 
 class MeshRGBFitter():
@@ -444,8 +451,9 @@ class MeshRGBFitterWithPose():
         step_quaternion = mult_and_clamp(-quaternion_with_grad.grad.numpy(), self.step_factor_quaternion, self.step_max_quaternion)  
         self.speed_quaternion = (1-self.damping) * (self.speed_quaternion * inertia + ( 1 - inertia ) *step_quaternion)   
         self.transformQuaternion=  self.transformQuaternion + self.speed_quaternion
-        #update translation
         self.transformQuaternion = self.transformQuaternion/np.linalg.norm(self.transformQuaternion)         
+        
+        #update translation
         step_translation = mult_and_clamp(-translation_with_grad.grad.numpy(), self.step_factor_translation, self.step_max_translation)
         self.speed_translation = (1 - self.damping)*(self.speed_translation * inertia + ( 1 - inertia ) * step_translation)
         self.transformTranslation = self.transformTranslation + self.speed_translation

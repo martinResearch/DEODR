@@ -118,7 +118,7 @@ class MeshRGBFitterWithPose():
         
         self.render_backward(Abuffer_b)
         
-
+        self.vertices_b = self.vertices_b-np.mean(self.vertices_b,axis=0)[None,:]
         #update v
         G =  self.vertices_b + grad_rigidity
         

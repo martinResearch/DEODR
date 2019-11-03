@@ -21,20 +21,18 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 	
 	def computeFaceNormals(self,vertices):
 		tris = vertices[self.faces_torch,:]
-		n = torch.cross( tris[::,1 ] - tris[::,0], tris[::,2 ] - tris[::,0] )
-		l = ((n**2).sum(dim = 1)).sqrt()
-		vertices.register_hook(print_grad('vertices'))	
-		tris.register_hook(print_grad('tris'))	
-		return n/l[:,None]
+		u = tris[::,1 ] - tris[::,0]
+		v = tris[::,2 ] - tris[::,0] 
+		n = torch.cross(u,v)
+		l2 =  ((n**2).sum(dim = 1))
+		l = l2.sqrt()
+		nn = n/l[:,None]
+		return nn
 		
 	def computeVertexNormals(self,faceNormals):
 		n = self.Vertices_Faces_torch.mm(faceNormals)
 		l2= ((n**2).sum(dim = 1))
 		l =l2.sqrt()
-		n.register_hook(print_grad('l2'))
-		n.register_hook(print_grad('n'))
-		l.register_hook(print_grad('l'))
-		faceNormals.register_hook(print_grad('faceNormals'))	
 		return  n/l[:,None]
 	
 	def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
