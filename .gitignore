@@ -17,7 +17,7 @@ examples/images
 Matlab/matlabAutoDiff
 build/temp.win-amd64-3.6/Release/
 DEODR/differentiablerenderer_cython.cp36-win_amd64.exp
-
 DEODR/differentiablerenderer_cython.cp36-win_amd64.lib
-
 DEODR/differentiablerenderer_cython.obj
+DEODR/differentiablerenderer_cython.cpp
+DEODR/differentiablerenderer_cython.html
