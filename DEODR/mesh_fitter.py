@@ -74,14 +74,15 @@ class MeshDepthFitter():
         q_normalized = normalize(self.transformQuaternion) # that will lead to a gradient that is in the tangeant space
         vertices_transformed = qrot(q_normalized, self.vertices) + self.transformTranslation
         self.mesh.setVertices(vertices_transformed)   
-        depth_scale = 1 * self.depthScale
-        Depth = self.scene.renderDepth(self.CameraMatrix,resolution=(self.SizeW,self.SizeH),depth_scale=depth_scale)
-        Depth = np.clip(Depth,0,self.scene.maxDepth)   
+        self.DepthNotCliped = self.scene.renderDepth(self.CameraMatrix,resolution=(self.SizeW,self.SizeH),depth_scale = self.depthScale)
+        Depth = np.clip(self.DepthNotCliped,0,self.scene.maxDepth)   
         return Depth
     
     def render_backward(self, Depth_b):
         self.scene.clear_gradients()
-        self.scene.renderDepth_backward(self.CameraMatrix, Depth_b)
+        Depth_b[self.DepthNotCliped<0]=0
+        Depth_b[self.DepthNotCliped>self.scene.maxDepth]=0
+        self.scene.renderDepth_backward(self.CameraMatrix, self.depthScale, Depth_b )
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transformTranslation_b = np.sum(vertices_transformed_b,axis=0)
         q_normalized = normalize(self.transformQuaternion)

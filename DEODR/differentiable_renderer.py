@@ -136,12 +136,15 @@ class Scene3D():
         P2D,depths,J_P2D = self.camera_project(CameraMatrix, vertices, get_jacobians=True) 
         return J_P2D     
     
-    def cameraProject_backward(self,cameraMatrix, P3D, P2D_b) :
+    def cameraProject_backward(self,cameraMatrix, P3D, P2D_b,depths_b=None) :
         r = np.column_stack((P3D, np.ones((P3D.shape[0],1), dtype = np.double))).dot(cameraMatrix.T)
         depths = r[:,2]
         #P2D = r[:,:2]/depths[:,None]
         r_b = np.column_stack((P2D_b/depths[:,None], -np.sum(P2D_b*r[:,:2],axis=1)/(depths**2))) 
+        if depths_b is not None:
+            r_b[:,2]+=depths_b
         P3D_b = r_b.dot(cameraMatrix[:,:3])
+            
         return P3D_b        
         
     def computeVerticesColorsWithIllumination(self):
@@ -235,10 +238,11 @@ class Scene3D():
         Abuffer = self.render2D(ij,colors)
         return Abuffer
     
-    def renderDepth_backward(self,CameraMatrix, Depth_b):
+    def renderDepth_backward(self,CameraMatrix,depth_scale,Depth_b):
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
-        ij_b, colors_b = self.render2D_backward(Depth_b)        
-        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
+        ij_b, colors_b = self.render2D_backward(Depth_b)   
+        depths_b= np.squeeze(colors_b*depth_scale,axis=1)
+        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b,depths_b)
           
     
 

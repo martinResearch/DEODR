@@ -294,7 +294,7 @@ class MeshDepthFitter():
         
         q_normalized = quaternion_with_grad/quaternion_with_grad.norm() # that will lead to a gradient that is in the tangeant space
         vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered)+translation_with_grad
-      
+       
         self.mesh.setVertices(vertices_with_grad_transformed)
 
         depth_scale = 1 * self.depthScale

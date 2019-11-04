@@ -10,7 +10,7 @@ import glob
 import json
 import os
 
-def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True, save_images=True):
+def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True, save_images=True, display = True):
     if dl_library == 'pytorch':
         from  DEODR.pytorch import MeshRGBFitterWithPose
     elif dl_library == 'tensorflow':
@@ -56,10 +56,12 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True, save_images
         Energy, Abuffer, diffImage = handFitter.step()
         Energies.append(Energy)
         durations.append( time.time() - start  )
-        combinedIMage = np.column_stack((handImage,Abuffer,np.tile(diffImage[:,:,None],(1,1,3))))
-        cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
-        if save_images:
-            imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
+        if display or save_images:
+            combinedIMage = np.column_stack((handImage,Abuffer,np.tile(diffImage[:,:,None],(1,1,3))))
+            if display:
+                cv2.imshow('animation', cv2.resize(combinedIMage[:,:,::-1], None, fx=2, fy=2)) 
+            if save_images:
+                imsave(os.path.join(iterfolder,f'hand_iter_{iter}.png'), combinedIMage)
         key = cv2.waitKey(1)  
 
        
@@ -88,6 +90,8 @@ def example_rgb_hand_fitting(dl_library='pytorch', plot_curves=True, save_images
         plt.show()  
 
 if __name__ == "__main__":
-    example_rgb_hand_fitting(dl_library='none', plot_curves = False)
-    example_rgb_hand_fitting(dl_library='pytorch', plot_curves = False)    
-    example_rgb_hand_fitting(dl_library='tensorflow')
+    display = False
+    save_images = False
+    example_rgb_hand_fitting(dl_library='none', plot_curves = False, display = display, save_images = save_images)
+    example_rgb_hand_fitting(dl_library='pytorch', plot_curves = False, display = display, save_images = save_images)    
+    example_rgb_hand_fitting(dl_library='tensorflow', plot_curves = True, display = display, save_images = save_images)
