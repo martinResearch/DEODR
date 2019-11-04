@@ -72,7 +72,7 @@ class Scene2D():
     def render_compare_and_backward(self, sigma = 1, antialiaseError = False, Aobs=None, mask = None, clear_gradients = True, make_copies=True):        
         if mask is None:
             mask = np.ones((Aobs.shape[0],Aobs.shape[1]))   
-        print('forward')
+        
         Abuffer, Zbuffer, ErrBuffer = self.render(sigma, antialiaseError, Aobs)
         if clear_gradients:
             self.clear_gradients()   
@@ -82,15 +82,15 @@ class Scene2D():
             ErrBuffer = ErrBuffer * mask    
             Err = np.sum(ErrBuffer)      
             ErrBuffer_b = copy.copy(mask)  
-            
+            self.render_backward(Abuffer_b, ErrBuffer_b ,sigma,antialiaseError = antialiaseError, Aobs = Aobs ,make_copies = make_copies)
         else:        
             diffImage=(Abuffer - Aobs) * mask[:,:,None]
             ErrBuffer = (diffImage) **2
             Err = np.sum(ErrBuffer)    
             Abuffer_b = 2 * diffImage     
             ErrBuffer_b = None
-            
-        self.render_backward(Abuffer_b, ErrBuffer_b ,sigma,antialiaseError = antialiaseError, Aobs = Aobs ,make_copies = make_copies)  
+            self.render_backward(Abuffer_b, ErrBuffer_b ,sigma,antialiaseError = antialiaseError, Aobs = None ,make_copies = make_copies)
+          
         return  Abuffer, Zbuffer, ErrBuffer, Err
 
 class Scene3D():

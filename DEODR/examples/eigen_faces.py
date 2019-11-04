@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn import decomposition 
 from scipy.spatial import Delaunay
 import numpy as np
-from DEODR.differentiable_renderer import Scene2DWithBackward
+from DEODR.differentiable_renderer import Scene2D
 import cv2
 
 faces=sklearn.datasets.fetch_olivetti_faces()
@@ -24,25 +24,26 @@ plt.imshow(faces_pca.mean_.reshape(faces.images[0].shape), cmap=plt.cm.bone)
 N=5
 points=np.column_stack([t.flatten() for t in np.meshgrid(np.arange(N+1)/N,np.arange(N+1)/N)])
 tri = Delaunay(points)
-plt.triplot(points[:,0], points[:,1], tri.simplices)
+triangles= tri.simplices.astype(np.uint32)
+plt.triplot(points[:,0], points[:,1], triangles)
 on_border= np.any((points==0)|(points==1),axis=1)
 
 # deform the grid
-max_displacement = 0.8
+max_displacement = 0.5
 np.random.seed(0)
 points_deformed_gt = points + (np.random.rand(*points.shape)-0.5)*max_displacement/N
 points_deformed_gt[on_border]=points[on_border]
-plt.triplot(points_deformed_gt[:,0], points_deformed_gt[:,1], tri.simplices)
+plt.triplot(points_deformed_gt[:,0], points_deformed_gt[:,1], triangles)
 #plt.show()
-
-nbTriangles = tri.simplices.shape[0]
-ij = points_deformed_gt[tri.simplices,:]*64-0.5
-uv = points[tri.simplices,:]*64+0.5
+nbPoints= points.shape[0]
+nbTriangles = triangles.shape[0]
+ij = points_deformed_gt*64-0.5
+uv = points*64+0.5
 textured = np.ones((nbTriangles), dtype=np.bool)
 shaded = np.ones((nbTriangles), dtype=np.bool)
-depths = np.ones((nbTriangles,3))
-shade =  np.ones((nbTriangles,3))
-colors = np.ones((nbTriangles,3,1))
+depths = np.ones((nbPoints))
+shade =  np.ones((nbPoints))
+colors = np.ones((nbPoints,1))
 edgeflags = np.zeros((nbTriangles,3),dtype=np.bool)
 image_H = 64
 image_W = 64
@@ -50,7 +51,7 @@ nbColors = 1
 texture = faces.images[10][:,:,None]
 background = np.zeros((image_H,image_W,1))
 
-scene_gt=Scene2DWithBackward(ij, depths, textured, uv, shade, colors, shaded, 
+scene_gt=Scene2D( triangles,  triangles,ij, depths, textured, uv, shade, colors, shaded, 
                    edgeflags, image_H, image_W, nbColors, 
                    texture, background)
 
@@ -68,7 +69,7 @@ np.max(texture-A_gt)
 
 
 
-scene = Scene2DWithBackward(ij, depths, textured, uv, shade, colors, shaded, 
+scene = Scene2D(triangles,  triangles,ij, depths, textured, uv, shade, colors, shaded, 
                              edgeflags, image_H, image_W, nbColors, 
                    texture, background)
 #cv2.namedWindow('animation',cv2.WINDOW_NORMAL)
@@ -76,7 +77,7 @@ scene = Scene2DWithBackward(ij, depths, textured, uv, shade, colors, shaded,
 
 rescale_factor = 10
 def fun(points_deformed,pca_coefs):
-    ij = points_deformed[tri.simplices,:] * 64-0.5
+    ij = points_deformed * 64-0.5
     #face=faces_pca.inverse_transform(coefs[:,None])
     face= (faces_pca.mean_+ pca_coefs.dot(faces_pca.components_)).reshape((64,64))
     scene.ij = ij
@@ -98,8 +99,7 @@ def fun(points_deformed,pca_coefs):
     
     # get gradient on pca coefs
     coefs_grad= faces_pca.components_.dot(scene.texture_b.flatten())
-    points_deformed_grad = np.zeros(points_deformed.shape)
-    np.add.at(points_deformed_grad, tri.simplices, scene.ij_b*64)  
+    points_deformed_grad=scene.ij_b*64
     print (np.max(np.abs(points_deformed_grad)))
     grads={'points_deformed':points_deformed_grad,'pca_coefs':coefs_grad}
     return Err,grads 

@@ -65,8 +65,6 @@ def main():
     print('process id=%d'%os.getpid())
    
     
-    
-    
     display = True
     np.random.seed(2)
     scene_gt = create_example_scene()
