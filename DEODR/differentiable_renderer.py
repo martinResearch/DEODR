@@ -206,9 +206,9 @@ class Scene3D():
         self.image_W = resolution[0]
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))          
-        Abuffer = self.render2D(ij,colors)
+        Abuffer = self._render2D(ij,colors)
         if not self.store_backward_current is None:
-            self.store_backward_current['render']=(CameraMatrix,edgeflags)# store this field as it could be overwritten when rendering several views
+            self.store_backward_current['render']=(CameraMatrix,self.edgeflags)# store this field as it could be overwritten when rendering several views
         return Abuffer    
     
     def render_backward(self, Abuffer_b):
@@ -217,7 +217,7 @@ class Scene3D():
         ij_b, colors_b = self._render2D_backward(Abuffer_b)
         self._computeVerticescolorsWithIllumination_backward(colors_b)
         self.mesh.vertices_b = self._cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
-        self.mesh._computeVertexNormals_backward(self.vertexNormals_b)
+        self.mesh.computeVertexNormals_backward(self.vertexNormals_b)
         
 
     def renderDepth(self,CameraMatrix,resolution,depth_scale):    

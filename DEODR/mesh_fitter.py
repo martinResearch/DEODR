@@ -212,7 +212,7 @@ class MeshRGBFitterWithPose():
     
     def render_backward(self, Abuffer_b):
         self.scene.clear_gradients()
-        self.scene.render_backward(self.CameraMatrix, Abuffer_b)
+        self.scene.render_backward( Abuffer_b)
         self.handColor_b=np.sum(self.mesh.verticesColors_b,axis=0)
         self.ligthDirectional_b=self.scene.lightDirectional_b
         self.ambiantLight_b=self.scene.ambiantLight_b

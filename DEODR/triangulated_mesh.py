@@ -26,6 +26,7 @@ class TriMeshAdjacencies():
 		self.Laplacian = sparse.diags([self.DegreeVE],[0],(self.nbV,self.nbV))-self.Adjacency_Vertices
 		self.hasBoundaries = np.any(np.sum(self.Edges_Faces_Ones,axis=1)==1)		
 		assert np.all(self.Laplacian*np.ones((self.nbV))==0)
+		self.store_backward={}
 		
 	def idEdge(self, idv):
 		return np.maximum(idv[:,0],idv[:,1]) + np.minimum(idv[:,0],idv[:,1]) * self.nbV		
@@ -36,13 +37,11 @@ class TriMeshAdjacencies():
 		v = tris[:,2,: ] - tris[:,0,:]
 		n = np.cross(u ,v )
 		normals = normalize(n, axis = 1)
+		self.store_backward['computeFaceNormals']=(u,v,n)
 		return normals
 	
 	def computeFaceNormals_backward(self,vertices,normals_b):
-		tris = vertices[self.faces,:]
-		u = tris[:,1,: ] - tris[:,0,:]
-		v = tris[:,2,: ] - tris[:,0,:]
-		n = np.cross(u ,v )
+		u,v,n = self.store_backward['computeFaceNormals']
 		n_b = normalize_backward(n, normals_b, axis = 1)
 		u_b,v_b = cross_backward(u,v,n_b)
 		tris_b = np.stack((-u_b-v_b,u_b,v_b),axis=1)
@@ -53,10 +52,11 @@ class TriMeshAdjacencies():
 	def computeVertexNormals(self,faceNormals):
 		n = self.Vertices_Faces * faceNormals
 		normals = normalize(n, axis =1)
+		self.store_backward['computeVertexNormals']=n
 		return normals  
 	
-	def computeVertexNormals_backward(self,  faceNormals, normals_b):
-		n = self.Vertices_Faces * faceNormals
+	def computeVertexNormals_backward(self,  faceNormals, normals_b):		
+		n = self.store_backward['computeVertexNormals']
 		n_b = normalize_backward(n, normals_b, axis = 1)		
 		faceNormals_b = self.Vertices_Faces.T* n_b		
 		return faceNormals_b
