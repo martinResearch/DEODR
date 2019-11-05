@@ -43,18 +43,18 @@ class Scene3DPytorch(Scene3D):
         self.ligthDirectional = ligthDirectional
         self.ambiantLight = ambiantLight    
             
-    def cameraProject(self,cameraMatrix,P3D) : 
+    def _cameraProject(self,cameraMatrix,P3D) : 
         assert( isinstance(P3D,torch.Tensor)) 
         r = torch.cat((P3D, torch.ones((P3D.shape[0], 1), dtype = torch.double)), dim = 1).mm(torch.tensor(cameraMatrix.T))
         depths = r[:,2]
         P2D = r[:,:2]/depths[:,None]
         return P2D,depths     
  
-    def computeVerticesColorsWithIllumination(self):
+    def _computeVerticesColorsWithIllumination(self):
         verticesLuminosity = torch.relu(-torch.sum(self.mesh.vertexNormals * self.ligthDirectional, dim = 1)) + self.ambiantLight      
         return self.mesh.verticesColors * verticesLuminosity[:,None]      
     
-    def render2D(self,ij,colors):   
+    def _render2D(self,ij,colors):   
         self.depths = self.depths.detach()
         return TorchDifferentiableRender2D(ij,colors,self)
     

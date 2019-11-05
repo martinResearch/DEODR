@@ -82,7 +82,7 @@ class MeshDepthFitter():
         self.scene.clear_gradients()
         Depth_b[self.DepthNotCliped<0]=0
         Depth_b[self.DepthNotCliped>self.scene.maxDepth]=0
-        self.scene.renderDepth_backward(self.CameraMatrix, self.depthScale, Depth_b )
+        self.scene.renderDepth_backward( Depth_b )
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transformTranslation_b = np.sum(vertices_transformed_b,axis=0)
         q_normalized = normalize(self.transformQuaternion)

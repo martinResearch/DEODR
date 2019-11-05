@@ -35,61 +35,64 @@ class Scene2D():
         self.ij_b.fill(0)
         self.shade_b.fill(0)
         self.colors_b.fill(0)  
-        self.texture_b.fill(0)         
+        self.texture_b.fill(0)   
         
-    def render(self, sigma = 1, antialiaseError = False, Aobs = None):    
+    def render_error(self,Aobs, sigma = 1):
+        Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors)) 
         Zbuffer = np.zeros((self.image_H, self.image_W)) 
-        Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))        
+        ErrBuffer = np.empty((self.image_H, self.image_W))            
+        antialiaseError = True
+        differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer)
+        self.store_backward = (sigma, Aobs, Abuffer, Zbuffer, ErrBuffer)
+        return Abuffer, Zbuffer,ErrBuffer
         
-        if antialiaseError:            
-            ErrBuffer = np.sum((Aobs - self.background)**2, axis=2)                          
-            differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer) 
-                        
-        else:  
-            ErrBuffer = None
-            differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, Aobs, ErrBuffer)             
-        
-        self.Buffers = (Abuffer, Zbuffer, ErrBuffer)
-        return Abuffer, Zbuffer, ErrBuffer
-        
-    def render_backward(self, Abuffer_b = None, ErrBuffer_b= None, sigma = 1, antialiaseError = False, Aobs = None, make_copies=True):
-        Abuffer, Zbuffer, ErrBuffer = self.Buffers
-        if antialiaseError:       
-            assert(Abuffer_b is None)
-            if make_copies:
-                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer.copy(), ErrBuffer_b)
-            else: # if we don't make copies the image Abuffer will 
-                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer, ErrBuffer_b)                       
-        else:  
-            assert(ErrBuffer_b is None)  
-            assert(Aobs is None)  
-            if make_copies: # if we make copies we keep the antialized image unchanged Abuffer along the occlusion boundaries
-                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer.copy(), Zbuffer, Abuffer_b, antialiaseError, None, ErrBuffer, ErrBuffer_b)
-            else:
-                differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, Abuffer_b, antialiaseError, None, ErrBuffer, ErrBuffer_b)
-                   
+    def render(self, sigma = 1):   
+        Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))  
+        Zbuffer = np.zeros((self.image_H, self.image_W)) 
+        ErrBuffer = None
+        antialiaseError = False
+        differentiable_renderer_cython.renderScene(self, sigma, Abuffer, Zbuffer, antialiaseError, None, None)  
+        self.store_backward = (sigma, Abuffer, Zbuffer)
+        return Abuffer, Zbuffer
+    
+    def render_error_backward(self, ErrBuffer_b, make_copies=True):
+        sigma, Aobs, Abuffer, Zbuffer, ErrBuffer = self.store_backward
+        antialiaseError = True
+        if make_copies:
+            differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer.copy(), ErrBuffer_b)
+        else: 
+            differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, None, antialiaseError, Aobs, ErrBuffer, ErrBuffer_b)     
+    
+    def render_backward(self, Abuffer_b, make_copies=True):
+        sigma, Abuffer, Zbuffer = self.store_backward 
+        antialiaseError = False
+        if make_copies: # if we make copies we keep the antialized image unchanged Abuffer along the occlusion boundaries
+            differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer.copy(), Zbuffer, Abuffer_b, antialiaseError, None, None, None)
+        else:
+            differentiable_renderer_cython.renderSceneB(self, sigma, Abuffer, Zbuffer, Abuffer_b, antialiaseError, None, None, None)
             
     def render_compare_and_backward(self, sigma = 1, antialiaseError = False, Aobs=None, mask = None, clear_gradients = True, make_copies=True):        
         if mask is None:
             mask = np.ones((Aobs.shape[0],Aobs.shape[1]))   
-        
-        Abuffer, Zbuffer, ErrBuffer = self.render(sigma, antialiaseError, Aobs)
+        if antialiaseError:
+            Abuffer, Zbuffer, ErrBuffer = self.render_error(Aobs,sigma)
+        else:
+            Abuffer, Zbuffer = self.render(sigma)
+            
         if clear_gradients:
             self.clear_gradients()   
             
         if antialiaseError:
-            Abuffer_b= None
             ErrBuffer = ErrBuffer * mask    
             Err = np.sum(ErrBuffer)      
             ErrBuffer_b = copy.copy(mask)  
-            self.render_backward(Abuffer_b, ErrBuffer_b ,sigma,antialiaseError = antialiaseError, Aobs = Aobs ,make_copies = make_copies)
+            self.render_error_backward( ErrBuffer_b ,make_copies = make_copies)
         else:        
             diffImage=(Abuffer - Aobs) * mask[:,:,None]
             ErrBuffer = (diffImage) **2
             Err = np.sum(ErrBuffer)    
-            Abuffer_b = 2 * diffImage     
-            ErrBuffer_b = None
-            self.render_backward(Abuffer_b, ErrBuffer_b ,sigma,antialiaseError = antialiaseError, Aobs = None ,make_copies = make_copies)
+            Abuffer_b = 2 * diffImage 
+            self.render_backward(Abuffer_b ,make_copies = make_copies)
           
         return  Abuffer, Zbuffer, ErrBuffer, Err
 
@@ -100,10 +103,9 @@ class Scene3D():
         self.ambiantLight = None
         self.sigma = 1
         
-        
-    def clear_gradients(self):
-    
-        # fields to store gradients  
+                
+    def clear_gradients(self):    
+        # fields to store gradients 
         self.uv_b = np.zeros((self.mesh.nbV,2))
         self.ij_b = np.zeros((self.mesh.nbV,2))
         self.shade_b = np.zeros((self.mesh.nbV))
@@ -120,10 +122,12 @@ class Scene3D():
     def setBackground(self,backgroundImage):
         self.background = backgroundImage
     
-    def cameraProject(self,cameraMatrix,P3D, get_jacobians = False) : 
+    def _cameraProject(self,cameraMatrix,P3D, get_jacobians = False) : 
         r = np.column_stack((P3D, np.ones((P3D.shape[0],1), dtype = np.double))).dot(cameraMatrix.T)
         depths = r[:,2]
         P2D = r[:,:2]/depths[:,None]
+        if not self.store_backward_current is None:
+            self.store_backward_current['cameraProject']=(r,depths)
         if get_jacobians:
             J_r = cameraMatrix[:,:3]
             J_d = J_r[2,:]
@@ -132,31 +136,28 @@ class Scene3D():
         else:           
             return P2D,depths 
         
-    def projectionsJacobian(self,CameraMatrix, vertices):
+    def _projectionsJacobian(self,CameraMatrix, vertices):
         P2D,depths,J_P2D = self.camera_project(CameraMatrix, vertices, get_jacobians=True) 
         return J_P2D     
     
-    def cameraProject_backward(self,cameraMatrix, P3D, P2D_b,depths_b=None) :
-        r = np.column_stack((P3D, np.ones((P3D.shape[0],1), dtype = np.double))).dot(cameraMatrix.T)
-        depths = r[:,2]
-        #P2D = r[:,:2]/depths[:,None]
+    def _cameraProject_backward(self,cameraMatrix, P3D, P2D_b,depths_b=None) :
+        r,depths =  self.store_backward_current['cameraProject']
         r_b = np.column_stack((P2D_b/depths[:,None], -np.sum(P2D_b*r[:,:2],axis=1)/(depths**2))) 
         if depths_b is not None:
             r_b[:,2]+=depths_b
-        P3D_b = r_b.dot(cameraMatrix[:,:3])
-            
+        P3D_b = r_b.dot(cameraMatrix[:,:3])            
         return P3D_b        
         
-    def computeVerticesColorsWithIllumination(self):
+    def _computeVerticesColorsWithIllumination(self):
         directional = np.maximum(0,-np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1))
         verticesLuminosity = directional + self.ambiantLight
         colors = self.mesh.verticesColors * verticesLuminosity[:,None] 
+        if not self.store_backward_current is None:
+            self.store_backward_current['computeVerticesColorsWithIllumination'] = (directional,verticesLuminosity)
         return colors 
     
-    def computeVerticescolorsWithIllumination_backward(self, colors_b):
-        directional = np.maximum(0,-np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1))
-        verticesLuminosity = directional + self.ambiantLight
-        
+    def _computeVerticescolorsWithIllumination_backward(self, colors_b):
+        directional,verticesLuminosity = self.store_backward_current['computeVerticesColorsWithIllumination']
         verticesLuminosity_b = np.sum(self.mesh.verticesColors * colors_b,axis=1)
         self.mesh.verticesColors_b = colors_b * verticesLuminosity[:,None]
         self.ambiantLight_b = np.sum(verticesLuminosity_b)
@@ -164,36 +165,40 @@ class Scene3D():
         self.lightDirectional_b = -np.sum(((directional_b*(directional>0))[:,None]) * self.mesh.vertexNormals,axis=0)
         self.vertexNormals_b = -((directional_b*(directional>0))[:,None]) * self.ligthDirectional
     
-    def render2D(self,ij,colors):   
+    def _render2D(self,ij,colors):   
         nbColorChanels = colors.shape[1]
         Abuffer = np.empty((self.image_H, self.image_W, nbColorChanels))
         Zbuffer = np.empty((self.image_H, self.image_W))
-        self.ij = np.array (ij)#should automatically detached according to https://pytorch.org/docs/master/notes/extending.html
+        self.ij = np.array (ij)
         self.colors = np.array (colors)  
         differentiable_renderer_cython.renderScene(self, self.sigma, Abuffer, Zbuffer) 
-        self.Buffers = (Abuffer, Zbuffer)
+        
+        if not self.store_backward_current is None:
+            self.store_backward_current['render2D']=(ij,colors,Abuffer,Zbuffer)
+            
         return Abuffer
     
-    def render2D_backward(self,Abuffer_b):  
-        Abuffer,Zbuffer = self.Buffers
+    def _render2D_backward(self,Abuffer_b):  
+        ij,colors,Abuffer,Zbuffer = self.store_backward_current['render2D']
+        self.ij = np.array (ij)
+        self.colors = np.array (colors)         
         differentiable_renderer_cython.renderSceneB(self, self.sigma, Abuffer.copy(), Zbuffer, Abuffer_b)  
         return self.ij_b, self.colors_b  
            
     def render(self,CameraMatrix,resolution):
+        self.store_backward_current={}
         self.mesh.computeVertexNormals()
         
-        ij,depths = self.cameraProject(CameraMatrix, self.mesh.vertices)        
+        ij,depths = self._cameraProject(CameraMatrix, self.mesh.vertices)        
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
-        colors =  self.computeVerticesColorsWithIllumination()
+        colors =  self._computeVerticesColorsWithIllumination()
         
-        #compute silhouette edges 
-        edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
-        
-        # construct triangle soup  
+        #compute silhouette edges         
+        self.edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
+        # construct 2D scene 
         self.faces=self.mesh.faces.astype(np.uint32)
         self.faces_uv=self.faces         
-        self.depths = depths  
-        self.edgeflags = edge_bool
+        self.depths = depths          
         self.uv = np.zeros((self.mesh.nbV,2))
         self.textured = np.zeros((self.mesh.nbF),dtype=np.bool)
         self.shade = np.zeros((self.mesh.nbV),dtype=np.bool) # eventually used when using texture
@@ -202,18 +207,22 @@ class Scene3D():
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))          
         Abuffer = self.render2D(ij,colors)
+        if not self.store_backward_current is None:
+            self.store_backward_current['render']=(CameraMatrix,edgeflags)# store this field as it could be overwritten when rendering several views
         return Abuffer    
     
-    def render_backward(self,CameraMatrix, Abuffer_b):
-        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
-        ij_b, colors_b = self.render2D_backward(Abuffer_b)
-        self.computeVerticescolorsWithIllumination_backward(colors_b)
-        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
-        self.mesh.computeVertexNormals_backward(self.vertexNormals_b)
+    def render_backward(self, Abuffer_b):
+        
+        CameraMatrix, self.edgeflags = self.store_backward_current['render']        
+        ij_b, colors_b = self._render2D_backward(Abuffer_b)
+        self._computeVerticescolorsWithIllumination_backward(colors_b)
+        self.mesh.vertices_b = self._cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
+        self.mesh._computeVertexNormals_backward(self.vertexNormals_b)
         
 
-    def renderDepth(self,CameraMatrix,resolution,depth_scale):        
-        P2D, depths = self.cameraProject(CameraMatrix, self.mesh.vertices)        
+    def renderDepth(self,CameraMatrix,resolution,depth_scale):    
+        self.store_backward_current={}
+        P2D, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)        
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3])        
     
         #compute silhouette edges 
@@ -234,15 +243,16 @@ class Scene3D():
         self.image_W = resolution[0]
         self.shaded = np.zeros((self.mesh.nbF),dtype=np.bool) # eventually used when using texture
         self.texture = np.zeros((0,0))
-        #colors[:,:,:]=1
-        Abuffer = self.render2D(ij,colors)
+        Abuffer = self._render2D(ij,colors)
+        if not self.store_backward_current is None:
+            self.store_backward_current['renderDepth']=(CameraMatrix,depth_scale)
         return Abuffer
     
-    def renderDepth_backward(self,CameraMatrix,depth_scale,Depth_b):
-        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3,:3], CameraMatrix[:,3]) 
-        ij_b, colors_b = self.render2D_backward(Depth_b)   
+    def renderDepth_backward(self,Depth_b):
+        CameraMatrix,depth_scale = self.store_backward_current['renderDepth']
+        ij_b, colors_b = self._render2D_backward(Depth_b)   
         depths_b= np.squeeze(colors_b*depth_scale,axis=1)
-        self.mesh.vertices_b = self.cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b,depths_b)
+        self.mesh.vertices_b = self._cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b,depths_b)
           
     
 

@@ -42,7 +42,7 @@ class Scene3DTensorflow(Scene3D):
         self.ligthDirectional = ligthDirectional
         self.ambiantLight = ambiantLight    
     
-    def cameraProject(self,cameraMatrix,P3D) : 
+    def _cameraProject(self,cameraMatrix,P3D) : 
         assert( isinstance(P3D,tf.Tensor)) 
         r = tf.linalg.matmul( tf.concat((P3D,  tf.ones((P3D.shape[0], 1),dtype=P3D.dtype)), axis = 1),tf.constant(cameraMatrix.T))
         depths = r[:,2]
@@ -50,11 +50,11 @@ class Scene3DTensorflow(Scene3D):
         return P2D,depths    
    
  
-    def computeVerticesColorsWithIllumination(self):
+    def _computeVerticesColorsWithIllumination(self):
         verticesLuminosity = tf.nn.relu(-tf.reduce_sum(self.mesh.vertexNormals * self.ligthDirectional, axis = 1)) + self.ambiantLight
         return self.mesh.verticesColors * verticesLuminosity[:,None]      
     
-    def render2D(self,ij,colors):   
+    def _render2D(self,ij,colors):   
         
         return TensorflowDifferentiableRender2D(ij,colors,self)
     

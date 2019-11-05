@@ -100,7 +100,7 @@ def main():
     scene_init.uv = np.minimum( scene_init.uv,max_uv)
     scene_init.colors = scene_gt.colors + np.random.randn(Nvertices,3) * displacement_magnitude_colors        
     
-    for antialiaseError in [False,True]:
+    for antialiaseError in [True,False]:
         np.random.seed(2)
         scene_iter = copy.deepcopy(scene_init)
         
