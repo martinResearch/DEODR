@@ -36,6 +36,7 @@ class MeshDepthFitter():
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        
         self.reset()
         
     def setMeshTransformInit(self,euler,translation):        
@@ -186,8 +187,21 @@ class MeshRGBFitterWithPose():
 
         self.speed_ligthDirectional = np.zeros(self.ligthDirectional.shape)
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
-        self.speed_handColor = np.zeros(self.handColor.shape)      
-
+        self.speed_handColor = np.zeros(self.handColor.shape) 
+        
+    def setImages(self,handImages,focal=None):   
+        self.SizeW = handImages[0].shape[1]
+        self.SizeH = handImages[0].shape[0]   
+        assert(handImages[0].ndim == 3)
+        self.handImages = handImages
+        if focal is None:
+            focal=2*self.SizeW
+    
+        R = np.array([[1,0,0],[0,-1,0],[0,0,-1]])
+        T = -R.T.dot(self.cameraCenter)
+        self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
+        self.iter=0  
+        
     def setImage(self,handImage,focal=None):   
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]   
@@ -201,42 +215,64 @@ class MeshRGBFitterWithPose():
         self.CameraMatrix = np.array([[focal,0,self.SizeW/2],[0,focal,self.SizeH/2],[0,0,1]]).dot(np.column_stack((R,T)))
         self.iter=0        
    
-    def render(self):
-        q_normalized = normalize(self.transformQuaternion) # that will lead to a gradient that is in the tangeant space
-        vertices_transformed = qrot(q_normalized, self.vertices) + self.transformTranslation
+    def render(self,idframe=None):
+        unormalized_quaternion = self.transformQuaternion[idframe]
+        translation = self.transformTranslation[idframe]
+        q_normalized = normalize(unormalized_quaternion) # that will lead to a gradient that is in the tangeant space
+        vertices_transformed = qrot(q_normalized, self.vertices) + self.transformTranslation[idframe]
         self.mesh.setVertices(vertices_transformed)        
         self.scene.setLight(ligthDirectional = self.ligthDirectional, ambiantLight = self.ambiantLight)
         self.mesh.setVerticesColors(np.tile(self.handColor,(self.mesh.nbV,1)))       
-        Abuffer = self.scene.render(self.CameraMatrix, resolution = (self.SizeW,self.SizeH))    
+        Abuffer = self.scene.render(self.CameraMatrix, resolution = (self.SizeW,self.SizeH)) 
+        self.store_backward['render']=(idframe,unormalized_quaternion,q_normalized)
         return Abuffer
     
+    def clear_gradients(self):        
+        self.ligthDirectional_b = np.zeros(self.ligthDirectional.shape)
+        self.ambiantLight_b = np.zeros(self.ambiantLight.shape)
+        self.vertices_b = np.zeros(self.vertices.shape)
+        self.transformQuaternion_b = np.zeros(self.transformQuaternion.shape)
+        self.transformTranslation_b = np.zeros(self.transformTranslation.shape)
+        self.handColor_b = np.zeros(self.handColor.shape)
+        self.store_backward = {}
+    
     def render_backward(self, Abuffer_b):
+        idframe,unormalized_quaternion,q_normalized =  self.store_backward['render']
         self.scene.clear_gradients()
         self.scene.render_backward( Abuffer_b)
-        self.handColor_b=np.sum(self.mesh.verticesColors_b,axis=0)
-        self.ligthDirectional_b=self.scene.lightDirectional_b
-        self.ambiantLight_b=self.scene.ambiantLight_b
+        self.handColor_b+=np.sum(self.mesh.verticesColors_b,axis=0)
+        self.ligthDirectional_b+=self.scene.lightDirectional_b
+        self.ambiantLight_b+=self.scene.ambiantLight_b
         vertices_transformed_b = self.scene.mesh.vertices_b
-        self.transformTranslation_b = np.sum(vertices_transformed_b,axis=0)
-        q_normalized = normalize(self.transformQuaternion)
-        q_normalized_b, self.vertices_b =  qrot_backward(q_normalized,  self.vertices,vertices_transformed_b) 
-        self.transformQuaternion_b = normalize_backward(self.transformQuaternion,q_normalized_b) # that will lead to a gradient that is in the tangeant space
+        self.transformTranslation_b[idframe] += np.sum(vertices_transformed_b,axis=0)    
+        q_normalized_b, vertices_b =  qrot_backward(q_normalized,  self.vertices,vertices_transformed_b) 
+        self.vertices_b +=vertices_b
+        self.transformQuaternion_b[idframe] += normalize_backward(unormalized_quaternion,q_normalized_b) # that will lead to a gradient that is in the tangeant space
         return 
          
     def step(self):
         self.vertices = self.vertices - np.mean(self.vertices, axis = 0)[None,:]
         
-        Abuffer = self.render()
-               
-        diffImage = np.sum((Abuffer-self.handImage)**2, axis = 2)
-        Abuffer_b = 2*(Abuffer-self.handImage)
-        EData = np.sum(diffImage)   
+        self.nbFrames = len(self.handImages)
         
+        Abuffer= [None]*self.nbFrames
+        diffImage=[None]*self.nbFrames
+        Abuffer_b= [None]*self.nbFrames
+        EDatas= [None]*self.nbFrames
+        self.clear_gradients()
+        coefData=1/self.nbFrames
+        for idframe in range(self.nbFrames):
+            Abuffer[idframe] = self.render(idframe=idframe)
+            diffImage[idframe] = np.sum((Abuffer[idframe]-self.handImages[idframe])**2, axis = 2)
+            Abuffer_b = coefData*2*(Abuffer[idframe]-self.handImages[idframe])
+            EDatas[idframe] = coefData*np.sum(diffImage[idframe])   
+            self.render_backward(Abuffer_b)
+        EData= np.sum(EDatas)
         E_rigid,grad_rigidity,approx_hessian_rigidity = self.rigidEnergy.eval(self.vertices)
         Energy = EData + E_rigid
         print('Energy=%f : EData=%f E_rigid=%f'%(Energy, EData, E_rigid))
         
-        self.render_backward(Abuffer_b)
+        
         
         self.vertices_b = self.vertices_b-np.mean(self.vertices_b,axis=0)[None,:]
         #update v

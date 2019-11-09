@@ -1,9 +1,15 @@
 import numpy as np
 
 def qrot(q, v):    
-    uv = np.cross(q[:3], v)
-    uuv = np.cross(q[:3], uv)
-    vr = v + 2 * (q[3] * uv + uuv)
+    if q.ndim==2:
+        uv = np.cross(q[:,None,:3], v[None,:,:])
+        uuv = np.cross(q[:,None,:3], uv)
+        vr = v + 2 * (q[:,None,[3]] * uv + uuv)
+    else:
+        uv = np.cross(q[:3], v)
+        uuv = np.cross(q[:3], uv)
+        vr = v + 2 * (q[3] * uv + uuv)
+    
     return vr
 
 def qrot_backward(q, v, vr_b):

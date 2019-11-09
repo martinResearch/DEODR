@@ -127,7 +127,7 @@ class Scene3D():
         depths = r[:,2]
         P2D = r[:,:2]/depths[:,None]
         if not self.store_backward_current is None:
-            self.store_backward_current['cameraProject']=(r,depths)
+            self.store_backward_current['cameraProject']=(cameraMatrix,r,depths)
         if get_jacobians:
             J_r = cameraMatrix[:,:3]
             J_d = J_r[2,:]
@@ -140,8 +140,8 @@ class Scene3D():
         P2D,depths,J_P2D = self.camera_project(CameraMatrix, vertices, get_jacobians=True) 
         return J_P2D     
     
-    def _cameraProject_backward(self,cameraMatrix, P3D, P2D_b,depths_b=None) :
-        r,depths =  self.store_backward_current['cameraProject']
+    def _cameraProject_backward(self, P2D_b,depths_b=None) :
+        cameraMatrix,r,depths =  self.store_backward_current['cameraProject']
         r_b = np.column_stack((P2D_b/depths[:,None], -np.sum(P2D_b*r[:,:2],axis=1)/(depths**2))) 
         if depths_b is not None:
             r_b[:,2]+=depths_b
@@ -216,7 +216,7 @@ class Scene3D():
         CameraMatrix, self.edgeflags = self.store_backward_current['render']        
         ij_b, colors_b = self._render2D_backward(Abuffer_b)
         self._computeVerticescolorsWithIllumination_backward(colors_b)
-        self.mesh.vertices_b = self._cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b)
+        self.mesh.vertices_b = self._cameraProject_backward(ij_b)
         self.mesh.computeVertexNormals_backward(self.vertexNormals_b)
         
 
@@ -245,14 +245,14 @@ class Scene3D():
         self.texture = np.zeros((0,0))
         Abuffer = self._render2D(ij,colors)
         if not self.store_backward_current is None:
-            self.store_backward_current['renderDepth']=(CameraMatrix,depth_scale)
+            self.store_backward_current['renderDepth']=(depth_scale)
         return Abuffer
     
     def renderDepth_backward(self,Depth_b):
-        CameraMatrix,depth_scale = self.store_backward_current['renderDepth']
+        depth_scale = self.store_backward_current['renderDepth']
         ij_b, colors_b = self._render2D_backward(Depth_b)   
         depths_b= np.squeeze(colors_b*depth_scale,axis=1)
-        self.mesh.vertices_b = self._cameraProject_backward(CameraMatrix, self.mesh.vertices, ij_b,depths_b)
+        self.mesh.vertices_b = self._cameraProject_backward( ij_b,depths_b)
           
     
 

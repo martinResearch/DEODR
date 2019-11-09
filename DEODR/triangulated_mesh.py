@@ -40,12 +40,12 @@ class TriMeshAdjacencies():
 		self.store_backward['computeFaceNormals']=(u,v,n)
 		return normals
 	
-	def computeFaceNormals_backward(self,vertices,normals_b):
+	def computeFaceNormals_backward(self,normals_b):
 		u,v,n = self.store_backward['computeFaceNormals']
 		n_b = normalize_backward(n, normals_b, axis = 1)
 		u_b,v_b = cross_backward(u,v,n_b)
 		tris_b = np.stack((-u_b-v_b,u_b,v_b),axis=1)
-		vertices_b = np.zeros(vertices.shape)
+		vertices_b = np.zeros((self.nbV,3))
 		np.add.at(vertices_b, self.faces,tris_b) 
 		return vertices_b
 	
@@ -55,7 +55,7 @@ class TriMeshAdjacencies():
 		self.store_backward['computeVertexNormals']=n
 		return normals  
 	
-	def computeVertexNormals_backward(self,  faceNormals, normals_b):		
+	def computeVertexNormals_backward(self, normals_b):		
 		n = self.store_backward['computeVertexNormals']
 		n_b = normalize_backward(n, normals_b, axis = 1)		
 		faceNormals_b = self.Vertices_Faces.T* n_b		
@@ -98,8 +98,8 @@ class TriMesh():
 		self.vertexNormals = self.adjacencies.computeVertexNormals(self.faceNormals)	
 		
 	def computeVertexNormals_backward(self,vertexNormals_b):				
-		self.faceNormals_b = self.adjacencies.computeVertexNormals_backward(self.faceNormals, vertexNormals_b)
-		self.vertices_b += self.adjacencies.computeFaceNormals_backward(self.vertices,self.faceNormals_b)
+		self.faceNormals_b = self.adjacencies.computeVertexNormals_backward(vertexNormals_b)
+		self.vertices_b += self.adjacencies.computeFaceNormals_backward(self.faceNormals_b)
 
 	def edgeOnSilhouette(self,viewpoint):
 		"""this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""
