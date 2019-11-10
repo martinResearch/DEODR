@@ -1,6 +1,7 @@
-from  scipy import sparse
+from scipy import sparse
 import numpy as np
 import tensorflow as tf
+
 
 def scipy_sparse_matrix_to_tensorflow(X):
     coo = X.tocoo()
