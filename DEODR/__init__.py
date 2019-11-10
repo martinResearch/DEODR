@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """DEODR
 
-Discontinuity-Edge-Overdraw differentiable Rendering
+Discontinuity-Edge-Overdraw Differentiable Rendering
 
 If you use this library please cite
 Model-based 3D Hand Pose Estimation from Monocular Video.
