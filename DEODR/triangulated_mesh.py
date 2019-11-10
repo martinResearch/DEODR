@@ -1,7 +1,7 @@
 from scipy import sparse
 import numpy as np
 
-from .tools import *
+from .tools import normalize
 
 
 class TriMeshAdjacencies:
