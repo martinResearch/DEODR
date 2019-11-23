@@ -7,6 +7,10 @@
 *.pyx~
 *.c~
 *.h~
+*.bak
+*.asv
+*.mexw64
+
 build/
 .gitignore~
 DEODR/differentiable_renderer_cython.cpp
