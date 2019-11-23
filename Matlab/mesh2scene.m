@@ -13,16 +13,18 @@ luminosity=max(0,(ligthDirectional*M.NormalsV))+ambiantLight;
 colorsV=M.colors.*([1;1;1]*luminosity);
 Ntri=M.nbF;
 
-scene.ij=reshape(P2D([2,1],M.F),2,3,[]);
-scene.colors=reshape(colorsV(:,M.F),3,3,[]);
-scene.depths=reshape(depths(M.F),1,3,[]);
+scene.ij=P2D;
+scene.colors=colorsV;
+scene.depths=depths;
 if  getSilhouette
 scene.edgeflags=M.edge_bool(M.Faces_edges');
 end
-scene.uv=zeros(2,3,Ntri);
+scene.faces = uint32( M.F)-1;
+scene.faces_uv = scene.faces;
+scene.uv=zeros(2,M.nbV);
 scene.textured=logical(zeros(1,Ntri));
-scene.shade=zeros(1,3,Ntri);
+scene.shade=zeros(1,M.nbV);
 scene.SizeH=SizeH;
 scene.SizeW=SizeW;
 scene.shaded=logical(zeros(1,Ntri));
-scene.material=zeros(3,10,10)  ;
+scene.texture=zeros(3,10,10)  ;

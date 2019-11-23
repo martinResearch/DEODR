@@ -14,5 +14,3 @@ from .differentiable_renderer import Scene2D, Scene3D
 from .obj import readObj
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .triangulated_mesh import TriMesh
-
-# from .tensorflow.triangulated_mesh_tensorflow import *

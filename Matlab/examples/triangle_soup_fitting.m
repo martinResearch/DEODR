@@ -1,5 +1,6 @@
 
 %%
+addpath(genpath('..'))
 
 display=1;
 save_images=true;
@@ -12,9 +13,9 @@ scene1=example_scene();
 [Abuffer1,Zbuffer]=render(scene1,sigma);
 
 
-Ntri=length(scene1.depths);
+Ntri=length(scene1.faces);
 scene2=scene1;
-max_uv= repmat([size(scene1.material,2),size(scene1.material,3)]'*ones(1,3),[1,1,Ntri]);
+max_uv= repmat([size(scene1.texture,2),size(scene1.texture,3)]',[1,3*Ntri]);
 
 displacement_magnitude_ij=10;
 displacement_magnitude_uv=0;
@@ -22,11 +23,11 @@ displacement_magnitude_colors=0;
 
 rng('default');
 rng(10);
-scene2.ij=scene1.ij+randn([2,3,Ntri])*displacement_magnitude_ij;
-scene2.uv=scene1.uv+randn([2,3,Ntri])*displacement_magnitude_uv;
+scene2.ij=scene1.ij+randn([2,3*Ntri])*displacement_magnitude_ij;
+scene2.uv=scene1.uv+randn([2,3*Ntri])*displacement_magnitude_uv;
 scene2.uv=max( scene2.uv,0);
 scene2.uv=min( scene2.uv,max_uv);
-scene2.colors=scene1.colors+randn([3,3,Ntri])*displacement_magnitude_colors;
+scene2.colors=scene1.colors+randn([3,3*Ntri])*displacement_magnitude_colors;
 
 alpha_ij=0.01
 beta_ij=0.80;
@@ -36,15 +37,16 @@ alpha_color=0.001;
 beta_color=0.70;
 
 
-speed_ij=zeros(2,3,Ntri);
-speed_uv=zeros(2,3,Ntri);
-speed_color=zeros(3,3,Ntri);
+speed_ij=zeros(2,3*Ntri);
+speed_uv=zeros(2,3*Ntri);
+speed_color=zeros(3,3*Ntri);
 
 
 nbMaxIter=500;
 lisframesGif=ceil((1:2:500.^(1/1.5)).^1.5);
 
 figure(1);
+mkdir('./images/')
 filename='./images/soup_fitting.gif';
 Err=zeros(1,nbMaxIter);
 for iter=1:nbMaxIter

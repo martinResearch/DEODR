@@ -1,7 +1,7 @@
 % load obj using third party library and convert in our format
 addpath(genpath('.'))
-h=loadawobj('../../data/hand.obj');
-M.F=h.f3;
+h=loadawobj('../data/hand.obj');
+M.F=flipud(h.f3);
 M.V=h.v;
 M=mesh_adjacencies(M);
 
@@ -17,12 +17,12 @@ objectCenter=mean(M.V,2);
 objectRadius=max(std(M.V,[],2));
 cameraCenter=objectCenter+[0,0,7]'*objectRadius;
 focal=600;
-R=[1,0,0;0,-1,0;0,0,-1];
+R=[0,-1,0;-1,0,0;0,0,-1];
 T=-R'*cameraCenter;
 CameraMatrix=[focal,0,SizeW/2;0,focal,SizeH/2;0,0,1]*[R,T];
 
 %setup light parameters
-ligthDirectional=[0.1,0.5,0.5];
+ligthDirectional=[0.1,-0.5,-0.5];
 ambiantLight=0.3;
 
 % conversion from 3D mesh to triangle 2.5D soup

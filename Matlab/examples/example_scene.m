@@ -41,23 +41,26 @@ for k=1:Ntri
          triangle.textured=0;
          triangle.shaded=0;
     end
-    triangle.edgeflags=[true,true,true];
+    triangle.edgeflags=[true,true,true]';
     triangles{k}=triangle;
     
 end
 triangles=cell2mat(triangles);
 
-scene.uv=cat(3,triangles.uv);
-scene.ij=cat(3,triangles.ij);
-scene.depths=cat(3,triangles.depths);
-scene.shade=cat(3,triangles.shade);
-scene.colors=cat(3,triangles.colors);
-scene.edgeflags=squeeze(cat(3,triangles.edgeflags));
+nbV=3*Ntri;
+scene.faces= uint32(reshape([1:nbV]-1,3,Ntri));
+scene.faces_uv= uint32(reshape([1:nbV]-1,3,Ntri));
+scene.uv=cat(2,triangles.uv);
+scene.ij=cat(2,triangles.ij);
+scene.depths=cat(2,triangles.depths);
+scene.shade=cat(2,triangles.shade);
+scene.colors=cat(2,triangles.colors);
+scene.edgeflags=squeeze(cat(2,triangles.edgeflags));
 scene.textured=logical([triangles.textured]);
 scene.shaded=logical([triangles.shaded]);
 scene.SizeH=SizeH;
 scene.SizeW=SizeW;
-scene.material=material   ;
+scene.texture=material   ;
 backgroundColor=[0.3,0.5,0.7];
 scene.background=repmat(backgroundColor(:),1,scene.SizeH,scene.SizeW);
 

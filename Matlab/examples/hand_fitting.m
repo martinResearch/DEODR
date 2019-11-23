@@ -1,6 +1,6 @@
 function hand_fitting()
 
-addpath(genpath('../..'))
+addpath(genpath('..'))
 
 % loading the image and creating mask to discard pixels we don't want to us
 % in the loss
