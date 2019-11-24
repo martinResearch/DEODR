@@ -147,7 +147,7 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 
 if __name__ == "__main__":
     display = True
-    save_images = True
+    save_images = False
     example_sfm(
         dl_library="none", plot_curves=True, display=display, save_images=save_images
     )
