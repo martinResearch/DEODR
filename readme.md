@@ -10,7 +10,7 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 2. [Installation](#Installation)
 3. [Examples](#Examples)
 4. [Equations](#Equations) 
-5. [Licence](#Licence)
+5. [License](#License)
 5. [Alternatives](#Alternatives)
 6. [References](#References)
 
