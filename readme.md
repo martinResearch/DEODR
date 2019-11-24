@@ -1,7 +1,18 @@
+
 # DEODR
 
 DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** and **Matlab** bindings. The python code provides interfaces with **Pytorch** and **Tensorflow**. It provides a differentiable rendering function and its associated reverse mode differentiation function (a.k.a adjoint function) that will provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
-The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projection are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. Unlike most other differentiable renderers, the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries. 
+The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projection are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. Unlike most other differentiable renderers, the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
+
+# Table of content
+
+1. [Features](#Features)
+2. [Installation](#Installation)
+3. [Examples](#Examples)
+4. [Equations](#Equations) 
+5. [Licence](#Licence)
+5. [Alternatives](#Alternatives)
+6. [References](#References)
 
 # Features
 
@@ -24,7 +35,7 @@ Some unsupported features:
 * texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiable would be challenging)
  
-# Using texture triangles
+### Using texture triangles
 
 Keeping the rendering differentiable everywhere when using texture is challenging: if you use textured triangles you will need to make sure there no adjacent triangles in the 3D mesh are simultaneously visible while disconnected in the UV map, i.e that there is no visible seam. Otherwise the rendering won't in general be continuous with respect to the 3D vertices positions due to the texture discontinuity along the seam. Depending on the shape of your object, you might not be able to define continuous UV mapping over the entire mesh and will need to define the UV texture coordinates in a very specific manner described in Figure 3 in [1], with some constraints on the texture intensities so that the continuity of the rendering is still guaranteed along edges between disconnected triangles in the UV map after texture bilinear interpolation.Note that an improved version that approach is also described in [7].
 
@@ -69,7 +80,7 @@ For this example you will also need to download the automatic differentiation to
 
 
  
-# Details
+# Equations
 
 This code implements the core of the differentiable renderer described in [1] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer to appear in the literature.
 It renders a set of triangles with texture bilinearly interpolated and shaded or with interpolated RGB colour. In contrast with most renderers, the rendered image is differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of from and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1] for more details). This allows us to and capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row correspond to a color intensity of a pixel of the rendered image, like done in [3]) but provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
@@ -118,9 +129,6 @@ The choice of the method is done through the Boolean parameter *antialiaseError*
 [BSD 2-clause "Simplified" license](licence.txt).
 
 
-
-# Citation
-
 If you use any part of this work please cite the following:
 
 Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
@@ -144,7 +152,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
      address = {Washington, DC, USA},
     } 
 
-## Other differentiable renderers 
+# Alternatives 
 
 * [**SoftRas**](https://github.com/ShichenLiu/SoftRas) (MIT Licence). Method published in [8]. This method consists in a differentiable renderwitha differentiable forward pass. This is at the moement the only method besides ours that has a differentiable forward pass and that computes the exact gradient of the forward pass in the backward pass.
 
@@ -159,7 +167,7 @@ While anterior to this paper, the method in [1] can be used in conjunction with 
 Unlike other differentiable renderer it does not provides suppport for occlusion boundaries in the gradient computation and thus is inadequate for many applications.
 * Code accompanying the paper [6] [github](https://github.com/ndrplz/differentiable-renderer). It renders only silhouettes. 
 
-## References
+# References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Paragios and David Fleet.* PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
 [2] *Discontinuity edge overdraw* P.V. Sander and H. Hoppe, J.Snyder and S.J. Gortler. SI3D 2001 [pdf](http://hhoppe.com/overdraw.pdf)
