@@ -21,7 +21,6 @@ M.colors = vertices_colors;
 M = mesh_adjacencies(M);
 Mref = M;
 
-
 Aobs = double(permute(image,[3,1,2]));
 
 losses = zeros(1,options.nbMaxIter);
@@ -52,7 +51,7 @@ for iter = 1:options.nbMaxIter
     scene2 = mesh2scene(Miter,CameraMatrix,lights.ligthDirectional,lights.ambiantLight,SizeH,SizeW);
     scene2.background = repmat(backgroundColor(:),1,scene2.SizeH,scene2.SizeW);
     
-    if options.display   
+    if options.display
         [scene2b,Edata,image]= render_and_compare(scene2, options.sigma, Aobs, options.antialiaseError, mask);
     else
         [scene2b] = render_and_compare(scene2, options.sigma, Aobs, options.antialiaseError);
@@ -96,7 +95,7 @@ for iter = 1:options.nbMaxIter
     %original mesh and enforce some kind of rigidity to the mesh
     
     H = options.alpha * (J_col' * J_col) + options.beta * (J_ij' * J_ij) + approxRigidHessian;
-   
+    
     %H= cTplusGama;
     
     switch options.method
@@ -112,7 +111,7 @@ for iter = 1:options.nbMaxIter
             %Eregu=cregu*0.5*sum(diff.^2);
             Eregu = options.cregu * 0.5 * sum(diff.^2);
             G = GradData' + grad_regu;
-
+            
             step = -H\G;
             %[step,~]=pcg(H,-G,0.2,100);
             % step=-bicg(H,G,1e-4,10);
@@ -123,11 +122,10 @@ for iter = 1:options.nbMaxIter
             fprintf('Energy=%f : Edata=%f Eregu=%f\n',E,Edata,Eregu);
             losses(iter) = E;
         otherwise
-            error('unkown method')        
+            error('unkown method')
     end
-    durations(iter) = toc(start);   
+    durations(iter) = toc(start);
 end
-
 
 if options.display
     figure(2)
@@ -138,13 +136,6 @@ if options.display
     plot(durations,losses,'color',rand(3,1))
 end
 
-
 fprint('error=%f',losses(end))
 
 end
-
-
-
-
-
-

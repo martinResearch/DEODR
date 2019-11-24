@@ -2247,7 +2247,6 @@ void checkSceneValid(Scene scene,bool has_derivatives)
 {
 
  
-    
     if (scene.faces == NULL)
         throw "scene.texture == NULL";
     if (scene.faces_uv == NULL)

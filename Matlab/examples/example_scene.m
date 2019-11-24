@@ -36,10 +36,10 @@ for k=1:Ntri
         triangle.shaded=1;
     else
         triangle.uv=zeros(2,3);
-        triangle.shade=zeros(1,3); 
+        triangle.shade=zeros(1,3);
         triangle.colors=rand(3,3);                    % colors of the vertices (can be gray, rgb color,or even other dimension vectors) when using simple linear interpolation across triangles
-         triangle.textured=0;
-         triangle.shaded=0;
+        triangle.textured=0;
+        triangle.shaded=0;
     end
     triangle.edgeflags=[true,true,true]';
     triangles{k}=triangle;

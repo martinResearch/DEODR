@@ -53,6 +53,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 
  
 	source=mxGetField(matlabScene,0,"faces");
+    if (!source)
+        error("missing field faces");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -66,6 +68,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     
     
     source=mxGetField(matlabScene,0,"faces_uv");
+    if (!source)
+        error("missing field faces_uv"); 
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -80,6 +84,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     
     	
 	source=mxGetField(matlabScene,0,"depths");
+    if (!source)
+        error("missing field depths"); 
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -90,6 +96,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.depths=mxGetPr(source);
     
 	source=mxGetField(matlabScene,0,"uv");
+    if (!source)
+        error("missing field uv"); 
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -100,6 +108,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.uv= mxGetPr(source);
     
 	source=mxGetField(matlabScene,0,"ij");
+    if (!source)
+        error("missing field ij");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -111,6 +121,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.ij= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"shade");
+    if (!source)
+        error("missing field shade");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	if (number_of_dims!=2)
@@ -122,6 +134,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.shade= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"colors");
+    if (!source)
+        error("missing field colors");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	
@@ -133,6 +147,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.colors= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"textured");
+    if (!source)
+        error("missing field textured");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 
@@ -145,9 +161,10 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.textured= mxGetLogicals(source);
 
     source=mxGetField(matlabScene,0,"edgeflags");
+    if (!source)
+        error("missing field edgeflags");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
-
 	if (number_of_dims!=2)
 		error("the input scene.edgeflag is not well sized , should be of dimension  3xNbTriangles");
 	if (dim_array[0]!=3)
@@ -157,9 +174,10 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.edgeflags= mxGetLogicals(source);
     
 	source=mxGetField(matlabScene,0,"shaded");
+    if (!source)
+        error("missing field shaded");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
-
 	if (number_of_dims!=2)
 		error("the input scene.textured is not well sized , should be of dimension  1xNbTriangles");
 	if (dim_array[0]!=1)
@@ -170,6 +188,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 
 	
 	source=mxGetField(matlabScene,0,"background");
+    if (!source)
+        error("missing field background");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	pr  = mxGetPr(source);
@@ -183,6 +203,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.background= mxGetPr(source);	
 
 	source=mxGetField(matlabScene,0,"texture");
+    if (!source)
+        error("missing field texture");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	pr  = mxGetPr(source);
@@ -195,6 +217,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     scene.texture= mxGetPr(source);
     
     source=mxGetField(matlabScene,0,"texture_b");
+    if (!source)
+        error("missing field texture_b");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	pr  = mxGetPr(source);
@@ -210,6 +234,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 
 
 	source=mxGetField(matlabScene,0,"uv_b");
+    if (!source)
+        error("missing field uv_b");
     number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
@@ -221,6 +247,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.uv_b= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"ij_b");
+    if (!source)
+        error("missing field ij_b");
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)
 		error("the input scene.ij_b is not well sized , should be of dimension 2 (2xNbVertices)");
@@ -231,6 +259,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.ij_b= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"shade_b");
+    if (!source)
+        error("missing field shade_b");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);
 	if (number_of_dims!=2)
@@ -242,6 +272,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.shade_b= mxGetPr(source);
 
 	source=mxGetField(matlabScene,0,"colors_b");
+    if (!source)
+        error("missing field colors_b");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	
 	if (number_of_dims!=2)

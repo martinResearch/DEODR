@@ -22,7 +22,7 @@ T=-R'*cameraCenter;
 CameraMatrix=[focal,0,SizeW/2;0,focal,SizeH/2;0,0,1]*[R,T];
 
 %setup light parameters
-ligthDirectional=[0.1,-0.5,-0.5];
+ligthDirectional=[-0.1,0.5,0.5];
 ambiantLight=0.3;
 
 % conversion from 3D mesh to triangle 2.5D soup
