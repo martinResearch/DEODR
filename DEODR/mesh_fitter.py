@@ -415,7 +415,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.mesh = TriMesh(faces[:, ::-1].copy())
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
+        self.cameraCenter = objectCenter + np.array([0, 0, 6]) * objectRadius
 
         self.scene = Scene3D()
         self.scene.setMesh(self.mesh)
