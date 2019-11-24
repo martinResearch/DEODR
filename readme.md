@@ -2,7 +2,7 @@
 # DEODR
 
 DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** and **Matlab** bindings. The python code provides interfaces with **Pytorch** and **Tensorflow**. It provides a differentiable rendering function and its associated reverse mode differentiation function (a.k.a adjoint function) that will provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
-The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projection are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. Unlike most other differentiable renderers, the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
+The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projection are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. Unlike most other differentiable renderers (except SoftRas [8]), the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [2] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
 
 # Table of content
 
@@ -57,13 +57,13 @@ add add the decompressed folder in your matlab path
 
 ## Iterative Mesh fitting in Python 
  
-Example of fitting a hand mesh to a depth sensor image [*DEODR/examples/depth_image_hand_fitting.py*](PyDEODR/examples/depth_image_hand_fitting.py)
+Example of fitting a hand mesh to a depth sensor image [*DEODR/examples/depth_image_hand_fitting.py*](DEODR/examples/depth_image_hand_fitting.py)
  ![animation](./images/python_depth_hand.gif)
 
-Example of fitting a hand mesh to a RGB sensor image [*DEODR/examples/depth_image_hand_fitting.py*](PyDEODR/examples/rgb_image_hand_fitting.py)
+Example of fitting a hand mesh to a RGB sensor image [*DEODR/examples/rgb_image_hand_fitting.py*](DEODR/examples/rgb_image_hand_fitting.py)
  ![animation](./images/python_rgb_hand.gif)
 
-Example of fitting a hand mesh to several RGB sensor images [*DEODR/examples/depth_image_hand_fitting.py*](PyDEODR/examples/rgb_multiview_hand.py)
+Example of fitting a hand mesh to several RGB sensor images [*DEODR/examples/rgb_multiview_hand.py*](DEODR/examples/rgb_multiview_hand.py)
  ![animation](./images/multiview.gif)
 
 
