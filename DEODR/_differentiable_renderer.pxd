@@ -13,6 +13,8 @@ cdef extern from "../c++/DifferentiableRenderer.h":
 		bool* textured
 		bool* shaded
 		int     nbTriangles
+		int nbVertices;
+		int nbUV;
 		int     image_H
 		int     image_W
 		int     nbColors

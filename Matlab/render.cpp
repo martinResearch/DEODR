@@ -90,7 +90,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 		error("the input scene.uv is not well sized should be of size 2xNbVertices");
 	scene.nbUV=dim_array[1];	
 	scene.uv= mxGetPr(source);
-
+    
 	source=mxGetField(matlabScene,0,"ij");
 	number_of_dims = mxGetNumberOfDimensions(source);
 	dim_array = mxGetDimensions(source);	

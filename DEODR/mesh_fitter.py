@@ -212,8 +212,8 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces[:, ::-1].copy())
-        objectCenter = vertices.mean(axis=0)
+        self.mesh = TriMesh(faces.copy())
+        objectCenter = vertices.mean(axis=0)+translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 

@@ -128,7 +128,8 @@ for iter = 1:options.nbMaxIter
     durations(iter) = toc(start);   
 end
 
-if display
+
+if options.display
     figure(2)
     hold on;
     plot(losses,'color',rand(3,1))
@@ -137,25 +138,7 @@ if display
     plot(durations,losses,'color',rand(3,1))
 end
 
-if true
-    figure(3)
-    if synthetic
-        trimesh(M.F',M.V(1,:),M.V(2,:),M.V(3,:),...
-            'EdgeColor',[36 169 225]/255,...
-            'LineWidth',0.5,...
-            'CDataMapping','scaled');
-        hold on
-    end
-    trimesh(Miter.F',Miter.V(1,:),Miter.V(2,:),Miter.V(3,:),...
-        'EdgeColor',[255 169 125]/255,...
-        'LineWidth',0.5,...
-        'CDataMapping','scaled');
-    axis equal
-    hold on
-    plot3(cameraCenter(1),cameraCenter(2),cameraCenter(3),'*r')
-    axis tight;
-    drawnow;    
-end
+
 fprint('error=%f',losses(end))
 
 end

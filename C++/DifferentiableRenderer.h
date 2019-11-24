@@ -60,9 +60,9 @@ struct Scene {
 	bool* edgeflags;
 	bool* textured;
 	bool* shaded;
-	int nbTriangles;
-    int nbVertices;
-    int nbUV;
+	int nbTriangles;	
+	int nbVertices;
+	int nbUV;
 	int image_H;
 	int image_W;
 	int nbColors;
@@ -76,6 +76,7 @@ struct Scene {
 	double* shade_b;
 	double* colors_b;
 	double* texture_b;
+	
 };
 
 
@@ -2336,7 +2337,7 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 				ij[i][j] = scene.ij[face[i] * 2 + j];
 		signedAreaV[k] = signedArea(ij);
 	}
-
+    
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
 
 	for (int k = 0; k < scene.nbTriangles; k++)

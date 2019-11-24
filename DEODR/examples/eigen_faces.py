@@ -73,7 +73,7 @@ scene_gt = Scene2D(
     background,
 )
 
-A_gt, _, _ = scene_gt.render(sigma=1)
+A_gt,_ = scene_gt.render(sigma=1)
 plt.subplot(3, 1, 1)
 plt.imshow(np.squeeze(texture, axis=2))
 plt.subplot(3, 1, 2)

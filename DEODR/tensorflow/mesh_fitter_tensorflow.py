@@ -228,10 +228,8 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(
-            faces[:, ::-1].copy()
-        )  # we do a copy to avoid negative stride not support by Tensorflow
-        objectCenter = vertices.mean(axis=0)
+        self.mesh = TriMesh(faces.copy())  # we do a copy to avoid negative stride not support by Tensorflow
+        objectCenter = vertices.mean(axis=0)+translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 

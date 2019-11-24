@@ -14,8 +14,9 @@ handColor=[0.4,0.3,0.25]';
 % loading the hand 3D mesh
 objfile='hand.obj';
 h=loadawobj(objfile);
-faces = h.f3;
+faces = flipud(h.f3);% reorient face
 vertices = h.v;
+
 vertices_colors = handColor*ones(1,size(vertices,2));
 
 % choosing the position of the camera so that the we get a good
@@ -40,12 +41,12 @@ options.antialiaseError = 0;
 options.gamma = 0.01;
 options.alpha = 0.0;
 options.beta = 0.01;
-options.inertia = 0.9;
-options.damping = 0.1;
+options.inertia = 0.95;
+options.damping = 0.2;
 options.method = 'heavyBall';
 options.nbMaxIter = 100;
 options.iter_images_folder='iterations';
 options.save_gif = true;
 
-options.cregu=2000; % mesh rigidity regularisation coefficient
+options.cregu=1000; % mesh rigidity regularisation coefficient
 mesh_fitting(handImage, mask, vertices, faces,vertices_colors, backgroundColor,lights,CameraMatrix,options)
