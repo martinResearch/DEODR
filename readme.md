@@ -103,7 +103,7 @@ and
 ![latex: \large ~~~~~~~~~~~~~~$\partial E/\partial C_k = \sum_{ij} D(i,j)(\partial I(i,j)/\partial C_k)$](./images/backoperator2.svg)
 
 
-In combination with automatic differentiation tool this core function allows to obtain the gradient of 
+In combination with an automatic differentiation tool this core function allows to obtain the gradient of 
 the error function with respect to the parameters of a complex 3D scene we aim to estimate.
 
 The rendering function implemented in C++ can draw image given a list of 2D projected triangles with associated depth (i.e 2.5D scene), where each triangle can have 
