@@ -167,7 +167,7 @@ While anterior to this paper, the method in [1] can be used in conjunction with 
 
 * Code accompanying the paper [7] [github](https://github.com/ndrplz/differentiable-renderer). It renders only silhouettes. 
 
-* [**redner **](https://github.com/BachiLi/redner) Method published in [10]. It is a differentiable path-tracer that can propagate gradients through indirect illumination. 
+* [**redner**](https://github.com/BachiLi/redner) Method published in [10]. It is a differentiable path-tracer that can propagate gradients through indirect illumination. 
 
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
