@@ -170,6 +170,8 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**Differential Surface Splatting**](https://github.com/yifita/DSS) Method publihed in [11]. It is a differentiable implementation of the surface splatting method that allows to render point clouds. The advantage of this approacg over mesh based methods is that there is no predefined connectivity associated to the set of points, which allows topological changes during minimization.
 
+* [DIB-Render](https://github.com/nv-tlabs/DIB-R) Method publihed in [12]
+
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
@@ -194,4 +196,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 [10]  *Differentiable Monte Carlo Ray Tracing through Edge Sampling*. zu-Mao Li, Miika Aittala, Frédo Durand, Jaakko Lehtinen.  SIGGRAPH Asia 2018.
 
 [11] *Differentiable Surface Splatting for Point-based Geometry Processing*. Felice Yifan, Serena Wang, Shihao Wu, Cengiz Oztireli and Olga Sorkine-Hornung. SIGGRAPH Asia 2019
+
+[12] *Learning to Predict 3D Objects with an Interpolation-based Differentiable Renderer* 
+Wenzheng Chen, Jun Gao*, Huan Ling*, Edward J. Smith*, Jaakko Lehtinen, Alec Jacobson, Sanja Fidler. NeurIPS 2019
 
