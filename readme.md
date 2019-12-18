@@ -37,7 +37,7 @@ Some unsupported features:
  
 ### Using texture triangles
 
-Keeping the rendering differentiable everywhere when using texture is challenging: if you use textured triangles you will need to make sure there are no adjacent triangles in the 3D mesh that are simultaneously visible while being disconnected in the UV map, i.e that there is no visible seam. Otherwise the rendering won't in general be continuous with respect to the 3D vertices positions due to the texture discontinuity along the seam. Depending on the shape of your object, you might not be able to define a continuous UV mapping over the entire mesh and will need to define the UV texture coordinates in a very specific manner described in Figure 3 in [1], with some constraints on the texture intensities so that the continuity of the rendering is still guaranteed along edges between disconnected triangles in the UV map after texture bilinear interpolation. Note that an improved version of that approach is also described in [8].
+Keeping the rendering differentiable everywhere when using texture is challenging: if you use textured triangles you will need to make sure there are no adjacent triangles in the 3D mesh that are simultaneously visible while being disconnected in the UV map, i.e. that there is no visible seam. Otherwise the rendering will not in general be continuous with respect to the 3D vertices positions due to the texture discontinuity along the seam. Depending on the shape of your object, you might not be able to define a continuous UV mapping over the entire mesh and you will need to define the UV texture coordinates in a very specific manner described in Figure 3 in [1], with some constraints on the texture intensities so that the continuity of the rendering is still guaranteed along edges between disconnected triangles in the UV map after texture bilinear interpolation. Note that an improved version of that approach is also described in [8].
 
 # Installation
 ## Python
@@ -50,7 +50,7 @@ Keeping the rendering differentiable everywhere when using texture is challengin
 ## Matlab
 Simply download the zip file, decompress it, run compile.m.
 
-For the hand fitting example you will also need to download the automatic differentiation toolbox from [here](https://github.com/martinResearch/MatlabAutoDiff) 
+For the hand fitting example you will also need to download my Matlab automatic differentiation toolbox from [here](https://github.com/martinResearch/MatlabAutoDiff) 
 add add the decompressed folder in your matlab path
 
 # Examples
@@ -68,11 +68,11 @@ Example of fitting a hand mesh to several RGB sensor images [*DEODR/examples/rgb
 
 
 ## iterative mesh fitting in Matlab
-You can call a simple triangle soup fitting [here](Matlab/examples/triangle_soup_fitting.m) 
+Example of a simple triangle soup fitting [*Matlab/examples/triangle_soup_fitting.m*](Matlab/examples/triangle_soup_fitting.m) 
 
 ![animation](./images/soup_fitting.gif)
 
-You can call a simple hand fitting example [here](Matlab/examples/hand_fitting.m).
+Example of fitting a hand mesh to a RGB sensor image [*Matlab/examples/hand_fitting.m*](Matlab/examples/hand_fitting.m).
 For this example you will also need to download the automatic differentiation toolbox from [https://github.com/martinResearch/MatlabAutoDiff](https://github.com/martinResearch/MatlabAutoDiff) 
 
 ![animation](./images/hand_fitting.gif)
@@ -83,7 +83,7 @@ For this example you will also need to download the automatic differentiation to
 # Equations
 
 This code implements the core of the differentiable renderer described in [1,2] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer to appear in the literature.
-It renders a set of triangles with texture bilinearly interpolated and shaded or with interpolated RGB colour. In contrast with most renderers, the rendered image pixel intensities are differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of the front and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1,2] for more details). This allows us to capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row would correspond to a color intensity of a pixel of the rendered image, like done in [4]) but it provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
+It renders a set of triangles with a texture that is bilinearly interpolated and shaded or with interpolated RGB colours. In contrast with most renderers, the intensity of each pixel in the rendered image is continuous and differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of the front and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1,2] for more details). This allows us to capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row would correspond to the color intensity of a pixel of the rendered image, like done in [4]) but it provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
 
 This can be used to do efficient analysis-by-synthesis computer vision by minimizing the function E that corresponds to the sum or the squared pixel intensities differences between a rendered image and a reference observed image I<sub>o</sub> with respect to the scene parameters we aim to estimate.
 
@@ -103,31 +103,30 @@ and
 ![latex: \large ~~~~~~~~~~~~~~$\partial E/\partial C_k = \sum_{ij} D(i,j)(\partial I(i,j)/\partial C_k)$](./images/backoperator2.svg)
 
 
-In combination with an automatic differentiation tool this core function allows one to obtain the gradient of 
+In combination with an automatic differentiation tool, this core function allows one to obtain the gradient of 
 the error function with respect to the parameters of a complex 3D scene one aims to estimate.
 
-The rendering function implemented in C++ can draw image given a list of 2D projected triangles with associated depth (i.e 2.5D scene), where each triangle can have 
+The rendering function implemented in C++ can draw an image given a list of 2D projected triangles with the associated vertices depths (i.e 2.5D scene), where each triangle can have 
 
 * a linearly interpolated color between its three extremities 
 * a texture with linear texture mapping (no perspective-correct texture mapping yet but it will lead to noticeable bias only for large triangle that are no fronto-parallel)
 * a texture combined with shading interpolated linearly (gouraud shading)
 
-We provide a functions in Matlab and Python to obtain the 2.5D representation of the scene from a textured 3D mesh, a camera and simple lighting model. This function is used in the example of 3D model hand fitting on image. 
+We provide a functions in Matlab and Python to obtain the 2.5D representation of the scene from a textured 3D mesh, a camera and a simple lighting model. This function is used in the example  in which we fit a 3D hand model to an image. 
 We kept this function as minimalist as possible as we did not intend to rewrite an entire rendering pipeline but to focus on the part that is difficult to differentiate and that cannot be differentiated easily using automatic differentiation.
 
 Our code provides two methods to handle discontinuities at the occlusion boundaries
 
 * the first method consists in antialiasing the synthetic image before comparing it to the observed image. 
-* the second method consists in antialising the squared residual between the observed image and the synthesized one, and corresponds to the method described in [1]. Note that antialiasing the residual instead of the squared residual is equivalent to do antialiasing on the synthetized image and then subtract the observed image.
+* the second method consists in antialising the squared residual between the observed image and the synthesized one, and corresponds to the method described in [1]. Note that antialiasing the residual (instead of the squared residual) is equivalent to do antialiasing on the synthetized image and then subtract the observed image.
 
-The choice of the method is done through the Boolean parameter *antialiaseError*. Both approaches lead to a differentiable error function after summation of the residuals over the pixels and both lead to similar gradients. The difference is subtle and is only noticeable at the borders after convergence on synthetic antialiased data. The first methods can potentially provide more flexibility for the design of the error function as one can for example use non-local comparison by comparing image moments instead of comparing pixel per pixel.
+The choice of the method is done through the Boolean parameter *antialiaseError*. Both approaches lead to a differentiable error function after summation of the residuals over the pixels and both lead to similar gradients. The difference is subtle and is only noticeable at the borders after convergence on synthetic antialiased data. The first methods can potentially provide more flexibility for the design of the error function as one can for example use a non-local image loss by comparing image moments instead of comparing pixel per pixel.
 
-**Note:** In order to keep the code minimal and well documented, I decided not to provide here the Matlab code to model the articulated hand and the code to update the texture image from observation used in [1]. The hand fitting example provided here does not relies on a underlying skeleton but on a regularization term that favors rigid deformations. Some Matlab code for Linear Blend Skinning can be found [here](http://uk.mathworks.com/matlabcentral/fileexchange/43039-linear-blend-skinning/). Using a Matlab implementation of the skinning equations would allow the use of the Matlab automatic differentiation toolbox provided [here](https://github.com/martinResearch/MatlabAutoDiff) to compute the Jacobian of the vertices positions with respect to the hand pose parameters.
+**Note:** In order to keep the code minimal and well documented, I decided not to provide here the Matlab code to model the articulated hand and the code to update the texture image from observation used in [1]. The hand fitting example provided here does not relies on a underlying skeleton but on a regularization term that penalizes non-rigid deformations. Some Matlab code for Linear Blend Skinning can be found [here](http://uk.mathworks.com/matlabcentral/fileexchange/43039-linear-blend-skinning/). Using a Matlab implementation of the skinning equations would allow the use of the Matlab automatic differentiation toolbox provided [here](https://github.com/martinResearch/MatlabAutoDiff) to compute the Jacobian of the vertices positions with respect to the hand pose parameters.
 
 # License
 
 [BSD 2-clause "Simplified" license](licence.txt).
-
 
 If you use any part of this work please cite the following:
 
@@ -172,6 +171,8 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**DIB-Render**](https://github.com/nv-tlabs/DIB-R) Method published in [12]
 
+* [**Differentiable path tracing**](https://github.com/mitsuba-renderer/mitsuba2) Method published in [13]
+
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
@@ -199,4 +200,6 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 [12] *Learning to Predict 3D Objects with an Interpolation-based Differentiable Renderer* 
 Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobson, Sanja Fidler. NeurIPS 2019
+
+[13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019
 
