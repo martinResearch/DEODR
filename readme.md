@@ -168,7 +168,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**redner**](https://github.com/BachiLi/redner) Method published in [10]. It is a differentiable path-tracer that can propagate gradients through indirect illumination. 
 
-* [*Differential Surface Splatting*](https://github.com/yifita/DSS)
+* [**Differential Surface Splatting**](https://github.com/yifita/DSS) Method publihed in [11]. It is a differentiable implementation of the surface splatting method that allows to render point clouds. The advantage of mesh based methods is that there is no predefined connectivity associated to the set of points, which allows topological changes during minimization.
 
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
