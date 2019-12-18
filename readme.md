@@ -154,7 +154,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 # Alternatives 
 
-* [**SoftRas**](https://github.com/ShichenLiu/SoftRas) (MIT Licence). Method published in [9]. This method consists in a differentiable renderwitha differentiable forward pass. This is at the moement the only method besides ours that has a differentiable forward pass and that computes the exact gradient of the forward pass in the backward pass.
+* [**SoftRas**](https://github.com/ShichenLiu/SoftRas) (MIT Licence). Method published in [9]. This method consists in a differentiable renderwitha differentiable forward pass. To my knowledge, this is at the moment the only method besides ours that has a differentiable forward pass and that computes the exact gradient of the forward pass in the backward pass.
 
 * [**OpenDR**](https://github.com/mattloper/opendr/wiki) [4] (MIT Licence) is an open source differentiable renderer written in python and make publicly available in 2014. OpenDR calls OpenGL and relies an a python automatic differentiation toolbox by the same author called [chumpy](https://github.com/mattloper/chumpy). Like in our code OpenDR uses a intermediate 2.5D representation of the scene using a set of 2D projected triangles. In contrast to our code OpenDR does not provide a continuous loss function as there is not continuous antialiasing formulation at the occlusion boundaries and the minimised function will have jumps when a pixel at the boundary switch between the front of back object. By providing a continuous differentiable error function using edge-overdraw antialiasing and its exact gradient, our method can lead to better a convergence of continuous optimisation methods..
 
