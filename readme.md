@@ -174,19 +174,19 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 * [**Differentiable path tracing**](https://github.com/mitsuba-renderer/mitsuba2) Method published in [13]
 
 # References
-[1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [pdf](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
+[1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
 [2] *Model-based 3D Hand Pose Estimation from Monocular Video*. M. de la Gorce. PhD thesis. Ecole centralde de Paris 2009.
-[pdf](https://tel.archives-ouvertes.fr/tel-00619637)
+[paper](https://tel.archives-ouvertes.fr/tel-00619637)
 
-[3] *Discontinuity edge overdraw* P.V. Sander and H. Hoppe, J.Snyder and S.J. Gortler. SI3D 2001 [pdf](http://hhoppe.com/overdraw.pdf)
+[3] *Discontinuity edge overdraw* P.V. Sander and H. Hoppe, J.Snyder and S.J. Gortler. SI3D 2001 [paper](http://hhoppe.com/overdraw.pdf)
 
-[4] *OpenDR: An Approximate Differentiable Renderer* Loper, Matthew M. and Black, Michael J. ECCV 2014 [pdf](http://files.is.tue.mpg.de/black/papers/OpenDR.pdf)
+[4] *OpenDR: An Approximate Differentiable Renderer* Loper, Matthew M. and Black, Michael J. ECCV 2014 [paper](http://files.is.tue.mpg.de/black/papers/OpenDR.pdf)
 [code](https://github.com/mattloper/opendr) [online documentation](https://github.com/mattloper/opendr/wiki)
 
 [5] *A Morphable Model For The Synthesis Of 3D Faces*. Volker Blanz and Thomas Vetter. SIGGRAPH 99. [paper](https://gravis.dmi.unibas.ch/publications/Sigg99/morphmod2.pdf)
 
-[6] *Neural 3D Mesh Renderer*. Hiroharu Kato and Yoshitaka Ushiku and Tatsuya Harada.CoRR 2017 [PDF](https://arxiv.org/pdf/1711.07566.pdf)
+[6] *Neural 3D Mesh Renderer*. Hiroharu Kato and Yoshitaka Ushiku and Tatsuya Harada.CoRR 2017 [paper](https://arxiv.org/pdf/1711.07566.pdf)
 
 [7] *End-to-end 6-DoF Object Pose Estimation through Differentiable Rasterization* Andrea Palazzi, Luca Bergamini, Simone Calderara, Rita Cucchiara. Second Workshop on 3D Reconstruction Meets Semantics (3DRMS) at ECCVW 2018. [paper](https://iris.unimore.it/retrieve/handle/11380/1167726/205862/palazzi_eccvw.pdf)
 
@@ -201,5 +201,5 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 [12] *Learning to Predict 3D Objects with an Interpolation-based Differentiable Renderer* 
 Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobson, Sanja Fidler. NeurIPS 2019. [paper](https://nv-tlabs.github.io/DIB-R/files/diff_shader.pdf)
 
-[13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019. [pproject page](https://rgl.epfl.ch/publications/Loubet2019Reparameterizing)
+[13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019. [project page](https://rgl.epfl.ch/publications/Loubet2019Reparameterizing)
 
