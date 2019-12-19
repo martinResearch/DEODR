@@ -184,22 +184,22 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 [4] *OpenDR: An Approximate Differentiable Renderer* Loper, Matthew M. and Black, Michael J. ECCV 2014 [pdf](http://files.is.tue.mpg.de/black/papers/OpenDR.pdf)
 [code](https://github.com/mattloper/opendr) [online documentation](https://github.com/mattloper/opendr/wiki)
 
-[5] *A Morphable Model For The Synthesis Of 3D Faces*. Volker Blanz and Thomas Vetter. SIGGRAPH 99
+[5] *A Morphable Model For The Synthesis Of 3D Faces*. Volker Blanz and Thomas Vetter. SIGGRAPH 99. [paper](https://gravis.dmi.unibas.ch/publications/Sigg99/morphmod2.pdf)
 
 [6] *Neural 3D Mesh Renderer*. Hiroharu Kato and Yoshitaka Ushiku and Tatsuya Harada.CoRR 2017 [PDF](https://arxiv.org/pdf/1711.07566.pdf)
 
-[7] *End-to-end 6-DoF Object Pose Estimation through Differentiable Rasterization* Andrea Palazzi, Luca Bergamini, Simone Calderara, Rita Cucchiara. Second Workshop on 3D Reconstruction Meets Semantics (3DRMS) at ECCVW 2018.
+[7] *End-to-end 6-DoF Object Pose Estimation through Differentiable Rasterization* Andrea Palazzi, Luca Bergamini, Simone Calderara, Rita Cucchiara. Second Workshop on 3D Reconstruction Meets Semantics (3DRMS) at ECCVW 2018. [paper](https://iris.unimore.it/retrieve/handle/11380/1167726/205862/palazzi_eccvw.pdf)
 
-[8] *Mesh Color textures* Cem Yuksel. Proceedings of High Performance Graphics 2017
+[8] *Mesh Color textures* Cem Yuksel. Proceedings of High Performance Graphics 2017. [paper](http://www.cemyuksel.com/research/meshcolors/mesh_color_textures.pdf)
 
-[9] *Soft Rasterizer: A Differentiable Renderer for Image-based 3D Reasoning*. Shichen Liu, Tianye Li, Weikai Chen and  Hao Li. ICCV 2019
+[9] *Soft Rasterizer: A Differentiable Renderer for Image-based 3D Reasoning*. Shichen Liu, Tianye Li, Weikai Chen and  Hao Li. ICCV 2019. [paper](http://openaccess.thecvf.com/content_ICCV_2019/papers/Liu_Soft_Rasterizer_A_Differentiable_Renderer_for_Image-Based_3D_Reasoning_ICCV_2019_paper.pdf)
 
-[10]  *Differentiable Monte Carlo Ray Tracing through Edge Sampling*. zu-Mao Li, Miika Aittala, Frédo Durand, Jaakko Lehtinen.  SIGGRAPH Asia 2018.
+[10]  *Differentiable Monte Carlo Ray Tracing through Edge Sampling*. zu-Mao Li, Miika Aittala, Frédo Durand, Jaakko Lehtinen.  SIGGRAPH Asia 2018. [project page](https://people.csail.mit.edu/tzumao/diffrt/)
 
-[11] *Differentiable Surface Splatting for Point-based Geometry Processing*. Felice Yifan, Serena Wang, Shihao Wu, Cengiz Oztireli and Olga Sorkine-Hornung. SIGGRAPH Asia 2019
+[11] *Differentiable Surface Splatting for Point-based Geometry Processing*. Felice Yifan, Serena Wang, Shihao Wu, Cengiz Oztireli and Olga Sorkine-Hornung. SIGGRAPH Asia 2019. [paper and video](https://yifita.github.io/publication/dss/)
 
 [12] *Learning to Predict 3D Objects with an Interpolation-based Differentiable Renderer* 
-Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobson, Sanja Fidler. NeurIPS 2019
+Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobson, Sanja Fidler. NeurIPS 2019. [paper](https://nv-tlabs.github.io/DIB-R/files/diff_shader.pdf)
 
-[13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019
+[13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019. [pproject page](https://rgl.epfl.ch/publications/Loubet2019Reparameterizing)
 
