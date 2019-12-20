@@ -2,7 +2,7 @@
 # DEODR
 
 DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** and **Matlab** bindings. The python code provides interfaces with **Pytorch** and **Tensorflow**. It provides a differentiable rendering function and its associated reverse mode differentiation function (a.k.a adjoint function) that will provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
-The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projections are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. The core C++ differentiable renderer has been implemented in 2008 and described in [1,2]. Unlike most other differentiable renderers (except the recent SoftRas [8] and the differentiable ray tracing method in [10]), the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with discontinuities occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Disontinuity-edge-overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
+The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projections are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. The core C++ differentiable renderer has been implemented in 2008 and described in [1,2]. Unlike most other differentiable renderers (except the recent SoftRas [8] and to some extend the differentiable ray/path tracing methods in [10] and [13]), the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with discontinuities occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
 
 # Table of content
 
@@ -31,7 +31,8 @@ Some unsupported features:
 * multithreading
 * GPU acceleration
 * differentiable handling of seams at visible self intersections
-* self-collision detection to prevent interpenetrations
+* self-collision detection to prevent interpenetrations (that lead to aliasing and non differentiability along the visible self-intersections)
+* phong shading
 * texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiable would be challenging)
  
@@ -51,7 +52,7 @@ Keeping the rendering differentiable everywhere when using texture is challengin
 Simply download the zip file, decompress it, run compile.m.
 
 For the hand fitting example you will also need to download my Matlab automatic differentiation toolbox from [here](https://github.com/martinResearch/MatlabAutoDiff) 
-add add the decompressed folder in your matlab path
+add the decompressed folder in your matlab path
 
 # Examples
 
@@ -82,8 +83,8 @@ For this example you will also need to download the automatic differentiation to
  
 # Equations
 
-This code implements the core of the differentiable renderer described in [1,2] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer to appear in the literature.
-It renders a set of triangles with a texture that is bilinearly interpolated and shaded or with interpolated RGB colours. In contrast with most renderers, the intensity of each pixel in the rendered image is continuous and differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of the front and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1,2] for more details). This allows us to capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row would correspond to the color intensity of a pixel of the rendered image, like done in [4]) but it provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
+This code implements the core of the differentiable renderer described in [1,2] and has been mostly written in 2008-2009. It is anterior to OpenDR and is to my knowledge the first differentiable renderer that deals with vertices displacements to appear in the literature.
+It renders a set of triangles with either a texture that is bilinearly interpolated and shaded or with interpolated RGB colours. In contrast with most renderers, the intensity of each pixel in the rendered image is continuous and differentiable with respect to the vertices positions even along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries, using a linear combination of the front and back triangles with a mixing coefficient that varies continuously as the reprojected vertices move in the image (see [1,2] for more details). This allows us to capture the effect of change of visibility along occlusion boundaries in the gradient of the loss in a principled manner by simply applying the chain rule of derivatives to our differentiable rendering function. Note that this code does not provide explicitly the sparse Jacobian of the rendering function (where each row would correspond to the color intensity of a pixel of the rendered image, like done in [4]) but it provides the vector-Jacobian product operator, which corresponds to the backward function in PyTorch.
 
 This can be used to do efficient analysis-by-synthesis computer vision by minimizing the function E that corresponds to the sum or the squared pixel intensities differences between a rendered image and a reference observed image I<sub>o</sub> with respect to the scene parameters we aim to estimate.
 
