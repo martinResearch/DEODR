@@ -170,7 +170,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**Differential Surface Splatting**](https://github.com/yifita/DSS) Method publihed in [11]. It is a differentiable implementation of the surface splatting method that allows to render point clouds. The advantage of this approach over mesh based methods is that there is no predefined connectivity associated to the set of points, which allows topological changes during minimization.
 
-* [**DIB-Render**](https://github.com/nv-tlabs/DIB-R) Method published in [12]. This method removes discontinuies along the projected mesh and background boundary (external silhouette) by rendering background pixels colors using a weighted sum of the background colour and nearby projected faces. However, unlike our method, it does not remove discontinuities among self-occlusions.
+* [**DIB-Render**](https://github.com/nv-tlabs/DIB-R) Method published in [12]. This method removes discontinuies along the projected mesh and background boundary (external silhouette) by rendering background pixels colors using a weighted sum of the background colour and nearby projected faces. However, unlike our method, it does not remove discontinuities along self-occlusions.
 
 * [**Differentiable path tracing**](https://github.com/mitsuba-renderer/mitsuba2) Method published in [13]
 
