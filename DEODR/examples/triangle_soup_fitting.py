@@ -34,7 +34,7 @@ def create_example_scene():
                 + 0.5 * (-0.5 + np.random.rand(2, 3))
             )
 
-        if np.linalg.det(np.vstack((tmp, np.ones((3))))) < 0:
+        if np.linalg.det(np.vstack((tmp, np.ones((3))))) > 0:
             tmp = np.fliplr(tmp)
         triangle = {}
         triangle["ij"] = tmp.T

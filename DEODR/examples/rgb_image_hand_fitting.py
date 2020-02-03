@@ -27,22 +27,18 @@ def example_rgb_hand_fitting(
     w = handImage.shape[1]
     h = handImage.shape[0]
     objFile = "hand.obj"
-    faces, vertices = readObj(objFile)
-    faces= faces[:, ::-1] # reorient faces
+    faces, vertices = readObj(objFile)  
 
     defaultColor = np.array([0.4, 0.3, 0.25])
     defaultLight = {
-        "directional": np.array([0.1, 0.5, 0.4]),
+        "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
-    # defaultLight = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}
-
-    
+       
     euler_init = np.array([0, 0, 0])
     translation_init =  np.mean(vertices, axis=0)
     # centering vertices 
     vertices = vertices - translation_init[None, :]
-
 
     handFitter = MeshRGBFitterWithPose(
         vertices,
@@ -54,8 +50,7 @@ def example_rgb_hand_fitting(
         euler_init=euler_init,
         translation_init=translation_init,
         cregu=1000,
-    )
-    #        handFitter = MeshRGBFitter(vertices,faces,defaultColor,defaultLight,  updateLights =  True, updateColor= True,cregu=1000)
+    )    
 
     handFitter.reset()
     maxIter = 100

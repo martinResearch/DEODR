@@ -62,6 +62,7 @@ struct Scene {
 	bool* shaded;
 	int nbTriangles;
 	int nbVertices;
+	bool clockwise;	
 	int nbUV;
 	int image_H;
 	int image_W;
@@ -1014,7 +1015,7 @@ inline  void render_part_textured_gouraud_B(double* Abuffer, double* Abuffer_B, 
 	delete[]A_B;
 }
 
-void get_edge_stencil_equations(double Vxy[][2], int SizeH, int SizeW, double sigma, double  xy1_to_bary[6], double xy1_to_transp[3], double ineq[12], int  &y_begin, int &y_end)
+void get_edge_stencil_equations(double Vxy[][2], int SizeH, int SizeW, double sigma, double  xy1_to_bary[6], double xy1_to_transp[3], double ineq[12], int  &y_begin, int &y_end, bool clockwise)
 {
 	double  edge_to_xy1[9];
 	double  xy1_to_edge[9];
@@ -1032,9 +1033,16 @@ void get_edge_stencil_equations(double Vxy[][2], int SizeH, int SizeW, double si
 	// create a matrix that map edge coordinates to homogeneous image coordinates
 
 	// outward normal of the edge
-
-	n[0] = Vxy[0][1] - Vxy[1][1];
-	n[1] = Vxy[1][0] - Vxy[0][0];
+	if (clockwise)
+	{	
+		n[0] = Vxy[0][1] - Vxy[1][1];
+		n[1] = Vxy[1][0] - Vxy[0][0];
+	}
+	else
+	{
+		n[0] = Vxy[1][1] - Vxy[0][1];
+		n[1] = Vxy[0][0] - Vxy[1][0];
+	}
 	double inv_norm = 1 / sqrt(n[0] * n[0] + n[1] * n[1]);
 	n[0] *= inv_norm;
 	n[1] *= inv_norm;
@@ -1108,15 +1116,22 @@ void get_edge_stencil_equations(double Vxy[][2], int SizeH, int SizeW, double si
 	}
 }
 
-void get_edge_stencil_equations_B(double Vxy[][2], double Vxy_B[][2], double sigma, double xy1_to_bary_B[6], double xy1_to_transp_B[3])
+void get_edge_stencil_equations_B(double Vxy[][2], double Vxy_B[][2], double sigma, double xy1_to_bary_B[6], double xy1_to_transp_B[3],bool clockwise)
 {
 	double  edge_to_xy1[9];
 	double  xy1_to_edge[9];
 	double  n[2];
 	double  nt[2];
-
-	nt[0] = Vxy[0][1] - Vxy[1][1];
-	nt[1] = Vxy[1][0] - Vxy[0][0];
+	if (clockwise)
+	{
+		nt[0] = Vxy[0][1] - Vxy[1][1];
+		nt[1] = Vxy[1][0] - Vxy[0][0];
+	}
+	else
+	{
+		nt[0] =  Vxy[1][1] - Vxy[0][1];
+		nt[1] = Vxy[0][0] - Vxy[1][0];	
+	}
 	double inv_norm = 1 / sqrt(nt[0] * nt[0] + nt[1] * nt[1]);
 	n[0] = nt[0] * inv_norm;
 	n[1] = nt[1] * inv_norm;
@@ -1158,15 +1173,24 @@ void get_edge_stencil_equations_B(double Vxy[][2], double Vxy_B[][2], double sig
 	
 	nt_B[0] += 2 * nt[0] * nor_s_B;
 	nt_B[1] += 2 * nt[1] * nor_s_B;
-
-	Vxy_B[0][1] += nt_B[0];
-	Vxy_B[1][1] += -nt_B[0];
-	Vxy_B[1][0] += nt_B[1];
-	Vxy_B[0][0] += -nt_B[1];
+	if (clockwise)
+	{
+		Vxy_B[0][1] += nt_B[0];
+		Vxy_B[1][1] += -nt_B[0];
+		Vxy_B[1][0] += nt_B[1];
+		Vxy_B[0][0] += -nt_B[1];
+	}
+	else
+	{
+		Vxy_B[0][1] += -nt_B[0];
+		Vxy_B[1][1] += nt_B[0];
+		Vxy_B[1][0] += -nt_B[1];
+		Vxy_B[0][0] += nt_B[1];
+	}
 }
 
 
-template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te Abuffer[], Te *Avertex[], double Zbuffer[], double Zvertex[], int SizeH, int SizeW, int sizeA, double sigma)
+template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te Abuffer[], Te *Avertex[], double Zbuffer[], double Zvertex[], int SizeH, int SizeW, int sizeA, double sigma,bool clockwise)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_transp[3];
@@ -1176,7 +1200,7 @@ template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te Abuffer
 	double *xy1_to_A;
 	double *A0y = new double[sizeA];
 	
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	double B_inc[2];
 	for (short int k = 0; k < 2; k++)
@@ -1233,7 +1257,7 @@ template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te Abuffer
 	delete[]xy1_to_A;
 }
 
-template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double Vxy_B[][2], Te Abuffer[], Te Abuffer_B[], Te *Avertex[], Te *Avertex_B[], double Zbuffer[], double Zvertex[], int SizeH, int SizeW, int sizeA, double sigma)
+template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double Vxy_B[][2], Te Abuffer[], Te Abuffer_B[], Te *Avertex[], Te *Avertex_B[], double Zbuffer[], double Zvertex[], int SizeH, int SizeW, int sizeA, double sigma,bool clockwise)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_bary_B[6] = { 0 };
@@ -1246,7 +1270,7 @@ template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double V
 	double *A0y = new double[sizeA];
 	double *A0y_B = new double[sizeA];
 	
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	//double B_inc[2];
 	//for(short int k=0;k<2;k++)
@@ -1349,7 +1373,7 @@ template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double V
 	//	xy1_to_bary_B  [3*k]+=B_inc_B[k];
 	xy1_to_transp_B[0] += T_inc_B;
 
-	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B);
+	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B,clockwise);
 
 	delete[]A0y;
 	delete[]A0y_B;
@@ -1357,7 +1381,7 @@ template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double V
 	delete[]xy1_to_A_B;
 }
 
-template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double Zvertex[2], double UVvertex[][2], double ShadeVertex[2], double Zbuffer[], Te Abuffer[], int SizeH, int SizeW, int sizeA, Te* Texture, int* Texture_size, double sigma)
+template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double Zvertex[2], double UVvertex[][2], double ShadeVertex[2], double Zbuffer[], Te Abuffer[], int SizeH, int SizeW, int sizeA, Te* Texture, int* Texture_size, double sigma,bool clockwise)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_transp[3];
@@ -1371,7 +1395,7 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 	
 	A = new double[sizeA];
 	
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	double B_inc[2];
 	for (short int k = 0; k < 2; k++)
@@ -1441,7 +1465,7 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 	delete[]A;
 }
 
-template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], Te Abuffer[], Te Abuffer_B[], int SizeH, int SizeW, int sizeA, Te* Texture, Te* Texture_B, int* Texture_size, double sigma)
+template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], Te Abuffer[], Te Abuffer_B[], int SizeH, int SizeW, int sizeA, Te* Texture, Te* Texture_B, int* Texture_size, double sigma,bool clockwise)
 
 {
 	double  xy1_to_bary[6];
@@ -1461,7 +1485,7 @@ template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], doub
 	A = new double[sizeA];
 	A_B = new double[sizeA];
 
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	double  xy1_to_bary_B[6] = { 0 };
 	double  xy1_to_transp_B[3] = { 0 };
@@ -1586,13 +1610,13 @@ template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], doub
 
 	xy1_to_transp_B[0] += T_inc_B;
 
-	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B);
+	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B, clockwise);
 
 	delete[]A;
 	delete[]A_B;
 }
 
-template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], double Zvertex[2], double UVvertex[][2], double ShadeVertex[2], double Zbuffer[], T Abuffer[], double* ErrBuffer, int SizeH, int SizeW, int sizeA, T* Texture, int* Texture_size, double sigma)
+template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], double Zvertex[2], double UVvertex[][2], double ShadeVertex[2], double Zbuffer[], T Abuffer[], double* ErrBuffer, int SizeH, int SizeW, int sizeA, T* Texture, int* Texture_size, double sigma,bool clockwise)
 
 {
 	double  xy1_to_bary[6];
@@ -1607,7 +1631,7 @@ template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], d
 	
 	A = new double[sizeA];
 	
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 	
 	double B_inc[2];
 	for (int k = 0; k < 2; k++)
@@ -1683,7 +1707,7 @@ template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], d
 	delete[]A;
 }
 
-template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, T* Texture_B, int* Texture_size, double sigma)
+template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, T* Texture, T* Texture_B, int* Texture_size, double sigma,bool clockwise)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_transp[3];
@@ -1701,7 +1725,7 @@ template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2],
 	A = new double[sizeA];
 	A_B = new double[sizeA];
 
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	double  xy1_to_bary_B[6] = { 0 };
 	double  xy1_to_transp_B[3] = { 0 };
@@ -1837,14 +1861,14 @@ template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2],
 
 	xy1_to_transp_B[0] += T_inc_B;
 
-	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B);
+	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B,clockwise);
 
 	delete[]A;
 	delete[]A_B;
 }
 
 
-template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], double Zvertex[2], T *Avertex[], double Zbuffer[], T Abuffer[], double* ErrBuffer, int SizeH, int SizeW, int sizeA, double sigma)
+template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], double Zvertex[2], T *Avertex[], double Zbuffer[], T Abuffer[], double* ErrBuffer, int SizeH, int SizeW, int sizeA, double sigma,bool clockwise)
 
 {
 	double  xy1_to_bary[6];
@@ -1855,7 +1879,7 @@ template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], doubl
 	double *xy1_to_A = new double[3 * sizeA];
 	double *A0y = new double[sizeA];
 
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 	
 	double B_inc[2];
 	for (int k = 0; k < 2; k++)
@@ -1920,7 +1944,7 @@ template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], doubl
 	delete[]xy1_to_A;
 }
 
-template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], T *Avertex[], T *Avertex_B[], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, double sigma)
+template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], T *Avertex[], T *Avertex_B[], double Zbuffer[], T Abuffer[], double ErrBuffer[], double ErrBuffer_B[], int SizeH, int SizeW, int sizeA, double sigma,bool clockwise)
 
 {
 	double  xy1_to_bary[6];
@@ -1934,7 +1958,7 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 	double * xy1_to_A = new double[3 * sizeA];
 	double * xy1_to_A_B = new double[3 * sizeA];
 
-	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end);
+	get_edge_stencil_equations(Vxy, SizeH, SizeW, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end, clockwise);
 
 	double  xy1_to_bary_B[6] = { 0 };
 	double  xy1_to_transp_B[3] = { 0 };
@@ -2047,7 +2071,7 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 
 	xy1_to_transp_B[0] += T_inc_B;
 
-	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B);
+	get_edge_stencil_equations_B(Vxy, Vxy_B, sigma, xy1_to_bary_B, xy1_to_transp_B,clockwise);
 
 	delete[]A0y;
 	delete[]A0y_B;
@@ -2089,14 +2113,13 @@ struct sortcompare {
 	}
 };
 
-double signedArea(double ij[3][2])
+double signedArea(double ij[3][2],bool clockwise)
 {
 	double ux = ij[1][0] - ij[0][0];
 	double uy = ij[1][1] - ij[0][1];
 	double vx = ij[2][0] - ij[0][0];
-	double vy = ij[2][1] - ij[0][1];
-
-	return 0.5*(ux * vy - vx * uy);
+	double vy = ij[2][1] - ij[0][1];	
+	return 0.5*(ux * vy - vx * uy)*(clockwise?1:-1);
 }
 
 void checkSceneValid(Scene scene, bool has_derivatives)
@@ -2154,7 +2177,7 @@ void checkSceneValid(Scene scene, bool has_derivatives)
 
 void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bool antialiaseError = 0, double* Aobs = NULL, double*  ErrBuffer = NULL)
 {
-
+	
 	checkSceneValid(scene, false);
 	// first pass : render triangle without edge antialiasing
 
@@ -2177,16 +2200,30 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 	{
 		sum_depth[k].value = 0;
 		sum_depth[k].index = k;
+		
+		bool allVerticesInFront=true;
 		unsigned int * face = &scene.faces[k * 3];
 
 		for (int i = 0; i < 3; i++)
+		{
+			if (scene.depths[face[i]]<0)
+			{
+				allVerticesInFront=false;
+			}
 			sum_depth[k].value += scene.depths[face[i]];
-
-		double ij[3][2];
-		for (int i = 0; i < 3; i++)
-			for (int j = 0; j < 2; j++)
-				ij[i][j] = scene.ij[face[i] * 2 + j];
-		signedAreaV[k] = signedArea(ij);
+		}
+		if (allVerticesInFront)
+		{	
+			double ij[3][2];
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 2; j++)
+					ij[i][j] = scene.ij[face[i] * 2 + j];
+			signedAreaV[k] = signedArea(ij,scene.clockwise);
+		}
+		else
+		{
+			signedAreaV[k]=0;
+		}
 	}
 
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
@@ -2246,7 +2283,6 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 
 
 	for (int it = 0; it < scene.nbTriangles; it++)
-
 	{
 		size_t k = sum_depth[it].index;// we render the silhoutette edges from the furthest from the camera to the nearest as we don't use zbuffer for discontinuity edge overdraw
 		unsigned int * face = &scene.faces[k * 3];
@@ -2285,9 +2321,9 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 						for (int i = 0; i < 2; i++)
 							shade[i] = scene.shade[face[sub[i]]];
 						if (antialiaseError)
-							rasterize_edge_textured_gouraud_error(ij, depths, uv, shade, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma);
+							rasterize_edge_textured_gouraud_error(ij, depths, uv, shade, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
 						else
-							rasterize_edge_textured_gouraud(ij, depths, uv, shade, Zbuffer, Abuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma);
+							rasterize_edge_textured_gouraud(ij, depths, uv, shade, Zbuffer, Abuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
 
 					}
 					else
@@ -2298,9 +2334,9 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 							colors[i] = scene.colors + face[sub[i]] * scene.nbColors;
 						}
 						if (antialiaseError)
-							rasterize_edge_interpolated_error(ij, depths, colors, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, sigma);
+							rasterize_edge_interpolated_error(ij, depths, colors, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
 						else
-							rasterize_edge_interpolated(ij, Abuffer, colors, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma);
+							rasterize_edge_interpolated(ij, Abuffer, colors, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
 
 					}
 				}
@@ -2313,7 +2349,7 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 {
 
 	// first pass : render triangle without edge antialiasing
-
+	
 	int Texture_size[2];
 
 	Texture_size[1] = scene.texture_H;
@@ -2330,19 +2366,34 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 
 	for (int k = 0; k < scene.nbTriangles; k++)
 	{
-		unsigned int * face = &scene.faces[k * 3];
 		sum_depth[k].value = 0;
 		sum_depth[k].index = k;
+		
+		bool allVerticesInFront=true;
+		unsigned int * face = &scene.faces[k * 3];
+
 		for (int i = 0; i < 3; i++)
+		{
+			if (scene.depths[face[i]]<0)
+			{
+				allVerticesInFront=false;
+			}
 			sum_depth[k].value += scene.depths[face[i]];
-
-		double ij[3][2];
-		for (int i = 0; i < 3; i++)
-			for (int j = 0; j < 2; j++)
-				ij[i][j] = scene.ij[face[i] * 2 + j];
-		signedAreaV[k] = signedArea(ij);
+		}
+		if (allVerticesInFront)
+		{	
+			double ij[3][2];
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 2; j++)
+					ij[i][j] = scene.ij[face[i] * 2 + j];
+			signedAreaV[k] = signedArea(ij,scene.clockwise);
+		}
+		else
+		{
+			signedAreaV[k]=0;
+		}
 	}
-
+	
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
 
 	if (sigma > 0)
@@ -2396,11 +2447,11 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 
 							if (antialiaseError)
 							{
-								rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma);
+								rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise);
 							}
 							else
 							{
-								rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma);
+								rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, Zbuffer, Abuffer, Abuffer_b, scene.image_H, scene.image_W, scene.nbColors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise);
 							}
 
 							for (int i = 0; i < 2; i++)
@@ -2426,9 +2477,9 @@ void renderScene_B(Scene scene, double* Abuffer, double* Zbuffer, double* Abuffe
 							}
 
 							if (antialiaseError)
-								rasterize_edge_interpolated_error_B(ij, ij_b, depths, colors, colors_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, sigma);
+								rasterize_edge_interpolated_error_B(ij, ij_b, depths, colors, colors_b, Zbuffer, Aobs, ErrBuffer, ErrBuffer_b, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
 							else
-								rasterize_edge_interpolated_B(ij, ij_b, Abuffer, Abuffer_b, colors, colors_b, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma);
+								rasterize_edge_interpolated_B(ij, ij_b, Abuffer, Abuffer_b, colors, colors_b, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
 						}
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)

@@ -36,6 +36,7 @@ def example_depth_image_hand_fitting(
     h = depth_image.shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
+   
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
@@ -116,7 +117,7 @@ def example_depth_image_hand_fitting(
 
 
 if __name__ == "__main__":
-    display = False
+    display = True
     example_depth_image_hand_fitting(
         dl_library="none", plot_curves=False, save_images=False, display=display
     )

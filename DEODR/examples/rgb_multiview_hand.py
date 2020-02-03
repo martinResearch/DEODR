@@ -22,10 +22,10 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
     h = handImages[0].shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
-
+    
     defaultColor = np.array([0.4, 0.3, 0.25])*1.5
     defaultLight = {
-        "directional": np.array([0.1, 0.5, 0.4]),
+        "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
     # defaultLight = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}

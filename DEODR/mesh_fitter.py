@@ -33,7 +33,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = TriMesh(
-            faces[:, ::-1].copy()
+            faces,vertices=vertices
         )  # we do a copy to avoid negative stride not support by pytorch
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
@@ -212,7 +212,7 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces.copy())
+        self.mesh = TriMesh(faces.copy(),vertices=vertices)
         objectCenter = vertices.mean(axis=0)+translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
@@ -412,7 +412,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces[:, ::-1].copy())
+        self.mesh = TriMesh(faces,vertices)
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 6]) * objectRadius

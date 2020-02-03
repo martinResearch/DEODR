@@ -203,7 +203,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000):
         super(MeshDepthFitterEnergy, self).__init__()
         self.mesh = TriMesh(
-            faces[:, ::-1].copy()
+            faces[:, ::-1].copy(),vertices
         )  # we do a copy to avoid negative stride not supported by pytorch
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))

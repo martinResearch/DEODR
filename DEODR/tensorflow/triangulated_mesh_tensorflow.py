@@ -13,7 +13,12 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
 
     def computeFaceNormals(self, vertices):
         tris = tf.gather(vertices, self.faces)
-        n = tf.linalg.cross(tris[::, 1] - tris[::, 0], tris[::, 2] - tris[::, 0])
+        u=tris[::, 1] - tris[::, 0]
+        v=tris[::, 2] - tris[::, 0]       
+        if self.clockwise:
+            n = -tf.linalg.cross(u,v )
+        else:
+            n = tf.linalg.cross(u,v )      
         l = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
         return n / l[:, None]
 
@@ -29,8 +34,8 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
 
 
 class TriMeshTensorflow(TriMesh):
-    def __init__(self, faces):
-        super().__init__(faces)
+    def __init__(self, faces, vertices=None,clockwise=False):
+        super().__init__(faces, vertices, clockwise)
 
     def computeAdjacencies(self):
         self.adjacencies = TriMeshAdjacenciesTensorflow(self.faces)

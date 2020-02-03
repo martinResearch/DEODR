@@ -12,8 +12,8 @@ def print_grad(name):
 
 
 class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
-    def __init__(self, faces):
-        super().__init__(faces)
+    def __init__(self, faces, clockwise=False):
+        super().__init__(faces, clockwise)
         self.faces_torch = torch.LongTensor(faces)
         i = self.faces_torch.flatten()
         j = torch.LongTensor(np.tile(np.arange(self.nbF)[:, None], [1, 3]).flatten())
@@ -28,7 +28,10 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         tris = vertices[self.faces_torch, :]
         u = tris[::, 1] - tris[::, 0]
         v = tris[::, 2] - tris[::, 0]
-        n = torch.cross(u, v)
+        if self.clockwise:
+            n = -torch.cross(u, v)
+        else:
+            n = torch.cross(u, v)
         l2 = (n ** 2).sum(dim=1)
         l = l2.sqrt()
         nn = n / l[:, None]
@@ -47,8 +50,8 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 
 
 class TriMeshPytorch(TriMesh):
-    def __init__(self, faces):
-        super().__init__(faces)
+    def __init__(self, faces, vertices=None,clockwise=False):
+        super().__init__(faces,vertices,clockwise)
 
     def computeAdjacencies(self):
         self.adjacencies = TriMeshAdjacenciesPytorch(self.faces)

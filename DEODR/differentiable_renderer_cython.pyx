@@ -84,6 +84,7 @@ def renderScene(scene,
 	scene_c.image_W = <int> scene.image_W	
 	scene_c.nbTriangles = nbTriangles
 	scene_c.nbVertices = nbVertices
+	scene_c.clockwise= scene.clockwise
 	scene_c.nbUV = nbVerticesUv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data
@@ -249,6 +250,7 @@ def renderSceneB(scene,
 	scene_c.image_W = <int> scene.image_W
 	scene_c.nbTriangles = nbTriangles
 	scene_c.nbVertices = nbVertices
+	scene_c.clockwise = scene.clockwise
 	scene_c.nbUV = nbVerticesUv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data	

@@ -14,6 +14,7 @@ cdef extern from "../c++/DifferentiableRenderer.h":
 		bool* shaded
 		int     nbTriangles
 		int nbVertices;
+		bool clockwise;
 		int nbUV;
 		int     image_H
 		int     image_W

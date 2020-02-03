@@ -4,7 +4,7 @@ import copy
 
 
 class Scene2D:
-    """this class is a simple class that contains a set of 2D vertices with associated depths and a list of faces that are triplets of vertices indexes"""
+    """this class represents a 2.5D scene. It contains a set of 2D vertices with associated depths and a list of faces that are triplets of vertices indexes"""
 
     def __init__(
         self,
@@ -23,6 +23,7 @@ class Scene2D:
         nbColors,
         texture,
         background,
+        clockwise=False
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -39,8 +40,6 @@ class Scene2D:
         self.nbColors = nbColors
         self.texture = texture
         self.background = background
-        self.faces = faces
-        self.faces_uv = faces_uv
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -48,6 +47,7 @@ class Scene2D:
         self.shade_b = np.zeros(self.shade.shape)
         self.colors_b = np.zeros(self.colors.shape)
         self.texture_b = np.zeros(self.texture.shape)
+        self.clockwise=clockwise
 
     def clear_gradients(self):
         self.uv_b.fill(0)
@@ -171,6 +171,7 @@ class Scene2D:
 
 
 class Scene3D:
+    """this class represents a 3D scene containing a single mesh, a directional light and an ambiant light. The parameter sigma control the width of antialiasing edge overdraw"""
     def __init__(self):
         self.mesh = None
         self.ligthDirectional = None
@@ -298,13 +299,14 @@ class Scene3D:
         self.textured = np.zeros((self.mesh.nbF), dtype=np.bool)
         self.shade = np.zeros(
             (self.mesh.nbV), dtype=np.bool
-        )  # eventually used when using texture
+        )  # could eventually be non zero if we were using texture
         self.image_H = resolution[1]
         self.image_W = resolution[0]
         self.shaded = np.zeros(
             (self.mesh.nbF), dtype=np.bool
-        )  # eventually used when using texture
+        )  # could eventually be non zero if we were using texture
         self.texture = np.zeros((0, 0))
+        self.clockwise = self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
         if not self.store_backward_current is None:
             self.store_backward_current["render"] = (
@@ -348,6 +350,7 @@ class Scene3D:
             (self.mesh.nbF), dtype=np.bool
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
+        self.clockwise= self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
         if not self.store_backward_current is None:
             self.store_backward_current["renderDepth"] = depth_scale

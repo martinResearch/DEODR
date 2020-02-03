@@ -7,7 +7,7 @@ from .tools import normalize,normalize_backward,cross_backward
 class TriMeshAdjacencies:
     """this class stores adjacency matrices and methods that use this adjacencies. Unlike the TriMesh class there are no vertices stored in this class"""
 
-    def __init__(self, faces):
+    def __init__(self, faces,clockwise=False):
         self.faces = faces
         self.nbF = faces.shape[0]
         self.nbV = np.max(faces.flat) + 1
@@ -16,15 +16,28 @@ class TriMeshAdjacencies:
         v = np.ones((self.nbF, 3)).flatten()
         self.Vertices_Faces = sparse.coo_matrix((v, (i, j)), shape=(self.nbV, self.nbF))
         idF = np.hstack((np.arange(self.nbF), np.arange(self.nbF), np.arange(self.nbF)))
-        idEtmp = np.hstack(
-            (
-                self.idEdge(self.faces[:, [0, 1]]),
-                self.idEdge(self.faces[:, [1, 2]]),
-                self.idEdge(self.faces[:, [2, 0]]),
-            )
-        )
-        idE = np.unique(idEtmp, return_inverse=True)[1]
+        self.clockwise=clockwise
+        edges = np.vstack((
+            self.faces[:, [0, 1]],
+            self.faces[:, [1, 2]],
+            self.faces[:, [2, 0]])
+        )   
+        
+        idEtmp,edgeIncrease=self.idEdge(edges) 
+        
+
+        _,idE,unique_counts  = np.unique(idEtmp, return_inverse=True,return_counts =True)
+        
+        
         self.nbE = np.max(idE) + 1
+        
+        nbInc = np.zeros((self.nbE))
+        np.add.at(nbInc,idE,edgeIncrease)
+        nbDec = np.zeros((self.nbE))
+        np.add.at(nbDec,idE,~edgeIncrease)        
+        self.isManifold = np.all(unique_counts<=2) and np.all(nbInc<=1) and np.all(nbDec<=1)
+        self.isClosed = self.isManifold  and np.all(unique_counts==2) 
+        
         self.Edges_Faces_Ones = sparse.coo_matrix(
             (np.ones((len(idE))), (idE, idF)), shape=(self.nbE, self.nbF)
         )
@@ -49,16 +62,21 @@ class TriMeshAdjacencies:
         self.store_backward = {}
 
     def idEdge(self, idv):
+        
         return (
             np.maximum(idv[:, 0], idv[:, 1])
-            + np.minimum(idv[:, 0], idv[:, 1]) * self.nbV
+            + np.minimum(idv[:, 0], idv[:, 1]) * self.nbV,
+            idv[:, 0]< idv[:, 1]
         )
 
     def computeFaceNormals(self, vertices):
         tris = vertices[self.faces, :]
         u = tris[:, 1, :] - tris[:, 0, :]
         v = tris[:, 2, :] - tris[:, 0, :]
-        n = np.cross(u, v)
+        if self.clockwise:
+            n = -np.cross(u, v)
+        else:
+            n = np.cross(u, v)
         normals = normalize(n, axis=1)
         self.store_backward["computeFaceNormals"] = (u, v, n)
         return normals
@@ -66,7 +84,10 @@ class TriMeshAdjacencies:
     def computeFaceNormals_backward(self, normals_b):
         u, v, n = self.store_backward["computeFaceNormals"]
         n_b = normalize_backward(n, normals_b, axis=1)
-        u_b, v_b = cross_backward(u, v, n_b)
+        if self.clockwise:
+            u_b, v_b = cross_backward(u, v, -n_b)
+        else:
+            u_b, v_b = cross_backward(u, v, n_b)
         tris_b = np.stack((-u_b - v_b, u_b, v_b), axis=1)
         vertices_b = np.zeros((self.nbV, 3))
         np.add.at(vertices_b, self.faces, tris_b)
@@ -95,7 +116,7 @@ class TriMeshAdjacencies:
 
 
 class TriMesh:
-    def __init__(self, faces):
+    def __init__(self, faces,vertices=None,clockwise=False):
 
         self.faces = faces
         self.nbV = np.max(faces) + 1
@@ -103,15 +124,33 @@ class TriMesh:
         self.vertices = None
         self.faceNormals = None
         self.vertexNormals = None
+        self.clockwise = clockwise
         self.computeAdjacencies()
+        assert(self.adjacencies.isManifold)
+        
+        if not vertices is None:
+            self.setVertices(vertices)
+            self.checkOrientation()
 
     def computeAdjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces)
+        self.adjacencies = TriMeshAdjacencies(self.faces,self.clockwise)
+        
 
     def setVertices(self, vertices):
         self.vertices = vertices
         self.faceNormals = None
         self.vertexNormals = None
+        
+    def computeVolume(self):
+        """Compute the volume enclosed by the triangulated surface. It assumes the surfaces is a closed manifold. 
+        This is done by summing the volumes of the simplices formed by joining the origin and the vertices of each triangle"""
+        return (1 if self.clockwise else -1)*np.sum(np.linalg.det(np.dstack((self.vertices[self.faces[:,0]],self.vertices[self.faces[:,1]],self.vertices[self.faces[:,2]]))))/6        
+        
+    def checkOrientation(self):
+        """check the mesh faces are properly oriented for the normals to point outward"""
+        if (self.computeVolume()>0):
+            raise(BaseException('The volume within the surface is negative. It seems that you faces are not oriented cooreclt accourding to the clockwise flag'))
+        
 
     def setVerticesColors(self, colors):
         self.verticesColors = colors

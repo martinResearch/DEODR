@@ -41,7 +41,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = TriMesh(
-            faces[:, ::-1].copy()
+            faces,vertices
         )  # we do a copy to avoid negative stride not support by Tensorflow
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
