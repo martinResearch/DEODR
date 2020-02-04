@@ -1,0 +1,10 @@
+newmtl M_crate1_blinn
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd T_crate1_D.png
+bump T_crate1_N.tga -bm T_crate1_N.tga
+Ni 1.00
+Ks 0.50 0.50 0.50
+map_Ks T_crate1_S.tga

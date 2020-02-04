@@ -1,6 +1,6 @@
 from DEODR import Scene3D, LaplacianRigidEnergy
 from DEODR import LaplacianRigidEnergy
-from DEODR import TriMesh
+from DEODR import TriMesh,ColoredTriMesh
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -212,7 +212,7 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces.copy(),vertices=vertices)
+        self.mesh = ColoredTriMesh(faces.copy(),vertices=vertices)
         objectCenter = vertices.mean(axis=0)+translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
@@ -412,7 +412,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces,vertices)
+        self.mesh = ColoredTriMesh(faces,vertices)
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 6]) * objectRadius

@@ -2,7 +2,7 @@ from scipy import sparse
 import numpy as np
 
 from .tools import normalize,normalize_backward,cross_backward
-
+import inspect
 
 class TriMeshAdjacencies:
     """this class stores adjacency matrices and methods that use this adjacencies. Unlike the TriMesh class there are no vertices stored in this class"""
@@ -23,11 +23,9 @@ class TriMeshAdjacencies:
             self.faces[:, [2, 0]])
         )   
         
-        idEtmp,edgeIncrease=self.idEdge(edges) 
-        
+        idEtmp,edgeIncrease=self.idEdge(edges)         
 
-        _,idE,unique_counts  = np.unique(idEtmp, return_inverse=True,return_counts =True)
-        
+        _,idE,unique_counts  = np.unique(idEtmp, return_inverse=True,return_counts =True)        
         
         self.nbE = np.max(idE) + 1
         
@@ -121,6 +119,7 @@ class TriMesh:
         self.faces = faces
         self.nbV = np.max(faces) + 1
         self.nbF = faces.shape[0]
+        
         self.vertices = None
         self.faceNormals = None
         self.vertexNormals = None
@@ -133,8 +132,7 @@ class TriMesh:
             self.checkOrientation()
 
     def computeAdjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces,self.clockwise)
-        
+        self.adjacencies = TriMeshAdjacencies(self.faces,self.clockwise)        
 
     def setVertices(self, vertices):
         self.vertices = vertices
@@ -149,8 +147,7 @@ class TriMesh:
     def checkOrientation(self):
         """check the mesh faces are properly oriented for the normals to point outward"""
         if (self.computeVolume()>0):
-            raise(BaseException('The volume within the surface is negative. It seems that you faces are not oriented cooreclt accourding to the clockwise flag'))
-        
+            raise(BaseException('The volume within the surface is negative. It seems that you faces are not oriented cooreclt accourding to the clockwise flag'))        
 
     def setVerticesColors(self, colors):
         self.verticesColors = colors
@@ -178,3 +175,72 @@ class TriMesh:
         return self.adjacencies.edgeOnSilhouette(
             self.vertices, self.faceNormals, viewpoint
         )
+    
+    
+class ColoredTriMesh(TriMesh):
+    def __init__(self, faces, vertices=None, clockwise=False,faces_uv=None,uv=None,texture=None,colors=None):
+        super(ColoredTriMesh, self).__init__(faces,vertices=vertices,clockwise=clockwise)
+        self.faces_uv = faces_uv
+        self.uv = uv
+        self.texture = texture    
+        self.colors = colors
+        self.textured = not (self.texture is None)
+        
+    def plot_uv_map(self,ax):
+        ax.imshow(self.texture)
+        ax.triplot(self.uv[:, 0], self.uv[:, 1], self.faces_uv)    
+        
+    def plot(self,ax,plot_normals=False):
+        x,y,z = self.vertices.T
+        u,v,w = self.vertexNormals.T
+        ax.plot_trisurf(self.vertices[:,0], self.vertices[:,1], Z= self.vertices[:,2], triangles=self.faces)
+        ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True,color=[0,1,0])        
+    @staticmethod
+    def from_trimesh(mesh):# inpired from pyrender
+        import trimesh # get trimesh module here instead of importing at the top of the file to keep the dependency on trimesh optional
+        """Gets the vertex colors, texture coordinates, and material properties
+        from a :class:`~trimesh.base.Trimesh`.
+        """
+        colors = None
+        uv = None
+        texture = None
+
+        # If the trimesh visual is undefined, return none for both
+
+        # Process vertex colors
+        if mesh.visual.kind == 'vertex':
+            colors = mesh.visual.vertex_colors.copy()
+            
+        # Process face colors
+        elif mesh.visual.kind == 'face':
+            raise BaseException("not suported yet, will need antialisaing at the seams")
+          
+        # Process texture colors
+        elif mesh.visual.kind == 'texture':
+            # Configure UV coordinates
+            if mesh.visual.uv is not None:
+                
+                texture = np.array(mesh.visual.material.image)/255
+                if texture.shape[2]==4:
+                    texture=texture[:,:,:3]# removing alpha channel
+                
+                uv=np.column_stack(((mesh.visual.uv[:,0])*texture.shape[0],(1-mesh.visual.uv[:,1])*texture.shape[1]))
+                
+                
+        #merge identical 3D vertices even if their uv are different to keep surface manifold 
+        # trimesh seem to split vertices that have different uvs (using unmerge_faces texture.py), making the surface not watertight, while there were only seems in the texture        
+       
+        vertices,return_index,inv_ids = np.unique( mesh.vertices,axis=0,return_index=True,return_inverse=True)
+        faces = inv_ids[mesh.faces].astype(np.uint32)  
+        if colors:
+            colors2=colors[return_index,:]
+            if np.any(colors != colors2[inv_ids,:]):
+                raise(BaseException("vertices at the same 3D location should have the same color for the rendering to be differentiable"))
+        else:
+            colors2=None
+            
+        return ColoredTriMesh(faces,vertices, clockwise=False, faces_uv=mesh.faces, 
+                      uv=uv, texture=texture, 
+                      colors=colors2)
+         
+        

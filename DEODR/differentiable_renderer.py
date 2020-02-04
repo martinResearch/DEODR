@@ -229,35 +229,49 @@ class Scene3D:
             r_b[:, 2] += depths_b
         P3D_b = r_b.dot(cameraMatrix[:, :3])
         return P3D_b
-
-    def _computeVerticesColorsWithIllumination(self):
+    
+    def computeVerticesLuminosity(self):
         directional = np.maximum(
             0, -np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
         )
-        verticesLuminosity = directional + self.ambiantLight
+        self.store_backward_current["computeVerticesLuminosity"] = (
+            directional
+        )        
+        return  directional + self.ambiantLight        
+
+    def _computeVerticesColorsWithIllumination(self):
+
+        verticesLuminosity = self.computeVerticesLuminosity()
         colors = self.mesh.verticesColors * verticesLuminosity[:, None]
         if not self.store_backward_current is None:
-            self.store_backward_current["computeVerticesColorsWithIllumination"] = (
-                directional,
-                verticesLuminosity,
+            self.store_backward_current["computeVerticesColorsWithIllumination"] = (                
+                verticesLuminosity
             )
         return colors
 
     def _computeVerticescolorsWithIllumination_backward(self, colors_b):
-        directional, verticesLuminosity = self.store_backward_current[
+        verticesLuminosity = self.store_backward_current[
             "computeVerticesColorsWithIllumination"
         ]
         verticesLuminosity_b = np.sum(self.mesh.verticesColors * colors_b, axis=1)
         self.mesh.verticesColors_b = colors_b * verticesLuminosity[:, None]
         self.ambiantLight_b = np.sum(verticesLuminosity_b)
         directional_b = verticesLuminosity_b
+        self.computeVerticesLuminosity_backward(directional_b)
+        
+        
+    def computeVerticesLuminosity_backward(self,directional_b):
+        directional = self.store_backward_current[
+            "computeVerticesLuminosity"
+        ]        
         self.lightDirectional_b = -np.sum(
             ((directional_b * (directional > 0))[:, None]) * self.mesh.vertexNormals,
             axis=0,
         )
         self.vertexNormals_b = (
             -((directional_b * (directional > 0))[:, None]) * self.ligthDirectional
-        )
+        )      
+    
 
     def _render2D(self, ij, colors):
         nbColorChanels = colors.shape[1]
@@ -287,25 +301,41 @@ class Scene3D:
 
         ij, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])
-        colors = self._computeVerticesColorsWithIllumination()
+        
 
         # compute silhouette edges
         self.edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
         # construct 2D scene
         self.faces = self.mesh.faces.astype(np.uint32)
-        self.faces_uv = self.faces
+        
         self.depths = depths
-        self.uv = np.zeros((self.mesh.nbV, 2))
-        self.textured = np.zeros((self.mesh.nbF), dtype=np.bool)
-        self.shade = np.zeros(
-            (self.mesh.nbV), dtype=np.bool
-        )  # could eventually be non zero if we were using texture
+        if not self.mesh.uv is None:
+            self.uv = self.mesh.uv
+            self.faces_uv = self.mesh.faces_uv
+            self.textured = np.ones((self.mesh.nbF), dtype=np.bool)
+            self.shade = self.computeVerticesLuminosity()
+            self.shaded = np.ones(
+                (self.mesh.nbF), dtype=np.bool
+            )  # could eventually be non zero if we were using texture   
+            self.texture = self.mesh.texture
+            colors=np.zeros((self.mesh.nbV, self.texture.shape[2]))
+        else:
+            colors = self._computeVerticesColorsWithIllumination()
+            self.faces_uv = self.faces
+            self.uv=np.zeros((self.mesh.nbV, 2))
+            self.textured = np.zeros((self.mesh.nbF), dtype=np.bool)
+            self.shade = np.zeros(
+                (self.mesh.nbV), dtype=np.float
+                )  # could eventually be non zero if we were using texture
+            self.shaded = np.zeros(
+                (self.mesh.nbF), dtype=np.bool
+            )  # could eventually be non zero if we were using texture   
+            self.texture = np.zeros((0, 0))
+                                    
         self.image_H = resolution[1]
         self.image_W = resolution[0]
-        self.shaded = np.zeros(
-            (self.mesh.nbF), dtype=np.bool
-        )  # could eventually be non zero if we were using texture
-        self.texture = np.zeros((0, 0))
+       
+        
         self.clockwise = self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
         if not self.store_backward_current is None:
