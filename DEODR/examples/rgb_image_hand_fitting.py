@@ -145,6 +145,8 @@ def example_rgb_hand_fitting(
 if __name__ == "__main__":
     display = True
     save_images = False
+    
+
     example_rgb_hand_fitting(
         dl_library="none", plot_curves=False, display=display, save_images=save_images
     )
@@ -154,6 +156,7 @@ if __name__ == "__main__":
         display=display,
         save_images=save_images,
     )
+
     example_rgb_hand_fitting(
         dl_library="tensorflow",
         plot_curves=True,

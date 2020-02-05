@@ -1,5 +1,6 @@
 from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow
 from DEODR.tensorflow import TriMeshTensorflow as TriMesh
+from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from DEODR import LaplacianRigidEnergy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -228,7 +229,7 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces.copy())  # we do a copy to avoid negative stride not support by Tensorflow
+        self.mesh = ColoredTriMesh(faces.copy())  # we do a copy to avoid negative stride not support by Tensorflow
         objectCenter = vertices.mean(axis=0)+translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius

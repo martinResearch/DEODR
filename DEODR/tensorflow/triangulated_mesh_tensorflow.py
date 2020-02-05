@@ -39,3 +39,12 @@ class TriMeshTensorflow(TriMesh):
 
     def computeAdjacencies(self):
         self.adjacencies = TriMeshAdjacenciesTensorflow(self.faces)
+
+class ColoredTriMeshTensorflow(TriMeshTensorflow):
+    def __init__(self, faces, vertices=None, clockwise=False,faces_uv=None,uv=None,texture=None,colors=None):
+        super(ColoredTriMeshTensorflow, self).__init__(faces,vertices=vertices,clockwise=clockwise)
+        self.faces_uv = faces_uv
+        self.uv = uv
+        self.texture = texture    
+        self.colors = colors
+        self.textured = not (self.texture is None)

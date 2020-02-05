@@ -1,6 +1,8 @@
 from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch
 from DEODR import LaplacianRigidEnergy
 from DEODR.pytorch import TriMeshPytorch as TriMesh
+from DEODR.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -515,7 +517,7 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(
+        self.mesh = ColoredTriMesh(
             faces.copy()
         )  # we do a copy to avoid negative stride not support by pytorch
         objectCenter = vertices.mean(axis=0)+translation_init

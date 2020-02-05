@@ -10,8 +10,8 @@ import trimesh
 #obj_file="../../data/hand.obj"
 obj_file="models/crate.obj"
 obj_file="models/duck.obj"
-obj_file="models/drill.obj"
-obj_file="models/fuze.obj"
+#obj_file="models/drill.obj"
+#obj_file="models/fuze.obj"
 
  
 mesh_trimesh = trimesh.load(obj_file)
