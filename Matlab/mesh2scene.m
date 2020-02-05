@@ -28,4 +28,5 @@ scene.shade=zeros(1,M.nbV);
 scene.SizeH=SizeH;
 scene.SizeW=SizeW;
 scene.shaded=logical(zeros(1,Ntri));
-scene.texture=zeros(3,10,10)  ;
+scene.texture=zeros(3,10,10);
+

@@ -61,6 +61,8 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	scene.faces= (uint32_T *)mxGetData(source);
     
     
+    scene.clockwise=true;
+    
     source=mxGetField(matlabScene,0,"faces_uv");
     if (!source)
         error("missing field faces_uv");
