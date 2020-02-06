@@ -173,7 +173,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**Differentiable path tracing**](https://github.com/mitsuba-renderer/mitsuba2) Method published in [13]
 
-* [**PyTorch3D's renderer**](https://pytorch3d.org/docs/renderer).
+* [**PyTorch3D's renderer**](https://pytorch3d.org/docs/renderer). The method implemented keeps a a list of the K nearest (depth) faces intersecting the ray corresponding to each pixel in the image (as opposed to traditional rasterization which returns only the index of the closest face in the mesh per pixel). The top K face properties can then be aggregated using different methods (such as the sigmoid/softmax approach proposed by Li et at in SoftRasterizer.  
 
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
