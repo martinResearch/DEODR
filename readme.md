@@ -173,6 +173,8 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**Differentiable path tracing**](https://github.com/mitsuba-renderer/mitsuba2) Method published in [13]
 
+* [**PyTorch3D's renderer**](https://pytorch3d.org/docs/renderer).
+
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
