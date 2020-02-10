@@ -50,6 +50,19 @@ mesh.texture=mesh.texture[:,:,::-1]# convert texture to GBR to avoid future conv
 
 fps=0
 fps_decay=0.1
+windowname=  f"DEODR mesh viewer:{obj_file}"
+
+
+def mouseCallback(event,x,y,flags,param):
+    
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print('left button down')
+    # check to see if the left mouse button was released
+    elif event == cv2.EVENT_LBUTTONUP:    
+        print('left button up')    
+cv2.namedWindow(windowname)
+cv2.setMouseCallback(windowname,mouseCallback)
+        
 while True:
     #mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
     start= time.clock()
@@ -60,16 +73,18 @@ while True:
     fontScale              = 1
     fontColor              = (0,0,255)
     thickness               = 2
-    
+     
     cv2.putText(Abuffer,'fps:%0.1f'%fps, 
         bottomLeftCornerOfText, 
         font, 
         fontScale,
         fontColor,
         thickness)
-    cv2.imshow(    f"DEODR mesh viewer:{obj_file}", Abuffer)    
+    
+    cv2.imshow(windowname, Abuffer)    
+    
     stop=time.clock()
     fps= (1-fps_decay)*fps+fps_decay*( 1/(stop-start))    
-    
     key = cv2.waitKey(1)
+
 

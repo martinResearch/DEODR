@@ -182,9 +182,14 @@ class ColoredTriMesh(TriMesh):
         super(ColoredTriMesh, self).__init__(faces,vertices=vertices,clockwise=clockwise)
         self.faces_uv = faces_uv
         self.uv = uv
+        
         self.texture = texture    
         self.colors = colors
         self.textured = not (self.texture is None)
+        if texture is None:
+            self.nbColors=colors.shape[1]
+        else:
+            self.nbColors= texture.shape[2]
         
     def plot_uv_map(self,ax):
         ax.imshow(self.texture)

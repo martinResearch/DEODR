@@ -2281,63 +2281,65 @@ void renderScene(Scene scene, double* Abuffer, double* Zbuffer, double sigma, bo
 		}
 	}
 
-
-	for (int it = 0; it < scene.nbTriangles; it++)
+	if (sigma > 0)
 	{
-		size_t k = sum_depth[it].index;// we render the silhoutette edges from the furthest from the camera to the nearest as we don't use zbuffer for discontinuity edge overdraw
-		unsigned int * face = &scene.faces[k * 3];
-
-		//k=order[i];
-		if (signedAreaV[k] > 0)
+		for (int it = 0; it < scene.nbTriangles; it++)
 		{
+			size_t k = sum_depth[it].index;// we render the silhoutette edges from the furthest from the camera to the nearest as we don't use zbuffer for discontinuity edge overdraw
+			unsigned int * face = &scene.faces[k * 3];
 
-			for (int n = 0; n < 3; n++)
+			//k=order[i];
+			if (signedAreaV[k] > 0)
 			{
 
-				if (scene.edgeflags[n + k * 3])
+				for (int n = 0; n < 3; n++)
 				{
-					double ij[2][2];
-					int* sub;
-					sub = list_sub[n];
-					for (int i = 0; i < 2; i++)
-						for (int j = 0; j < 2; j++)
-							ij[i][j] = scene.ij[face[sub[i]] * 2 + j];
 
-					double depths[2];
-					for (int i = 0; i < 2; i++)
+					if (scene.edgeflags[n + k * 3])
 					{
-						depths[i] = scene.depths[face[sub[i]]];
-					}
-
-					if ((scene.textured[k]) && (scene.shaded[k]))
-					{
-						unsigned int * face_uv = &scene.faces_uv[k * 3];
-
-						double uv[2][2];
+						double ij[2][2];
+						int* sub;
+						sub = list_sub[n];
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
-								uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
-						double shade[2];
-						for (int i = 0; i < 2; i++)
-							shade[i] = scene.shade[face[sub[i]]];
-						if (antialiaseError)
-							rasterize_edge_textured_gouraud_error(ij, depths, uv, shade, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
-						else
-							rasterize_edge_textured_gouraud(ij, depths, uv, shade, Zbuffer, Abuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
+								ij[i][j] = scene.ij[face[sub[i]] * 2 + j];
 
-					}
-					else
-					{
-						double* colors[2];
+						double depths[2];
 						for (int i = 0; i < 2; i++)
 						{
-							colors[i] = scene.colors + face[sub[i]] * scene.nbColors;
+							depths[i] = scene.depths[face[sub[i]]];
 						}
-						if (antialiaseError)
-							rasterize_edge_interpolated_error(ij, depths, colors, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
-						else
-							rasterize_edge_interpolated(ij, Abuffer, colors, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
 
+						if ((scene.textured[k]) && (scene.shaded[k]))
+						{
+							unsigned int * face_uv = &scene.faces_uv[k * 3];
+
+							double uv[2][2];
+							for (int i = 0; i < 2; i++)
+								for (int j = 0; j < 2; j++)
+									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
+							double shade[2];
+							for (int i = 0; i < 2; i++)
+								shade[i] = scene.shade[face[sub[i]]];
+							if (antialiaseError)
+								rasterize_edge_textured_gouraud_error(ij, depths, uv, shade, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
+							else
+								rasterize_edge_textured_gouraud(ij, depths, uv, shade, Zbuffer, Abuffer, scene.image_H, scene.image_W, scene.nbColors, scene.texture, Texture_size, sigma, scene.clockwise);
+
+						}
+						else
+						{
+							double* colors[2];
+							for (int i = 0; i < 2; i++)
+							{
+								colors[i] = scene.colors + face[sub[i]] * scene.nbColors;
+							}
+							if (antialiaseError)
+								rasterize_edge_interpolated_error(ij, depths, colors, Zbuffer, Aobs, ErrBuffer, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
+							else
+								rasterize_edge_interpolated(ij, Abuffer, colors, Zbuffer, depths, scene.image_H, scene.image_W, scene.nbColors, sigma, scene.clockwise);
+
+						}
 					}
 				}
 			}

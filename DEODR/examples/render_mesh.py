@@ -45,6 +45,7 @@ backgroundImage=np.ones((SizeH,SizeW,3))
 scene.setBackground(backgroundImage)
 
 Abuffer = scene.render(CameraMatrix, resolution=(SizeW, SizeH))
+
 plt.figure()
 plt.imshow(Abuffer)
 
@@ -56,5 +57,20 @@ ax.set_ylabel('y')
 ax.set_zlabel('z')
 u,v,w= scene.ligthDirectional
 ax.quiver(np.array([0.0]),np.array([0.0]),np.array([0.0]),np.array([u]),np.array([v]),np.array([w]),color=[1,1,0.5])
+
+
+channels = scene.renderDeffered(CameraMatrix, resolution=(SizeW, SizeH))
+plt.figure()
+for i,(name,v) in enumerate(channels.items()):
+    ax=plt.subplot(2,3,i+1)
+    ax.set_title(name)
+    if v.ndim==3 and v.shape[2]<3:        
+        nv=np.zeros((v.shape[0],v.shape[1],3))
+        nv[:,:,:v.shape[2]]=v
+        ax.imshow((nv-nv.min())/(nv.max()-nv.min()))
+    else:    
+        ax.imshow((v-v.min())/(v.max()-v.min()))
+
 plt.show()
+
 

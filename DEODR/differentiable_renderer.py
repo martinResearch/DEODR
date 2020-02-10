@@ -2,8 +2,46 @@ import numpy as np
 from . import differentiable_renderer_cython
 import copy
 
+class Scene2DBase:
+    """this class represents the structure representing the 2.5 scene expect by the C++ code"""
 
-class Scene2D:
+    def __init__(
+        self,
+        faces,
+        faces_uv,
+        ij,
+        depths,
+        textured,
+        uv,
+        shade,
+        colors,
+        shaded,
+        edgeflags,
+        image_H,
+        image_W,
+        nbColors,
+        texture,
+        background,
+        clockwise=False
+    ):
+        self.faces = faces
+        self.faces_uv = faces_uv
+        self.ij = ij
+        self.depths = depths
+        self.textured = textured
+        self.uv = uv
+        self.shade = shade
+        self.colors = colors
+        self.shaded = shaded
+        self.edgeflags = edgeflags
+        self.image_H = image_H
+        self.image_W = image_W
+        self.nbColors = nbColors
+        self.texture = texture
+        self.background = background
+        self.clockwise=clockwise
+
+class Scene2D(Scene2DBase):
     """this class represents a 2.5D scene. It contains a set of 2D vertices with associated depths and a list of faces that are triplets of vertices indexes"""
 
     def __init__(
@@ -40,6 +78,7 @@ class Scene2D:
         self.nbColors = nbColors
         self.texture = texture
         self.background = background
+        self.clockwise=clockwise
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -47,7 +86,7 @@ class Scene2D:
         self.shade_b = np.zeros(self.shade.shape)
         self.colors_b = np.zeros(self.colors.shape)
         self.texture_b = np.zeros(self.texture.shape)
-        self.clockwise=clockwise
+        
 
     def clear_gradients(self):
         self.uv_b.fill(0)
@@ -300,8 +339,7 @@ class Scene3D:
         self.mesh.computeVertexNormals()
 
         ij, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
-        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])
-        
+        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])        
 
         # compute silhouette edges
         self.edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
@@ -353,7 +391,7 @@ class Scene3D:
         self.mesh.vertices_b = self._cameraProject_backward(ij_b)
         self.mesh.computeVertexNormals_backward(self.vertexNormals_b)
 
-    def renderDepth(self, CameraMatrix, resolution, depth_scale):
+    def renderDepth(self, CameraMatrix, resolution, depth_scale=1):
         self.store_backward_current = {}
         P2D, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
         cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])
@@ -361,8 +399,7 @@ class Scene3D:
         # compute silhouette edges
         self.mesh.computeFaceNormals()
         edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
-
-        # construct triangle soup
+        
         self.faces = self.mesh.faces.astype(np.uint32)
         self.faces_uv = self.faces
         ij = P2D
@@ -391,3 +428,64 @@ class Scene3D:
         ij_b, colors_b = self._render2D_backward(Depth_b)
         depths_b = np.squeeze(colors_b * depth_scale, axis=1)
         self.mesh.vertices_b = self._cameraProject_backward(ij_b, depths_b)
+        
+    def renderDeffered(self, CameraMatrix, resolution, depth_scale=1):
+        
+        P2D, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
+        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])
+
+        # compute silhouette edges
+        self.mesh.computeFaceNormals()
+        edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
+        
+        verticesLuminosity = self.computeVerticesLuminosity()
+        
+        # construct triangle soup (loosing connectivity), needed to render discontinuous uv maps and face ids    
+        soup_nbF=self.mesh.nbF
+        soup_nbV=3*self.mesh.nbF
+        soup_faces=np.arange(0, soup_nbV,dtype=np.uint32).reshape(self.mesh.nbF,3)
+        soup_faces_uv = soup_faces
+        soup_ij = P2D[self.mesh.faces].reshape(soup_nbV,2)
+        soup_faceids=np.tile(np.arange(0,self.mesh.nbF)[:,None],(1,3)).reshape(soup_nbV,1)
+        soup_verticesLuminosity=self.computeVerticesLuminosity()[self.mesh.faces].reshape(soup_nbV,1)
+        soup_depths=depths[self.mesh.faces].reshape(soup_nbV,1)
+        soup_normals = self.mesh.vertexNormals[self.mesh.faces].reshape(soup_nbV,3)
+        soup_luminosity = verticesLuminosity[self.mesh.faces].reshape(soup_nbV,1)
+        
+        if self.mesh.uv is None:            
+            soup_vcolors=self.mesh.verticesColor[self.mesh.faces]
+            colors = np.column_stack((soup_depths[:, None] * depth_scale,soup_faceids[:,:,None],soup_normals,soup_luminosity[:,:,None],soup_vcolors))                        
+        else:
+            soup_uv=self.mesh.uv[self.mesh.faces_uv].reshape(soup_nbV,2)
+            colors = np.column_stack((soup_depths * depth_scale,soup_faceids, soup_normals,soup_luminosity,soup_uv))
+                
+        
+        nbColors=colors.shape[1]
+        uv = np.zeros((soup_nbV, 2))
+        textured = np.zeros((soup_nbF), dtype=np.bool)
+        shade = np.zeros(
+            (soup_nbV), dtype=np.bool
+        )        
+        
+        image_H = resolution[1]
+        image_W = resolution[0]
+        shaded = np.zeros(
+            (soup_nbF), dtype=np.bool
+        )  # eventually used when using texture
+        texture = np.zeros((0, 0))
+        clockwise= self.mesh.clockwise
+        
+        background=np.zeros((image_H,image_W,nbColors))
+        background[:,:,0]=depths.max()
+        scene2D=Scene2DBase(faces=soup_faces, faces_uv=soup_faces_uv, ij=soup_ij, depths=soup_depths, textured=textured, uv=uv, shade= shade, colors=colors, 
+                   shaded=shaded, edgeflags=edgeflags, image_H=image_H, image_W=image_W, 
+                   nbColors=nbColors, texture=texture, background=background)
+        Abuffer = np.empty((self.image_H, self.image_W, nbColors))
+        Zbuffer = np.empty((self.image_H, self.image_W))        
+        differentiable_renderer_cython.renderScene(scene2D, 0, Abuffer, Zbuffer)
+        
+        if not self.mesh.uv is None:
+            return {'depth':Abuffer[:,:,0],'faceid':Abuffer[:,:,1],'normal':Abuffer[:,:,2:4],'luminosity':Abuffer[:,:,5],'uv':Abuffer[:,:,6:]}                    
+                   
+        else:
+            pass
