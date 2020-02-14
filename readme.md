@@ -25,7 +25,7 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * differentiability of the rendering function 
 * exact gradient of the rendering function
 
-Some unsupported features:
+Some **unsupported** features:
 
 * SIMD instructions acceleration
 * multithreading
