@@ -33,6 +33,7 @@ Some unsupported features:
 * differentiable handling of seams at visible self intersections
 * self-collision detection to prevent interpenetrations (that lead to aliasing and non differentiability along the visible self-intersections)
 * phong shading
+* perspective-correct texture mapping
 * texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiable would be challenging)
  
