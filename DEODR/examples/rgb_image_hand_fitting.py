@@ -27,17 +27,17 @@ def example_rgb_hand_fitting(
     w = handImage.shape[1]
     h = handImage.shape[0]
     objFile = "hand.obj"
-    faces, vertices = readObj(objFile)  
+    faces, vertices = readObj(objFile)
 
     defaultColor = np.array([0.4, 0.3, 0.25])
     defaultLight = {
         "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
-       
+
     euler_init = np.array([0, 0, 0])
-    translation_init =  np.mean(vertices, axis=0)
-    # centering vertices 
+    translation_init = np.mean(vertices, axis=0)
+    # centering vertices
     vertices = vertices - translation_init[None, :]
 
     handFitter = MeshRGBFitterWithPose(
@@ -50,7 +50,7 @@ def example_rgb_hand_fitting(
         euler_init=euler_init,
         translation_init=translation_init,
         cregu=1000,
-    )    
+    )
 
     handFitter.reset()
     maxIter = 100
@@ -66,9 +66,9 @@ def example_rgb_hand_fitting(
         ),
         axis=0,
     )
-    
+
     backgroundColor = np.array([0.5, 0.6, 0.7])
-    handFitter.setImage(handImage)
+    handFitter.setImage(handImage, dist=[-1, 0, 0, 0, 0])
     handFitter.setBackgroundColor(backgroundColor)
     Energies = []
     durations = []
@@ -144,17 +144,18 @@ def example_rgb_hand_fitting(
 
 if __name__ == "__main__":
     display = True
+
     save_images = False
-    
+
+    example_rgb_hand_fitting(
+        dl_library="none", plot_curves=False, display=display, save_images=save_images
+    )
+
     example_rgb_hand_fitting(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
-    )
-    
-    example_rgb_hand_fitting(
-        dl_library="none", plot_curves=False, display=display, save_images=save_images
     )
 
     example_rgb_hand_fitting(
@@ -163,4 +164,3 @@ if __name__ == "__main__":
         display=display,
         save_images=save_images,
     )
-

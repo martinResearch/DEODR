@@ -8,25 +8,25 @@ import trimesh
 import cv2
 import time
 
-#obj_file="../../data/hand.obj"
-obj_file="models/crate.obj"
-obj_file="models/duck.obj"
-#obj_file="models/drill.obj"
-#obj_file="models/fuze.obj"
+# obj_file="../../data/hand.obj"
+obj_file = "models/crate.obj"
+obj_file = "models/duck.obj"
+# obj_file="models/drill.obj"
+# obj_file="models/fuze.obj"
 
- 
+
 mesh_trimesh = trimesh.load(obj_file)
 mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
 
-ax=plt.subplot(111)
+ax = plt.subplot(111)
 if mesh.textured:
     mesh.plot_uv_map(ax)
 
 SizeW = 640
 SizeH = 480
 
-objectCenter = 0.5*(mesh.vertices.max(axis=0)+mesh.vertices.min(axis=0))
-objectRadius = np.max(mesh.vertices.max(axis=0)-mesh.vertices.min(axis=0))
+objectCenter = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
+objectRadius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
 cameraCenter = objectCenter + np.array([0, 0, 4]) * objectRadius
 focal = 2 * SizeW
 
@@ -35,8 +35,10 @@ T = -R.T.dot(cameraCenter)
 extrinsic = np.column_stack((R, T))
 intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
 
-dist=[-10,0,0,0,0]
-camera = differentiable_renderer.Camera(extrinsic=extrinsic,intrinsic=intrinsic, dist=dist)
+dist = [-10, 0, 0, 0, 0]
+camera = differentiable_renderer.Camera(
+    extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+)
 
 handColor = np.array([200, 100, 100]) / 255
 mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
@@ -44,48 +46,53 @@ mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
 scene = differentiable_renderer.Scene3D()
 scene.setLight(ligthDirectional=np.array([-0.5, 0, -0.5]), ambiantLight=0.3)
 scene.setMesh(mesh)
-backgroundImage=np.ones((SizeH,SizeW,3))
+backgroundImage = np.ones((SizeH, SizeW, 3))
 scene.setBackground(backgroundImage)
 
-mesh.texture=mesh.texture[:,:,::-1]# convert texture to GBR to avoid future conversion when ploting in Opencv
+mesh.texture = mesh.texture[
+    :, :, ::-1
+]  # convert texture to GBR to avoid future conversion when ploting in Opencv
 
-fps=0
-fps_decay=0.1
-windowname=  f"DEODR mesh viewer:{obj_file}"
+fps = 0
+fps_decay = 0.1
+windowname = f"DEODR mesh viewer:{obj_file}"
 
 
-def mouseCallback(event,x,y,flags,param):
-    
+def mouseCallback(event, x, y, flags, param):
+
     if event == cv2.EVENT_LBUTTONDOWN:
-        print('left button down')
+        print("left button down")
     # check to see if the left mouse button was released
-    elif event == cv2.EVENT_LBUTTONUP:    
-        print('left button up')    
+    elif event == cv2.EVENT_LBUTTONUP:
+        print("left button up")
+
+
 cv2.namedWindow(windowname)
-cv2.setMouseCallback(windowname,mouseCallback)
-        
+cv2.setMouseCallback(windowname, mouseCallback)
+
 while True:
-    #mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
-    start= time.clock()
-    Abuffer = scene.render(camera, resolution=(SizeW, SizeH)) 
-    
-    font                   = cv2.FONT_HERSHEY_SIMPLEX
-    bottomLeftCornerOfText = (20,SizeH-20)
-    fontScale              = 1
-    fontColor              = (0,0,255)
-    thickness               = 2
-     
-    cv2.putText(Abuffer,'fps:%0.1f'%fps, 
-        bottomLeftCornerOfText, 
-        font, 
+    # mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+    start = time.clock()
+    Abuffer = scene.render(camera, resolution=(SizeW, SizeH))
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    bottomLeftCornerOfText = (20, SizeH - 20)
+    fontScale = 1
+    fontColor = (0, 0, 255)
+    thickness = 2
+
+    cv2.putText(
+        Abuffer,
+        "fps:%0.1f" % fps,
+        bottomLeftCornerOfText,
+        font,
         fontScale,
         fontColor,
-        thickness)
-    
-    cv2.imshow(windowname, Abuffer)    
-    
-    stop=time.clock()
-    fps= (1-fps_decay)*fps+fps_decay*( 1/(stop-start))    
+        thickness,
+    )
+
+    cv2.imshow(windowname, Abuffer)
+
+    stop = time.clock()
+    fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
     key = cv2.waitKey(1)
-
-

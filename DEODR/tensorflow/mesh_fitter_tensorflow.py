@@ -1,4 +1,8 @@
-from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow, CameraTensorflow
+from DEODR.tensorflow import (
+    Scene3DTensorflow,
+    LaplacianRigidEnergyTensorflow,
+    CameraTensorflow,
+)
 from DEODR.tensorflow import TriMeshTensorflow as TriMesh
 from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from DEODR import LaplacianRigidEnergy
@@ -42,7 +46,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = TriMesh(
-            faces,vertices
+            faces, vertices
         )  # we do a copy to avoid negative stride not support by Tensorflow
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
@@ -80,7 +84,7 @@ class MeshDepthFitter:
     def setDepthScale(self, depthScale):
         self.depthScale = depthScale
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 2
@@ -93,8 +97,10 @@ class MeshDepthFitter:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = CameraTensorflow(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraTensorflow(
+            extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+        )
         self.iter = 0
 
     def step(self):
@@ -231,8 +237,10 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces.copy())  # we do a copy to avoid negative stride not support by Tensorflow
-        objectCenter = vertices.mean(axis=0)+translation_init
+        self.mesh = ColoredTriMesh(
+            faces.copy()
+        )  # we do a copy to avoid negative stride not support by Tensorflow
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 
@@ -272,7 +280,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
         self.speed_handColor = np.zeros(self.handColor.shape)
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 3
@@ -285,8 +293,10 @@ class MeshRGBFitterWithPose:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = CameraTensorflow(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraTensorflow(
+            extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+        )
         self.iter = 0
 
     def step(self):

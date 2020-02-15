@@ -2,24 +2,33 @@ import numpy as np
 from .. import differentiable_renderer_cython
 import tensorflow as tf
 import copy
-from ..differentiable_renderer import Scene3D ,Camera
+from ..differentiable_renderer import Scene3D, Camera
 
 
 class CameraTensorflow(Camera):
-    def __init__(self,extrinsic,intrinsic, dist=None):
-        super().__init__(extrinsic,intrinsic, dist=dist,checks=False)
-    def worldToCamera(self,P3D):
+    def __init__(self, extrinsic, intrinsic, dist=None):
+        super().__init__(extrinsic, intrinsic, dist=dist, checks=False)
+
+    def worldToCamera(self, P3D):
         assert isinstance(P3D, tf.Tensor)
-        return  tf.linalg.matmul(
+        return tf.linalg.matmul(
             tf.concat((P3D, tf.ones((P3D.shape[0], 1), dtype=P3D.dtype)), axis=1),
             tf.constant(self.extrinsic.T),
-        )   
-    def leftMulIntrinsic(self,projected):
+        )
+
+    def leftMulIntrinsic(self, projected):
         assert isinstance(projected, tf.Tensor)
-        return  tf.linalg.matmul(
-            tf.concat((projected, tf.ones((projected.shape[0], 1), dtype=projected.dtype)), axis=1),
-            tf.constant(self.intrinsic[:2,:].T),
-        )   
+        return tf.linalg.matmul(
+            tf.concat(
+                (projected, tf.ones((projected.shape[0], 1), dtype=projected.dtype)),
+                axis=1,
+            ),
+            tf.constant(self.intrinsic[:2, :].T),
+        )
+
+    def column_stack(self, values):
+        return tf.stack(values, axis=1)
+
 
 def TensorflowDifferentiableRender2D(ij, colors, scene):
     @tf.custom_gradient

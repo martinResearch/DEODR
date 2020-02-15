@@ -13,9 +13,9 @@ import cv2
 faces, vertices = obj.readObj("../data/hand.obj")
 
 mesh = TriMesh(
-     faces[:, ::-1],# flip the faces to get the right normals orientation
-     vertices=vertices
-)  
+    faces[:, ::-1],  # flip the faces to get the right normals orientation
+    vertices=vertices,
+)
 
 SizeW = 640
 SizeH = 480
@@ -30,7 +30,7 @@ T = -R.T.dot(cameraCenter)
 extrinsics = np.column_stack((R, T))
 intrinsics = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
 
-CameraMatrix =intrinsics.dot(extrinsics)
+CameraMatrix = intrinsics.dot(extrinsics)
 
 handColor = np.array([200, 100, 100]) / 255
 mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
@@ -38,10 +38,9 @@ mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
 scene = differentiable_renderer.Scene3D()
 scene.setLight(ligthDirectional=np.array([0.8, 0.5, 0.5]), ambiantLight=0.3)
 scene.setMesh(mesh)
-backgroundImage=np.ones((SizeH,SizeW,3))
+backgroundImage = np.ones((SizeH, SizeW, 3))
 scene.setBackground(backgroundImage)
 
 Abuffer = scene.render(CameraMatrix, resolution=(SizeW, SizeH))
 plt.imshow(Abuffer)
 plt.show()
-

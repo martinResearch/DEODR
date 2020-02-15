@@ -1,6 +1,6 @@
 from DEODR import Scene3D, Camera, LaplacianRigidEnergy
 from DEODR import LaplacianRigidEnergy
-from DEODR import TriMesh,ColoredTriMesh
+from DEODR import TriMesh, ColoredTriMesh
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
@@ -33,7 +33,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = TriMesh(
-            faces,vertices=vertices
+            faces, vertices=vertices
         )  # we do a copy to avoid negative stride not support by pytorch
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
@@ -72,7 +72,7 @@ class MeshDepthFitter:
     def setDepthScale(self, depthScale):
         self.depthScale = depthScale
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 2
@@ -84,8 +84,8 @@ class MeshDepthFitter:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
         self.iter = 0
 
     def render(self):
@@ -213,8 +213,8 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces.copy(),vertices=vertices,nbColors=3)
-        objectCenter = vertices.mean(axis=0)+translation_init
+        self.mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nbColors=3)
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 
@@ -254,7 +254,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
         self.speed_handColor = np.zeros(self.handColor.shape)
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 3
@@ -267,8 +267,8 @@ class MeshRGBFitterWithPose:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
         self.iter = 0
 
     def render(self):
@@ -283,9 +283,7 @@ class MeshRGBFitterWithPose:
             ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
         )
         self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(
-            self.camera, resolution=(self.SizeW, self.SizeH)
-        )
+        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
         return Abuffer
 
     def render_backward(self, Abuffer_b):
@@ -415,7 +413,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces,vertices,nbColors=3)
+        self.mesh = ColoredTriMesh(faces, vertices, nbColors=3)
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 6]) * objectRadius
@@ -469,8 +467,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic)
         self.iter = 0
 
     def setImage(self, handImage, focal=None):
@@ -486,8 +484,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
-        extrinsic=np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic,intrinsic=intrinsic)
+        extrinsic = np.column_stack((R, T))
+        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic)
         self.iter = 0
 
     def render(self, idframe=None):
@@ -504,9 +502,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
         )
         self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(
-            self.camera, resolution=(self.SizeW, self.SizeH)
-        )
+        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
         return Abuffer
 

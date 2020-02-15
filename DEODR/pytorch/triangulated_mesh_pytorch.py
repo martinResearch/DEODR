@@ -44,25 +44,36 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         return n / l[:, None]
 
     def edgeOnSilhouette(self, vertices2D):
-        return super().edgeOnSilhouette(
-            vertices2D.detach().numpy()
-        )
+        return super().edgeOnSilhouette(vertices2D.detach().numpy())
 
 
 class TriMeshPytorch(TriMesh):
-    def __init__(self, faces, vertices=None,clockwise=False):
-        super().__init__(faces,vertices,clockwise)
+    def __init__(self, faces, vertices=None, clockwise=False):
+        super().__init__(faces, vertices, clockwise)
 
     def computeAdjacencies(self):
         self.adjacencies = TriMeshAdjacenciesPytorch(self.faces)
-        
+
+
 class ColoredTriMeshPytorch(TriMeshPytorch):
-    def __init__(self, faces, vertices=None, clockwise=False,faces_uv=None,uv=None,texture=None,colors=None):
-        super(ColoredTriMeshPytorch, self).__init__(faces,vertices=vertices,clockwise=clockwise)
+    def __init__(
+        self,
+        faces,
+        vertices=None,
+        clockwise=False,
+        faces_uv=None,
+        uv=None,
+        texture=None,
+        colors=None,
+    ):
+        super(ColoredTriMeshPytorch, self).__init__(
+            faces, vertices=vertices, clockwise=clockwise
+        )
         self.faces_uv = faces_uv
         self.uv = uv
-        self.texture = texture    
+        self.texture = texture
         self.colors = colors
         self.textured = not (self.texture is None)
+
     def setVerticesColors(self, colors):
-        self.verticesColors = colors    
+        self.verticesColors = colors

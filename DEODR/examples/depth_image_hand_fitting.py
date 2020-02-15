@@ -36,7 +36,6 @@ def example_depth_image_hand_fitting(
     h = depth_image.shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
-   
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
@@ -46,7 +45,7 @@ def example_depth_image_hand_fitting(
     )
     maxIter = 150
 
-    handFitter.setImage(depth_image, focal=241)
+    handFitter.setImage(depth_image, focal=241, dist=[-1, 0, 0, 0, 0])
     handFitter.setMaxDepth(1)
     handFitter.setDepthScale(110 / max_depth)
     Energies = []

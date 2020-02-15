@@ -13,4 +13,4 @@ Martin de La Gorce. 2019.
 from .differentiable_renderer import Scene2D, Scene3D, Camera
 from .obj import readObj
 from .laplacian_rigid_energy import LaplacianRigidEnergy
-from .triangulated_mesh import TriMesh,ColoredTriMesh
+from .triangulated_mesh import TriMesh, ColoredTriMesh
