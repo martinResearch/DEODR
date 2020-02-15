@@ -4,7 +4,8 @@ import copy
 
 
 class Camera:
-    def __init__(self, extrinsic, intrinsic, dist=None, checks=True):
+    def __init__(self, extrinsic, intrinsic, resolution, dist=None, checks=True):
+        """camera with same distortion paramterization as opencv"""
         if checks:
             assert extrinsic.shape == (3, 4)
             assert intrinsic.shape == (3, 3)
@@ -19,6 +20,7 @@ class Camera:
         self.extrinsic = extrinsic
         self.intrinsic = intrinsic
         self.dist = dist
+        self.resolution = resolution
 
     def worldToCamera(self, points3D):
         return points3D.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
@@ -413,7 +415,7 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, camera, resolution):
+    def render(self, camera):
         self.store_backward_current = {}
         self.mesh.computeVertexNormals()
 
@@ -451,8 +453,8 @@ class Scene3D:
             )  # could eventually be non zero if we were using texture
             self.texture = np.zeros((0, 0))
 
-        self.image_H = resolution[1]
-        self.image_W = resolution[0]
+        self.image_H = camera.resolution[1]
+        self.image_W = camera.resolution[0]
 
         self.clockwise = self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
@@ -514,7 +516,7 @@ class Scene3D:
             ij_b, depths_b=depths_b, store_backward=self.store_backward_current
         )
 
-    def renderDeffered(self, camera, resolution, depth_scale=1):
+    def renderDeffered(self, camera, depth_scale=1):
 
         P2D, depths = camera.projectPoints(self.mesh.vertices)
 
@@ -571,8 +573,8 @@ class Scene3D:
         textured = np.zeros((soup_nbF), dtype=np.bool)
         shade = np.zeros((soup_nbV), dtype=np.bool)
 
-        image_H = resolution[1]
-        image_W = resolution[0]
+        image_H = camera.resolution[1]
+        image_W = camera.resolution[0]
         shaded = np.zeros(
             (soup_nbF), dtype=np.bool
         )  # eventually used when using texture

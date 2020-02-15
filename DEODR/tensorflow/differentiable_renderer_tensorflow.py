@@ -6,8 +6,8 @@ from ..differentiable_renderer import Scene3D, Camera
 
 
 class CameraTensorflow(Camera):
-    def __init__(self, extrinsic, intrinsic, dist=None):
-        super().__init__(extrinsic, intrinsic, dist=dist, checks=False)
+    def __init__(self, extrinsic, intrinsic, resolution, dist=None):
+        super().__init__(extrinsic, intrinsic, resolution, dist=dist, checks=False)
 
     def worldToCamera(self, P3D):
         assert isinstance(P3D, tf.Tensor)

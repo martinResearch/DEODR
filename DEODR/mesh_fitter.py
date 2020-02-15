@@ -85,7 +85,12 @@ class MeshDepthFitter:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
+        self.camera = Camera(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            dist=dist,
+            resolution=(self.SizeW, self.SizeH),
+        )
         self.iter = 0
 
     def render(self):
@@ -268,7 +273,12 @@ class MeshRGBFitterWithPose:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
+        self.camera = Camera(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            dist=dist,
+            resolution=(self.SizeW, self.SizeH),
+        )
         self.iter = 0
 
     def render(self):
@@ -283,7 +293,7 @@ class MeshRGBFitterWithPose:
             ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
         )
         self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
+        Abuffer = self.scene.render(self.camera)
         return Abuffer
 
     def render_backward(self, Abuffer_b):
@@ -468,7 +478,11 @@ class MeshRGBFitterWithPoseMultiFrame:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic)
+        self.camera = Camera(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+        )
         self.iter = 0
 
     def setImage(self, handImage, focal=None):
@@ -485,7 +499,11 @@ class MeshRGBFitterWithPoseMultiFrame:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = Camera(extrinsic=extrinsic, intrinsic=intrinsic)
+        self.camera = Camera(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+        )
         self.iter = 0
 
     def render(self, idframe=None):
@@ -502,7 +520,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
         )
         self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
+        Abuffer = self.scene.render(self.camera)
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
         return Abuffer
 

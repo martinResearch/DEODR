@@ -401,7 +401,12 @@ class MeshDepthFitter:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
+        self.camera = CameraPytorch(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
+        )
         self.iter = 0
 
     def step(self):
@@ -580,7 +585,12 @@ class MeshRGBFitterWithPose:
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((R, T))
-        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
+        self.camera = CameraPytorch(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
+        )
         self.iter = 0
 
     def step(self):
@@ -622,7 +632,7 @@ class MeshRGBFitterWithPose:
         )
         self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
 
-        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
+        Abuffer = self.scene.render(self.camera)
 
         diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
         loss = torch.sum(diffImage)

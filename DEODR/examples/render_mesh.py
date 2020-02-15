@@ -34,16 +34,16 @@ SizeH = 480
 
 objectCenter = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
 objectRadius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
-cameraCenter = objectCenter + np.array([0, 0, 4]) * objectRadius
+cameraCenter = objectCenter + np.array([0, 0, 3]) * objectRadius
 focal = 2 * SizeW
 
 R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
 T = -R.T.dot(cameraCenter)
 extrinsic = np.column_stack((R, T))
 intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
-dist = [-10, 0, 0, 0, 0]
+dist = [-2, 0, 0, 0, 0]
 camera = differentiable_renderer.Camera(
-    extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+    extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(SizeW, SizeH)
 )
 
 handColor = np.array([200, 100, 100]) / 255
@@ -55,7 +55,7 @@ scene.setMesh(mesh)
 backgroundImage = np.ones((SizeH, SizeW, 3))
 scene.setBackground(backgroundImage)
 
-Abuffer = scene.render(camera, resolution=(SizeW, SizeH))
+Abuffer = scene.render(camera)
 
 plt.figure()
 plt.imshow(Abuffer)
@@ -78,7 +78,7 @@ ax.quiver(
 )
 
 
-channels = scene.renderDeffered(camera, resolution=(SizeW, SizeH))
+channels = scene.renderDeffered(camera)
 plt.figure()
 for i, (name, v) in enumerate(channels.items()):
     ax = plt.subplot(2, 3, i + 1)

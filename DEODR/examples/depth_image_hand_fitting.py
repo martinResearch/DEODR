@@ -117,12 +117,15 @@ def example_depth_image_hand_fitting(
 
 if __name__ == "__main__":
     display = True
+
     example_depth_image_hand_fitting(
         dl_library="none", plot_curves=False, save_images=False, display=display
     )
+
     example_depth_image_hand_fitting(
         dl_library="pytorch", plot_curves=False, save_images=False, display=display
     )
+
     example_depth_image_hand_fitting(
         dl_library="tensorflow", plot_curves=True, save_images=False, display=display
     )

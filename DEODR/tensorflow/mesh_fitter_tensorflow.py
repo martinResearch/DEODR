@@ -99,7 +99,10 @@ class MeshDepthFitter:
         )
         extrinsic = np.column_stack((R, T))
         self.camera = CameraTensorflow(
-            extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
         )
         self.iter = 0
 
@@ -295,7 +298,10 @@ class MeshRGBFitterWithPose:
         )
         extrinsic = np.column_stack((R, T))
         self.camera = CameraTensorflow(
-            extrinsic=extrinsic, intrinsic=intrinsic, dist=dist
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            dist=dist,
+            resolution=(self.SizeW, self.SizeH),
         )
         self.iter = 0
 
@@ -339,9 +345,7 @@ class MeshRGBFitterWithPose:
                 tf.tile(handColor_with_grad[None, :], [self.mesh.nbV, 1])
             )
 
-            Abuffer = self.scene.render(
-                self.camera, resolution=(self.SizeW, self.SizeH)
-            )
+            Abuffer = self.scene.render(self.camera)
 
             diffImage = tf.reduce_sum(
                 (Abuffer - tf.constant(self.handImage)) ** 2, axis=2
