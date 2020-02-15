@@ -146,10 +146,17 @@ if __name__ == "__main__":
     display = True
     save_images = False
     
-
+    example_rgb_hand_fitting(
+        dl_library="tensorflow",
+        plot_curves=True,
+        display=display,
+        save_images=save_images,
+    )
+    
     example_rgb_hand_fitting(
         dl_library="none", plot_curves=False, display=display, save_images=save_images
     )
+
     example_rgb_hand_fitting(
         dl_library="pytorch",
         plot_curves=False,
@@ -157,9 +164,3 @@ if __name__ == "__main__":
         save_images=save_images,
     )
 
-    example_rgb_hand_fitting(
-        dl_library="tensorflow",
-        plot_curves=True,
-        display=display,
-        save_images=save_images,
-    )

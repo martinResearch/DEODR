@@ -1,4 +1,4 @@
-from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow
+from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow, CameraTensorflow
 from DEODR.tensorflow import TriMeshTensorflow as TriMesh
 from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from DEODR import LaplacianRigidEnergy
@@ -90,9 +90,11 @@ class MeshDepthFitter:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic=np.column_stack((R, T))
+        self.camera = CameraTensorflow(extrinsic=extrinsic,intrinsic=intrinsic)
         self.iter = 0
 
     def step(self):
@@ -126,7 +128,7 @@ class MeshDepthFitter:
 
             depth_scale = 1 * self.depthScale
             Depth = self.scene.renderDepth(
-                self.CameraMatrix,
+                self.camera,
                 resolution=(self.SizeW, self.SizeH),
                 depth_scale=depth_scale,
             )
@@ -280,9 +282,11 @@ class MeshRGBFitterWithPose:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic=np.column_stack((R, T))
+        self.camera = CameraTensorflow(extrinsic=extrinsic,intrinsic=intrinsic)
         self.iter = 0
 
     def step(self):
@@ -326,7 +330,7 @@ class MeshRGBFitterWithPose:
             )
 
             Abuffer = self.scene.render(
-                self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
+                self.camera, resolution=(self.SizeW, self.SizeH)
             )
 
             diffImage = tf.reduce_sum(

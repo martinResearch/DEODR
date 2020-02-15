@@ -32,10 +32,11 @@ focal = 2 * SizeW
 
 R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
 T = -R.T.dot(cameraCenter)
-extrinsics = np.column_stack((R, T))
-intrinsics = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
+extrinsic = np.column_stack((R, T))
+intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
 
-CameraMatrix = intrinsics.dot(extrinsics)
+dist=[-10,0,0,0,0]
+camera = differentiable_renderer.Camera(extrinsic=extrinsic,intrinsic=intrinsic, dist=dist)
 
 handColor = np.array([200, 100, 100]) / 255
 mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
@@ -66,7 +67,7 @@ cv2.setMouseCallback(windowname,mouseCallback)
 while True:
     #mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
     start= time.clock()
-    Abuffer = scene.render(CameraMatrix, resolution=(SizeW, SizeH)) 
+    Abuffer = scene.render(camera, resolution=(SizeW, SizeH)) 
     
     font                   = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (20,SizeH-20)

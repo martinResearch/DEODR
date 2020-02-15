@@ -152,8 +152,7 @@ class TriMesh:
         if (self.computeVolume()>0):
             raise(BaseException('The volume within the surface is negative. It seems that you faces are not oriented cooreclt accourding to the clockwise flag'))        
 
-    def setVerticesColors(self, colors):
-        self.verticesColors = colors
+
 
     def computeFaceNormals(self):
         self.faceNormals = self.adjacencies.computeFaceNormals(self.vertices)
@@ -178,7 +177,7 @@ class TriMesh:
     
     
 class ColoredTriMesh(TriMesh):
-    def __init__(self, faces, vertices=None, clockwise=False,faces_uv=None,uv=None,texture=None,colors=None):
+    def __init__(self, faces, vertices=None, clockwise=False,faces_uv=None,uv=None,texture=None,colors=None,nbColors=None):
         super(ColoredTriMesh, self).__init__(faces,vertices=vertices,clockwise=clockwise)
         self.faces_uv = faces_uv
         self.uv = uv
@@ -186,11 +185,16 @@ class ColoredTriMesh(TriMesh):
         self.texture = texture    
         self.colors = colors
         self.textured = not (self.texture is None)
-        if texture is None:
-            self.nbColors=colors.shape[1]
-        else:
-            self.nbColors= texture.shape[2]
-        
+        self.nbColors=nbColors
+        if nbColors is None: 
+            if texture is None:
+                self.nbColors=colors.shape[1]
+            else:
+                self.nbColors= texture.shape[2]
+                
+    def setVerticesColors(self, colors):
+        self.verticesColors = colors                
+            
     def plot_uv_map(self,ax):
         ax.imshow(self.texture)
         ax.triplot(self.uv[:, 0], self.uv[:, 1], self.faces_uv)    

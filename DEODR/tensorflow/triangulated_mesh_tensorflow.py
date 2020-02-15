@@ -27,9 +27,9 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
         l = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
         return n / l[:, None]
 
-    def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
+    def edgeOnSilhouette(self, vertices2D):
         return super().edgeOnSilhouette(
-            vertices.numpy(), faceNormals.numpy(), viewpoint
+            vertices2D.numpy()
         )
 
 
@@ -48,3 +48,5 @@ class ColoredTriMeshTensorflow(TriMeshTensorflow):
         self.texture = texture    
         self.colors = colors
         self.textured = not (self.texture is None)
+    def setVerticesColors(self, colors):
+        self.verticesColors = colors        

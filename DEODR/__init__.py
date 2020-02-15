@@ -10,7 +10,7 @@ M. de la Gorce, N. Paragios and David Fleet. PAMI 2011
 Martin de La Gorce. 2019.
 """
 
-from .differentiable_renderer import Scene2D, Scene3D
+from .differentiable_renderer import Scene2D, Scene3D, Camera
 from .obj import readObj
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .triangulated_mesh import TriMesh,ColoredTriMesh

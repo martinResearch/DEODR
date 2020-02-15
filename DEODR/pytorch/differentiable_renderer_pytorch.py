@@ -2,7 +2,21 @@ import numpy as np
 from .. import differentiable_renderer_cython
 import torch
 import copy
-from ..differentiable_renderer import Scene3D
+from ..differentiable_renderer import Scene3D,Camera
+
+
+class CameraPytorch(Camera):
+    def __init__(self,extrinsic,intrinsic, dist=None):
+        super().__init__(extrinsic,intrinsic, dist=dist,checks=False)
+    def worldToCamera(self,P3D):
+        assert isinstance(P3D, torch.Tensor)
+        return torch.cat(
+            (P3D, torch.ones((P3D.shape[0], 1), dtype=torch.double)), dim=1
+        ).mm(torch.tensor(self.extrinsic.T))   
+    def leftMulIntrinsic(self,projected):
+        return torch.cat(
+            (projected, torch.ones((projected.shape[0], 1), dtype=torch.double)), dim=1
+        ).mm(torch.tensor(self.intrinsic[:2,:].T))         
 
 
 class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
@@ -52,10 +66,7 @@ class Scene3DPytorch(Scene3D):
         self.ambiantLight = ambiantLight
 
     def _cameraProject(self, cameraMatrix, P3D):
-        assert isinstance(P3D, torch.Tensor)
-        r = torch.cat(
-            (P3D, torch.ones((P3D.shape[0], 1), dtype=torch.double)), dim=1
-        ).mm(torch.tensor(cameraMatrix.T))
+
         depths = r[:, 2]
         P2D = r[:, :2] / depths[:, None]
         return P2D, depths

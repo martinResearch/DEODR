@@ -43,9 +43,9 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         l = l2.sqrt()
         return n / l[:, None]
 
-    def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
+    def edgeOnSilhouette(self, vertices2D):
         return super().edgeOnSilhouette(
-            vertices.detach().numpy(), faceNormals.detach().numpy(), viewpoint
+            vertices2D.detach().numpy()
         )
 
 
@@ -64,3 +64,5 @@ class ColoredTriMeshPytorch(TriMeshPytorch):
         self.texture = texture    
         self.colors = colors
         self.textured = not (self.texture is None)
+    def setVerticesColors(self, colors):
+        self.verticesColors = colors    

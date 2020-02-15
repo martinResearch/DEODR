@@ -1,4 +1,4 @@
-from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch
+from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch,CameraPytorch
 from DEODR import LaplacianRigidEnergy
 from DEODR.pytorch import TriMeshPytorch as TriMesh
 from DEODR.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
@@ -83,9 +83,11 @@ class MeshRGBFitter:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic=np.column_stack((R, T))
+        self.camera = CameraPytorch(extrinsic=extrinsic,intrinsic=intrinsic)
         self.iter = 0
 
     def setBackgroundColor(self, backgroundColor):
@@ -113,25 +115,25 @@ class MeshRGBFitter:
         self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
 
         Abuffer = self.scene.render(
-            self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
+            self.camera, resolution=(self.SizeW, self.SizeH)
         )
-        projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
-        # projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
-        i = np.tile(
-            (
-                np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
-                + np.arange(projJac.shape[1])[None, :]
-            )[:, :, None],
-            (1, 1, projJac.shape[2]),
-        )
-        j = np.tile(
-            (
-                np.arange(projJac.shape[0])[:, None] * projJac.shape[2]
-                + np.arange(projJac.shape[2])[None, :]
-            )[:, :, None],
-            (1, projJac.shape[1], 1),
-        )
-        projJacSp = sparse.coo_matrix((projJac.flatten(), (i.flatten(), j.flatten())))
+        #projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
+        ## projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
+        #i = np.tile(
+            #(
+                #np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
+                #+ np.arange(projJac.shape[1])[None, :]
+            #)[:, :, None],
+            #(1, 1, projJac.shape[2]),
+        #)
+        #j = np.tile(
+            #(
+                #np.arange(projJac.shape[0])[:, None] * projJac.shape[2]
+                #+ np.arange(projJac.shape[2])[None, :]
+            #)[:, :, None],
+            #(1, projJac.shape[1], 1),
+        #)
+        #projJacSp = sparse.coo_matrix((projJac.flatten(), (i.flatten(), j.flatten())))
 
         diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
         loss = torch.sum(diffImage)
@@ -391,9 +393,11 @@ class MeshDepthFitter:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic=np.column_stack((R, T))
+        self.camera = CameraPytorch(extrinsic=extrinsic,intrinsic=intrinsic)
         self.iter = 0
 
     def step(self):
@@ -421,7 +425,7 @@ class MeshDepthFitter:
 
         depth_scale = 1 * self.depthScale
         Depth = self.scene.renderDepth(
-            self.CameraMatrix,
+            self.camera,
             resolution=(self.SizeW, self.SizeH),
             depth_scale=depth_scale,
         )
@@ -570,9 +574,11 @@ class MeshRGBFitterWithPose:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic=np.column_stack((R, T))
+        self.camera = CameraPytorch(extrinsic=extrinsic,intrinsic=intrinsic)        
         self.iter = 0
 
     def step(self):
@@ -615,7 +621,7 @@ class MeshRGBFitterWithPose:
         self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
 
         Abuffer = self.scene.render(
-            self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
+            self.camera, resolution=(self.SizeW, self.SizeH)
         )
 
         diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
