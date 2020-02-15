@@ -1,4 +1,4 @@
-from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch
+from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch, CameraPytorch
 from DEODR import LaplacianRigidEnergy
 from DEODR.pytorch import TriMeshPytorch as TriMesh
 from DEODR.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
@@ -53,8 +53,10 @@ class MeshRGBFitter:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = TriMesh(faces.copy())  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0)+translation_init
+        self.mesh = TriMesh(
+            faces.copy()
+        )  # we do a copy to avoid negative stride not support by pytorch
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
         self.scene = Scene3DPytorch()
@@ -75,17 +77,21 @@ class MeshRGBFitter:
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
         self.speed_handColor = np.zeros(self.handColor.shape)
 
-    def setImage(self, handImage):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
+        assert handImage.ndim == 3
         self.handImage = handImage
-        focal = 2 * self.SizeW
+        if focal is None:
+            focal = 2 * self.SizeW
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
         self.iter = 0
 
     def setBackgroundColor(self, backgroundColor):
@@ -112,26 +118,24 @@ class MeshRGBFitter:
         )
         self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
 
-        Abuffer = self.scene.render(
-            self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
-        )
-        projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
-        # projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
-        i = np.tile(
-            (
-                np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
-                + np.arange(projJac.shape[1])[None, :]
-            )[:, :, None],
-            (1, 1, projJac.shape[2]),
-        )
-        j = np.tile(
-            (
-                np.arange(projJac.shape[0])[:, None] * projJac.shape[2]
-                + np.arange(projJac.shape[2])[None, :]
-            )[:, :, None],
-            (1, projJac.shape[1], 1),
-        )
-        projJacSp = sparse.coo_matrix((projJac.flatten(), (i.flatten(), j.flatten())))
+        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
+        # projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
+        ## projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
+        # i = np.tile(
+        # (
+        # np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
+        # + np.arange(projJac.shape[1])[None, :]
+        # )[:, :, None],
+        # (1, 1, projJac.shape[2]),
+        # )
+        # j = np.tile(
+        # (
+        # np.arange(projJac.shape[0])[:, None] * projJac.shape[2]
+        # + np.arange(projJac.shape[2])[None, :]
+        # )[:, :, None],
+        # (1, projJac.shape[1], 1),
+        # )
+        # projJacSp = sparse.coo_matrix((projJac.flatten(), (i.flatten(), j.flatten())))
 
         diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
         loss = torch.sum(diffImage)
@@ -205,7 +209,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000):
         super(MeshDepthFitterEnergy, self).__init__()
         self.mesh = TriMesh(
-            faces[:, ::-1].copy(),vertices
+            faces[:, ::-1].copy(), vertices
         )  # we do a copy to avoid negative stride not supported by pytorch
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
@@ -239,7 +243,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     def setDepthScale(self, depthScale):
         self.depthScale = depthScale
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 2
@@ -249,9 +253,11 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
         self.iter = 0
 
     def forward(self):
@@ -345,7 +351,7 @@ class MeshDepthFitter:
         self.mesh = TriMesh(
             faces.copy()
         )  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0)+translation_init
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([-0.5, 0, 5]) * objectRadius
 
@@ -381,7 +387,7 @@ class MeshDepthFitter:
     def setDepthScale(self, depthScale):
         self.depthScale = depthScale
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 2
@@ -391,9 +397,16 @@ class MeshDepthFitter:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraPytorch(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
+        )
         self.iter = 0
 
     def step(self):
@@ -421,9 +434,7 @@ class MeshDepthFitter:
 
         depth_scale = 1 * self.depthScale
         Depth = self.scene.renderDepth(
-            self.CameraMatrix,
-            resolution=(self.SizeW, self.SizeH),
-            depth_scale=depth_scale,
+            self.camera, resolution=(self.SizeW, self.SizeH), depth_scale=depth_scale
         )
         Depth = torch.clamp(Depth, 0, self.scene.maxDepth)
 
@@ -520,7 +531,7 @@ class MeshRGBFitterWithPose:
         self.mesh = ColoredTriMesh(
             faces.copy()
         )  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0)+translation_init
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 
@@ -560,7 +571,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
         self.speed_handColor = np.zeros(self.handColor.shape)
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 3
@@ -570,9 +581,16 @@ class MeshRGBFitterWithPose:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraPytorch(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
+        )
         self.iter = 0
 
     def step(self):
@@ -614,9 +632,7 @@ class MeshRGBFitterWithPose:
         )
         self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
 
-        Abuffer = self.scene.render(
-            self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
-        )
+        Abuffer = self.scene.render(self.camera)
 
         diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
         loss = torch.sum(diffImage)

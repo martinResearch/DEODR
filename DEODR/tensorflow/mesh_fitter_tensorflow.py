@@ -1,4 +1,8 @@
-from DEODR.tensorflow import Scene3DTensorflow, LaplacianRigidEnergyTensorflow
+from DEODR.tensorflow import (
+    Scene3DTensorflow,
+    LaplacianRigidEnergyTensorflow,
+    CameraTensorflow,
+)
 from DEODR.tensorflow import TriMeshTensorflow as TriMesh
 from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from DEODR import LaplacianRigidEnergy
@@ -42,7 +46,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = TriMesh(
-            faces,vertices
+            faces, vertices
         )  # we do a copy to avoid negative stride not support by Tensorflow
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
@@ -80,7 +84,7 @@ class MeshDepthFitter:
     def setDepthScale(self, depthScale):
         self.depthScale = depthScale
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 2
@@ -90,9 +94,16 @@ class MeshDepthFitter:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraTensorflow(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            resolution=(self.SizeW, self.SizeH),
+            dist=dist,
+        )
         self.iter = 0
 
     def step(self):
@@ -126,7 +137,7 @@ class MeshDepthFitter:
 
             depth_scale = 1 * self.depthScale
             Depth = self.scene.renderDepth(
-                self.CameraMatrix,
+                self.camera,
                 resolution=(self.SizeW, self.SizeH),
                 depth_scale=depth_scale,
             )
@@ -229,8 +240,10 @@ class MeshRGBFitterWithPose:
         self.defaultLight = defaultLight
         self.updateLights = updateLights
         self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces.copy())  # we do a copy to avoid negative stride not support by Tensorflow
-        objectCenter = vertices.mean(axis=0)+translation_init
+        self.mesh = ColoredTriMesh(
+            faces.copy()
+        )  # we do a copy to avoid negative stride not support by Tensorflow
+        objectCenter = vertices.mean(axis=0) + translation_init
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
 
@@ -270,7 +283,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
         self.speed_handColor = np.zeros(self.handColor.shape)
 
-    def setImage(self, handImage, focal=None):
+    def setImage(self, handImage, focal=None, dist=None):
         self.SizeW = handImage.shape[1]
         self.SizeH = handImage.shape[0]
         assert handImage.ndim == 3
@@ -280,9 +293,16 @@ class MeshRGBFitterWithPose:
 
         R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         T = -R.T.dot(self.cameraCenter)
-        self.CameraMatrix = np.array(
+        intrinsic = np.array(
             [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        ).dot(np.column_stack((R, T)))
+        )
+        extrinsic = np.column_stack((R, T))
+        self.camera = CameraTensorflow(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            dist=dist,
+            resolution=(self.SizeW, self.SizeH),
+        )
         self.iter = 0
 
     def step(self):
@@ -325,9 +345,7 @@ class MeshRGBFitterWithPose:
                 tf.tile(handColor_with_grad[None, :], [self.mesh.nbV, 1])
             )
 
-            Abuffer = self.scene.render(
-                self.CameraMatrix, resolution=(self.SizeW, self.SizeH)
-            )
+            Abuffer = self.scene.render(self.camera)
 
             diffImage = tf.reduce_sum(
                 (Abuffer - tf.constant(self.handImage)) ** 2, axis=2

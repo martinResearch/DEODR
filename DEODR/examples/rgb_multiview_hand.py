@@ -15,29 +15,31 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 
     from DEODR.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
 
-    handImages=[ imread(file).astype(np.double) / 255 for  file in glob.glob("./sfm/*.jpg")]
+    handImages = [
+        imread(file).astype(np.double) / 255 for file in glob.glob("./sfm/*.jpg")
+    ]
     nbFrames = len(handImages)
 
     w = handImages[0].shape[1]
     h = handImages[0].shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
-    
-    defaultColor = np.array([0.4, 0.3, 0.25])*1.5
+
+    defaultColor = np.array([0.4, 0.3, 0.25]) * 1.5
     defaultLight = {
         "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
     # defaultLight = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}
 
-    euler_init = np.row_stack([np.array([0, yrot, 0]) for yrot in np.linspace(-0.5,0.5,3)])  
+    euler_init = np.row_stack(
+        [np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)]
+    )
 
-   
-    vertices =vertices - np.mean(vertices, axis=0)
-    t_init=np.array([0,-0.2,0.2])
-    translation_init =  np.tile(t_init [None,:], [nbFrames,1])
-    # centering vertices 
- 
+    vertices = vertices - np.mean(vertices, axis=0)
+    t_init = np.array([0, -0.2, 0.2])
+    translation_init = np.tile(t_init[None, :], [nbFrames, 1])
+    # centering vertices
 
     handFitter = MeshRGBFitterWithPoseMultiFrame(
         vertices,
@@ -86,7 +88,9 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
                 (
                     np.row_stack(handImages),
                     np.row_stack(Abuffer),
-                    np.tile(np.row_stack(np.minimum(diffImage,1))[:, :, None], (1, 1, 3)),
+                    np.tile(
+                        np.row_stack(np.minimum(diffImage, 1))[:, :, None], (1, 1, 3)
+                    ),
                 )
             )
             if display:
@@ -94,7 +98,10 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
                     "animation", cv2.resize(combinedIMage[:, :, ::-1], None, fx=1, fy=1)
                 )
             if save_images:
-                imsave(os.path.join(iterfolder, f"hand_iter_{iter}.png"), (combinedIMage*255).astype(np.uint8))
+                imsave(
+                    os.path.join(iterfolder, f"hand_iter_{iter}.png"),
+                    (combinedIMage * 255).astype(np.uint8),
+                )
         key = cv2.waitKey(1)
 
     # save convergence curve
