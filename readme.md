@@ -24,6 +24,7 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * derivatives along occlusion boundaries
 * differentiability of the rendering function 
 * exact gradient of the rendering function
+* support camera distortion (applied on vertices) with OpenCV's 5 distortion parameters described [here](https://docs.opencv.org/2.4/doc/tutorials/calib3d/camera_calibration/camera_calibration.html)
 
 Some **unsupported** features:
 
