@@ -73,7 +73,9 @@ class Camera:
 
         if self.dist is None:
             points3D, pCam, depths, projected = store_backward["projectPoints"]
-            projected_b = projectedImageCoordinates_b.dot(self.intrinsic[:2, :2].T)# not sure about transpose
+            projected_b = projectedImageCoordinates_b.dot(
+                self.intrinsic[:2, :2].T
+            )  # not sure about transpose
 
         else:
             points3D, pCam, depths, projected, r2, radialDistortion = store_backward[
@@ -82,7 +84,9 @@ class Camera:
             k1, k2, p1, p2, k3, = self.dist
             x = projected[:, 0]
             y = projected[:, 1]
-            distorted_b = projectedImageCoordinates_b.dot(self.intrinsic[:2, :2].T)# not sure about transpose
+            distorted_b = projectedImageCoordinates_b.dot(
+                self.intrinsic[:2, :2].T
+            )  # not sure about transpose
             distortedx_b = distorted_b[:, 0]
             distortedy_b = distorted_b[:, 1]
             x_b = distortedx_b * radialDistortion
