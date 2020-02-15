@@ -45,7 +45,7 @@ def example_depth_image_hand_fitting(
     )
     maxIter = 150
 
-    handFitter.setImage(depth_image, focal=241, dist=[-1, 0, 0, 0, 0])
+    handFitter.setImage(depth_image, focal=241, dist=[1, 0, 0, 0, 0])
     handFitter.setMaxDepth(1)
     handFitter.setDepthScale(110 / max_depth)
     Energies = []
