@@ -20,10 +20,6 @@ class Camera:
         self.intrinsic = intrinsic
         self.dist = dist
 
-        self.extrinsic_b = np.zeros((3, 4))
-        self.intrinsic_b = np.zeros((3, 5))
-        self.dist_b = np.zeros((5))
-
     def worldToCamera(self, points3D):
         return points3D.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
 
@@ -40,23 +36,31 @@ class Camera:
         depths = pCam[:, 2]
         projected = pCam[:, :2] / depths[:, None]
 
-        if not store_backward is None:
-            store_backward["projectPoints"] = (points3D, pCam, depths, projected)
-
         if self.dist is None:
             projectedImageCoordinates = self.leftMulIntrinsic(projected)
+            if not store_backward is None:
+                store_backward["projectPoints"] = (points3D, pCam, depths, projected)
         else:
             k1, k2, p1, p2, k3, = self.dist
-            r2 = projected[:, 0] ** 2 + projected[:, 1] ** 2
-            radialDistortion = 1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3
             x = projected[:, 0]
             y = projected[:, 1]
+            r2 = x ** 2 + y ** 2
+            radialDistortion = 1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3
             tangentialDistortionx = 2 * p1 * x * y + p2 * (r2 + 2 * x ** 2)
             tangentialDistortiony = p1 * (r2 + 2 * y ** 2) + 2 * p2 * x * y
             distortedx = x * radialDistortion + tangentialDistortionx
             distortedy = y * radialDistortion + tangentialDistortiony
             distorted = self.column_stack((distortedx, distortedy))
             projectedImageCoordinates = self.leftMulIntrinsic(distorted)
+            if not store_backward is None:
+                store_backward["projectPoints"] = (
+                    points3D,
+                    pCam,
+                    depths,
+                    projected,
+                    r2,
+                    radialDistortion,
+                )
 
         if return_depths:
             return projectedImageCoordinates, depths
@@ -66,13 +70,35 @@ class Camera:
     def projectPoints_backward(
         self, projectedImageCoordinates_b, store_backward, depths_b=None
     ):
-        points3D, pCam, depths, projected = store_backward["projectPoints"]
+
         if self.dist is None:
-            projected_b = projectedImageCoordinates_b.dot(self.intrinsic[:2, :2].T)
-            self.intrinsic_b[:2, :2] += projected.T.dot(projectedImageCoordinates_b)
-            self.intrinsic_b[:2, 2] += projectedImageCoordinates_b.sum(axis=0)
+            points3D, pCam, depths, projected = store_backward["projectPoints"]
+            projected_b = projectedImageCoordinates_b.dot(self.intrinsic[:2, :2].T)# not sure about transpose
+
         else:
-            raise (BaseException("not implemented yet"))
+            points3D, pCam, depths, projected, r2, radialDistortion = store_backward[
+                "projectPoints"
+            ]
+            k1, k2, p1, p2, k3, = self.dist
+            x = projected[:, 0]
+            y = projected[:, 1]
+            distorted_b = projectedImageCoordinates_b.dot(self.intrinsic[:2, :2].T)# not sure about transpose
+            distortedx_b = distorted_b[:, 0]
+            distortedy_b = distorted_b[:, 1]
+            x_b = distortedx_b * radialDistortion
+            y_b = distortedy_b * radialDistortion
+            radialDistortion_b = distortedx_b * x + distortedy_b * y
+            tangentialDistortionx_b = distortedx_b
+            tangentialDistortiony_b = distortedy_b
+            x_b += tangentialDistortionx_b * (2 * p1 * y + p2 * 4 * x)
+            y_b += tangentialDistortionx_b * 2 * p1 * x
+            x_b += tangentialDistortiony_b * 2 * p2 * y
+            y_b += tangentialDistortiony_b * (2 * p2 * x + p1 * 4 * y)
+            r2_b = tangentialDistortionx_b * p2 + tangentialDistortiony_b * p1
+            r2_b += radialDistortion_b * (k1 + 2 * k2 * r2 + 3 * k3 * r2 ** 2)
+            x_b += r2_b * 2 * x
+            y_b += r2_b * 2 * y
+            projected_b = np.column_stack((x_b, y_b))
 
         pCam_b = np.column_stack(
             (
@@ -83,8 +109,7 @@ class Camera:
         if depths_b is not None:
             pCam_b[:, 2] += depths_b
         points3D_b = pCam_b.dot(self.extrinsic[:3, :3].T)
-        self.extrinsic_b[:3, :3] += points3D.T.dot(pCam_b)  # check not transpose
-        self.extrinsic_b[:3, 3] += pCam_b.sum(axis=0)
+
         return points3D_b
 
     def getCenter(self):
