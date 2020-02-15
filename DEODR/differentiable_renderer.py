@@ -2,6 +2,64 @@ import numpy as np
 from . import differentiable_renderer_cython
 import copy
 
+
+
+class Camera():
+    def __init__(self,extrinsic,intrinsic, dist=None):
+        
+        
+        assert(extrinsic.shape==(3,4))
+        assert(intrinsic.shape==(3,3))
+        assert(np.all(intrinsic[2,:]== [0, 0, 1]))
+        assert(np.linalg.norm(extrinsic[:3,:3].T.dot(extrinsic[:3,:3])-np.eye(3))<1e-8)
+        if not dist is None:
+            assert(len(dist)==5)
+            
+        self.extrinsic = extrinsic
+        self.intrinsic = intrinsic
+        self.dist = dist     
+
+    def projectPoints(self,points3D,get_jacobians=False,store_backward=None,return_depths=True): # similar to cv2.projectPoints   
+        pCam=points3D.dot(self.extrinsic[:3,:3].T)+self.extrinsic[:3,3]
+        depths=pCam[:,2] 
+        projected= pCam[:,:2]/depths[:,None]
+
+        if not store_backward is None:
+            store_backward["projectPoints"+hash(points3D)] = ( pCam, depths)  
+            
+        if not self.dist is None:
+            k1,k2,p1,p2,k3, = self.dist
+            r2=np.sum((projected)**2,axis=1)
+            radialDistortion=(1+k1*r2+k2*r2**2+k3*r2**3)
+            x=projected[:,0]
+            y=projected[:,1]
+            tangentialDistortionx=2*p1*x*y+p2*(r2+2*x**2)
+            tangentialDistortiony=p1*(r2+2*y**2)+2*p2*x*y 
+            distorted=np.zeros(projected.shape)
+            distorted[:,0] = x*radialDistortion+tangentialDistortionx
+            distorted[:,1] = y*radialDistortion+tangentialDistortiony
+            projectedImageCoordinates=distorted.dot(self.intrinsic[:2,:2])+  self.intrinsic[:2,2] 
+        else:
+            projectedImageCoordinates=projected.dot(self.intrinsic[:2,:2])+  self.intrinsic[:2,2]
+        if return_depths:
+            return  projectedImageCoordinates,depths
+        else:        
+            return projectedImageCoordinates
+    
+    
+    def projectPoints_backward(self, store_backward,points3D, projectedImageCoordinates_b, depths_b=None):
+        pass
+        #cameraMatrix, pCam, depths = store_backward_current["projectPoints"+hash(points3D)] =
+        #pCam_b = np.column_stack(
+            #(projectedImageCoordinates_b / depths[:, None], -np.sum(projectedImageCoordinates_b * pCam[:, :2], axis=1) / (depths ** 2))
+        #)
+        #if depths_b is not None:
+            #r_b[:, 2] += depths_b
+        #P3D_b = r_b.dot(cameraMatrix[:, :3])
+        #return P3D_b
+    def getCenter(self):
+        return -self.extrinsic[:3, :3].T.dot( self.extrinsic[:, 3])  
+
 class Scene2DBase:
     """this class represents the structure representing the 2.5 scene expect by the C++ code"""
 
@@ -211,11 +269,11 @@ class Scene2D(Scene2DBase):
 
 class Scene3D:
     """this class represents a 3D scene containing a single mesh, a directional light and an ambiant light. The parameter sigma control the width of antialiasing edge overdraw"""
-    def __init__(self):
+    def __init__(self,sigma=1):
         self.mesh = None
         self.ligthDirectional = None
         self.ambiantLight = None
-        self.sigma = 1
+        self.sigma = sigma
 
     def clear_gradients(self):
         # fields to store gradients
@@ -334,15 +392,15 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, CameraMatrix, resolution):
+    def render(self, camera, resolution):
         self.store_backward_current = {}
         self.mesh.computeVertexNormals()
 
-        ij, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
-        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])        
+        ij, depths = camera.projectPoints(self.mesh.vertices)
+        cameraCenter3D = camera.getCenter()       
 
         # compute silhouette edges
-        self.edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
+        self.edgeflags = self.mesh.edgeOnSilhouette(ij)
         # construct 2D scene
         self.faces = self.mesh.faces.astype(np.uint32)
         
@@ -378,7 +436,6 @@ class Scene3D:
         Abuffer = self._render2D(ij, colors)
         if not self.store_backward_current is None:
             self.store_backward_current["render"] = (
-                CameraMatrix,
                 self.edgeflags,
             )  # store this field as it could be overwritten when rendering several views
         return Abuffer
@@ -398,7 +455,7 @@ class Scene3D:
 
         # compute silhouette edges
         self.mesh.computeFaceNormals()
-        edge_bool = self.mesh.edgeOnSilhouette(cameraCenter3D)
+        edge_bool = self.mesh.edgeOnSilhouette(P2D)
         
         self.faces = self.mesh.faces.astype(np.uint32)
         self.faces_uv = self.faces
@@ -429,14 +486,14 @@ class Scene3D:
         depths_b = np.squeeze(colors_b * depth_scale, axis=1)
         self.mesh.vertices_b = self._cameraProject_backward(ij_b, depths_b)
         
-    def renderDeffered(self, CameraMatrix, resolution, depth_scale=1):
+    def renderDeffered(self, camera, resolution, depth_scale=1):
         
-        P2D, depths = self._cameraProject(CameraMatrix, self.mesh.vertices)
-        cameraCenter3D = -np.linalg.solve(CameraMatrix[:3, :3], CameraMatrix[:, 3])
+        P2D, depths = camera.projectPoints( self.mesh.vertices)
+        cameraCenter3D = camera.getCenter()
 
         # compute silhouette edges
         self.mesh.computeFaceNormals()
-        edgeflags = self.mesh.edgeOnSilhouette(cameraCenter3D)
+        edgeflags = self.mesh.edgeOnSilhouette(P2D)
         
         verticesLuminosity = self.computeVerticesLuminosity()
         
@@ -446,6 +503,7 @@ class Scene3D:
         soup_faces=np.arange(0, soup_nbV,dtype=np.uint32).reshape(self.mesh.nbF,3)
         soup_faces_uv = soup_faces
         soup_ij = P2D[self.mesh.faces].reshape(soup_nbV,2)
+        soup_xyz =self.mesh.vertices [self.mesh.faces].reshape(soup_nbV,3)
         soup_faceids=np.tile(np.arange(0,self.mesh.nbF)[:,None],(1,3)).reshape(soup_nbV,1)
         soup_verticesLuminosity=self.computeVerticesLuminosity()[self.mesh.faces].reshape(soup_nbV,1)
         soup_depths=depths[self.mesh.faces].reshape(soup_nbV,1)
@@ -454,10 +512,10 @@ class Scene3D:
         
         if self.mesh.uv is None:            
             soup_vcolors=self.mesh.verticesColor[self.mesh.faces]
-            colors = np.column_stack((soup_depths[:, None] * depth_scale,soup_faceids[:,:,None],soup_normals,soup_luminosity[:,:,None],soup_vcolors))                        
+            colors = np.column_stack((soup_depths[:, None] * depth_scale,soup_faceids[:,:,None],soup_normals,soup_luminosity[:,:,None],soup_vcolors,soup_xyz))                        
         else:
             soup_uv=self.mesh.uv[self.mesh.faces_uv].reshape(soup_nbV,2)
-            colors = np.column_stack((soup_depths * depth_scale,soup_faceids, soup_normals,soup_luminosity,soup_uv))
+            colors = np.column_stack((soup_depths * depth_scale,soup_faceids, soup_normals,soup_luminosity,soup_uv,soup_xyz))
                 
         
         nbColors=colors.shape[1]
@@ -485,7 +543,7 @@ class Scene3D:
         differentiable_renderer_cython.renderScene(scene2D, 0, Abuffer, Zbuffer)
         
         if not self.mesh.uv is None:
-            return {'depth':Abuffer[:,:,0],'faceid':Abuffer[:,:,1],'normal':Abuffer[:,:,2:4],'luminosity':Abuffer[:,:,5],'uv':Abuffer[:,:,6:]}                    
+            return {'depth':Abuffer[:,:,0],'faceid':Abuffer[:,:,1],'normal':Abuffer[:,:,2:4],'luminosity':Abuffer[:,:,5],'uv':Abuffer[:,:,6:8],'xyz':Abuffer[:,:,8:]}                    
                    
         else:
             pass

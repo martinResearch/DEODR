@@ -103,12 +103,15 @@ class TriMeshAdjacencies:
         faceNormals_b = self.Vertices_Faces.T * n_b
         return faceNormals_b
 
-    def edgeOnSilhouette(self, vertices, faceNormals, viewpoint):
+    def edgeOnSilhouette(self, vertices2D):
         """this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""
-        face_visible = (
-            np.sum(faceNormals * (vertices[self.faces[:, 0], :] - viewpoint), axis=1)
-            > 0
-        )
+        tris = vertices2D[self.faces, :]
+        u = tris[:, 1, :] - tris[:, 0, :]
+        v = tris[:, 2, :] - tris[:, 0, :] 
+        if self.clockwise:
+            face_visible = np.cross(u,v)>0
+        else:
+            face_visible = np.cross(u,v)<0
         edge_bool = (self.Edges_Faces_Ones * face_visible) == 1
         return edge_bool[self.Faces_Edges]
 
@@ -168,13 +171,10 @@ class TriMesh:
             self.faceNormals_b
         )
 
-    def edgeOnSilhouette(self, viewpoint):
-        """this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh given a view point"""
-        if self.faceNormals is None:
-            self.computeFaceNormals()
-        return self.adjacencies.edgeOnSilhouette(
-            self.vertices, self.faceNormals, viewpoint
-        )
+    def edgeOnSilhouette(self, points2D):
+        """this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh"""
+       
+        return self.adjacencies.edgeOnSilhouette(points2D)
     
     
 class ColoredTriMesh(TriMesh):

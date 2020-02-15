@@ -4,8 +4,15 @@ from DEODR import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import trimesh
 
+
+from cache_to_disk import cache_to_disk
+
+@cache_to_disk(3)
+def loadmesh(file):
+    import trimesh
+    mesh_trimesh = trimesh.load(file)
+    return  ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 #obj_file="../../data/hand.obj"
 obj_file="models/crate.obj"
@@ -13,9 +20,8 @@ obj_file="models/duck.obj"
 #obj_file="models/drill.obj"
 #obj_file="models/fuze.obj"
 
- 
-mesh_trimesh = trimesh.load(obj_file)
-mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+mesh=loadmesh(obj_file)
+
 ax=plt.subplot(111)
 if mesh.textured:
     mesh.plot_uv_map(ax)
@@ -30,10 +36,10 @@ focal = 2 * SizeW
 
 R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
 T = -R.T.dot(cameraCenter)
-extrinsics = np.column_stack((R, T))
-intrinsics = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
-
-CameraMatrix = intrinsics.dot(extrinsics)
+extrinsic = np.column_stack((R, T))
+intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
+dist=[-10,0,0,0,0]
+camera = differentiable_renderer.Camera(extrinsic=extrinsic,intrinsic=intrinsic, dist=dist)
 
 handColor = np.array([200, 100, 100]) / 255
 mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
@@ -44,7 +50,7 @@ scene.setMesh(mesh)
 backgroundImage=np.ones((SizeH,SizeW,3))
 scene.setBackground(backgroundImage)
 
-Abuffer = scene.render(CameraMatrix, resolution=(SizeW, SizeH))
+Abuffer = scene.render(camera, resolution=(SizeW, SizeH))
 
 plt.figure()
 plt.imshow(Abuffer)
@@ -59,7 +65,7 @@ u,v,w= scene.ligthDirectional
 ax.quiver(np.array([0.0]),np.array([0.0]),np.array([0.0]),np.array([u]),np.array([v]),np.array([w]),color=[1,1,0.5])
 
 
-channels = scene.renderDeffered(CameraMatrix, resolution=(SizeW, SizeH))
+channels = scene.renderDeffered(camera, resolution=(SizeW, SizeH))
 plt.figure()
 for i,(name,v) in enumerate(channels.items()):
     ax=plt.subplot(2,3,i+1)
