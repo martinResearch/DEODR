@@ -333,7 +333,7 @@ class Scene3D:
     """this class represents a 3D scene containing a single mesh, a directional light and an ambiant light. The parameter sigma control the width of antialiasing edge overdraw"""
 
     def __init__(self, sigma=1):
-        self.mesh = None
+        self.meshes = []
         self.ligthDirectional = None
         self.ambiantLight = None
         self.sigma = sigma
@@ -350,8 +350,8 @@ class Scene3D:
         self.ligthDirectional = ligthDirectional
         self.ambiantLight = ambiantLight
 
-    def setMesh(self, mesh):
-        self.mesh = mesh
+    def addMesh(self, mesh,pose):
+        self.meshes.append( (mesh,pose))
 
     def setBackground(self, backgroundImage):
         self.background = backgroundImage

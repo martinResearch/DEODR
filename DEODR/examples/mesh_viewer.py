@@ -9,11 +9,11 @@ import cv2
 import time
 from scipy.spatial.transform import Rotation
 
-# obj_file="../../data/hand.obj"
-obj_file = "models/crate.obj"
+#obj_file="../../data/hand.obj"
+#obj_file = "models/crate.obj"
 obj_file = "models/duck.obj"
-# obj_file="models/drill.obj"
-# obj_file="models/fuze.obj"
+#obj_file="models/drill.obj"
+#obj_file="models/fuze.obj"
 
 
 mesh_trimesh = trimesh.load(obj_file)
@@ -47,7 +47,19 @@ mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
 
 scene = differentiable_renderer.Scene3D()
 scene.setLight(ligthDirectional=np.array([-0.5, 0, -0.5]), ambiantLight=0.3)
-scene.setMesh(mesh)
+
+R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+T = np.array([1, 0, 0])
+pose = np.column_stack((R, T))
+
+scene.addMesh(mesh,pose=pose)
+
+R = 0.5*np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+T = np.array([-1, 0, 0])
+pose = np.column_stack((R, T))
+
+scene.addMesh(mesh,pose=pose)
+
 backgroundImage = np.ones((SizeH, SizeW, 3))
 scene.setBackground(backgroundImage)
 
@@ -61,13 +73,13 @@ windowname = f"DEODR mesh viewer:{obj_file}"
 
 
 class Interactor:
-    def __init__(self, mode="object_centered", object_center=None):
+    def __init__(self, mode="object_centered", object_center=None,object_scale=1):
         self.left_is_down = False
         self.right_is_down = False
         self.mode = mode
         self.object_center = object_center
         self.rotation_speed = 0.003
-        self.translation_speed = 0.05
+        self.translation_speed = 0.02*object_scale
 
     def mouseCallback(self, event, x, y, flags, param):
 
@@ -133,22 +145,19 @@ class Interactor:
                 self.y_last = y
 
 
-interactor = Interactor(object_center=objectCenter)
+interactor = Interactor(object_center=objectCenter,object_scale=objectRadius)
 
 cv2.namedWindow(windowname)
 cv2.setMouseCallback(windowname, interactor.mouseCallback)
 
-while True:
-    # mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+while True:    
     start = time.clock()
     Abuffer = scene.render(camera)
-
     font = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (20, SizeH - 20)
     fontScale = 1
     fontColor = (0, 0, 255)
     thickness = 2
-
     cv2.putText(
         Abuffer,
         "fps:%0.1f" % fps,
@@ -158,9 +167,7 @@ while True:
         fontColor,
         thickness,
     )
-
     cv2.imshow(windowname, Abuffer)
-
     stop = time.clock()
     fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
     key = cv2.waitKey(1)
