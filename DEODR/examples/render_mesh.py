@@ -5,11 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import trimesh
-
+import os
 
 #obj_file="../../data/hand.obj"
-obj_file="models/crate.obj"
-obj_file="models/duck.obj"
+obj_file=os.path.join(os.path.dirname(__file__),"models/crate.obj")
+obj_file=os.path.join(os.path.dirname(__file__),"models/duck.obj")
 #obj_file="models/drill.obj"
 #obj_file="models/fuze.obj"
 
