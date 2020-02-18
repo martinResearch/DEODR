@@ -25,7 +25,7 @@ author_email='martin.delagorce@gmail.com',
 license='BSD',
 packages= ['DEODR'],
 ext_modules = my_modules,  # additional source file(s)),
-include_dirs=[ np.get_include()]
-install_requires=['cython','numpy','scipy'],
+include_dirs=[ np.get_include()],
+install_requires=['cython','numpy','scipy']
 )
 
