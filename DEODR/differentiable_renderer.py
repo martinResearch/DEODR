@@ -4,7 +4,9 @@ import copy
 
 
 class Camera:
-    def __init__(self, extrinsic, intrinsic, resolution, dist=None, checks=True):
+    def __init__(
+        self, extrinsic, intrinsic, resolution, dist=None, checks=True, tol=1e-6
+    ):
         """camera with same distortion paramterization as opencv"""
         if checks:
             assert extrinsic.shape == (3, 4)
@@ -12,7 +14,7 @@ class Camera:
             assert np.all(intrinsic[2, :] == [0, 0, 1])
             assert (
                 np.linalg.norm(extrinsic[:3, :3].T.dot(extrinsic[:3, :3]) - np.eye(3))
-                < 1e-8
+                < tol
             )
             if not dist is None:
                 assert len(dist) == 5
@@ -347,13 +349,14 @@ class Scene3D:
         self.texture_b = np.zeros((0, 0))
 
     def setLight(self, ligthDirectional, ambiantLight):
-        self.ligthDirectional = ligthDirectional
+        self.ligthDirectional = np.array(ligthDirectional)
         self.ambiantLight = ambiantLight
 
     def setMesh(self, mesh):
         self.mesh = mesh
 
     def setBackground(self, backgroundImage):
+        assert backgroundImage.dtype == np.double
         self.background = backgroundImage
 
     def computeVerticesLuminosity(self):
@@ -404,7 +407,7 @@ class Scene3D:
         if not self.store_backward_current is None:
             self.store_backward_current["render2D"] = (ij, colors, Abuffer, Zbuffer)
 
-        return Abuffer
+        return Abuffer, Zbuffer
 
     def _render2D_backward(self, Abuffer_b):
         ij, colors, Abuffer, Zbuffer = self.store_backward_current["render2D"]
@@ -415,7 +418,7 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, camera):
+    def render(self, camera, return_zbuffer=False):
         self.store_backward_current = {}
         self.mesh.computeVertexNormals()
 
@@ -457,13 +460,16 @@ class Scene3D:
         self.image_W = camera.resolution[0]
 
         self.clockwise = self.mesh.clockwise
-        Abuffer = self._render2D(ij, colors)
+        Abuffer, Zbuffer = self._render2D(ij, colors)
         if not self.store_backward_current is None:
             self.store_backward_current["render"] = (
                 camera,
                 self.edgeflags,
             )  # store this field as it could be overwritten when rendering several views
-        return Abuffer
+        if return_zbuffer:
+            return Abuffer, Zbuffer
+        else:
+            return Abuffer
 
     def render_backward(self, Abuffer_b):
 
@@ -503,7 +509,7 @@ class Scene3D:
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
-        Abuffer = self._render2D(ij, colors)
+        Abuffer, _ = self._render2D(ij, colors)
         if not self.store_backward_current is None:
             self.store_backward_current["renderDepth"] = (camera, depth_scale)
         return Abuffer

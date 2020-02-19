@@ -12,13 +12,23 @@ import os
 
 
 class Interactor:
-    def __init__(self, camera, mode="object_centered_trackball", object_center=None):
+    def __init__(
+        self,
+        camera,
+        mode="object_centered_trackball",
+        object_center=None,
+        rotation_speed=0.003,
+        z_translation_speed=0.05,
+        xy_translation_speed=0.01,
+    ):
         self.left_is_down = False
         self.right_is_down = False
+        self.middle_is_down = False
         self.mode = mode
         self.object_center = object_center
-        self.rotation_speed = 0.003
-        self.translation_speed = 0.05
+        self.rotation_speed = rotation_speed
+        self.z_translation_speed = z_translation_speed
+        self.xy_translation_speed = xy_translation_speed
         self.camera = camera
 
     def mouseCallback(self, event, x, y, flags, param):
@@ -37,6 +47,15 @@ class Interactor:
             # check to see if the left mouse button was released
         if event == cv2.EVENT_RBUTTONUP:
             self.right_is_down = False
+
+        if event == cv2.EVENT_MBUTTONDOWN:
+            self.middle_is_down = True
+            self.x_last = x
+            self.y_last = y
+        # check to see if the left mouse button was released
+        if event == cv2.EVENT_MBUTTONUP:
+            self.middle_is_down = False
+
         if self.left_is_down:
             if self.mode == "camera_centered":
                 Rot = Rotation.from_rotvec(
@@ -76,13 +95,13 @@ class Interactor:
 
         if self.right_is_down:
             if self.mode == "camera_centered":
-                self.camera.extrinsic[2, 3] += self.translation_speed * (
+                self.camera.extrinsic[2, 3] += self.z_translation_speed * (
                     self.y_last - y
                 )
                 self.x_last = x
                 self.y_last = y
             if self.mode == "object_centered_trackball":
-                self.camera.extrinsic[2, 3] += self.translation_speed * (
+                self.camera.extrinsic[2, 3] += self.z_translation_speed * (
                     self.y_last - y
                 )
                 self.x_last = x
@@ -90,11 +109,45 @@ class Interactor:
             else:
                 raise (baseException(f"unkown camera mode {self.mode}"))
 
+        if self.middle_is_down:
+            object_depth = (
+                self.camera.extrinsic[2, :3].dot(self.object_center)
+                + self.camera.extrinsic[2, 3]
+            )
+
+            self.camera.extrinsic[0, 3] += (
+                self.xy_translation_speed * object_depth * (x - self.x_last)
+            )
+            self.camera.extrinsic[1, 3] += (
+                self.xy_translation_speed * object_depth * (y - self.y_last)
+            )
+            self.x_last = x
+            self.y_last = y
+
 
 def mesh_viewer(
-    obj_file, display_texture_map=True, SizeW=640, SizeH=480, display_fps=True
+    obj_file_or_trimesh,
+    display_texture_map=True,
+    SizeW=640,
+    SizeH=480,
+    display_fps=True,
+    title=None,
 ):
-    mesh_trimesh = trimesh.load(obj_file)
+    if type(obj_file_or_trimesh) == str:
+        if title is None:
+            title = obj_file_or_trimesh
+        mesh_trimesh = trimesh.load(obj_file_or_trimesh)
+    elif type(obj_file_or_trimesh) == trimesh.base.Trimesh:
+        mesh_trimesh = obj_file_or_trimesh
+        if title is None:
+            title = "unknown"
+    else:
+        raise (
+            BaseException(
+                f"unkown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh, can be string or trimesh.base.Trimesh"
+            )
+        )
+
     mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
     if display_texture_map:
         ax = plt.subplot(111)
@@ -132,9 +185,14 @@ def mesh_viewer(
 
     fps = 0
     fps_decay = 0.1
-    windowname = f"DEODR mesh viewer:{obj_file}"
+    windowname = f"DEODR mesh viewer:{title}"
 
-    interactor = Interactor(camera=camera, object_center=objectCenter)
+    interactor = Interactor(
+        camera=camera,
+        object_center=objectCenter,
+        z_translation_speed=0.01 * objectRadius,
+        xy_translation_speed=1e-7 * objectRadius,
+    )
 
     cv2.namedWindow(windowname)
     cv2.setMouseCallback(windowname, interactor.mouseCallback)
