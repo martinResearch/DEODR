@@ -3,7 +3,6 @@ from deodr import LaplacianRigidEnergy
 from deodr.pytorch import TriMeshPytorch as TriMesh
 from deodr.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
 import numpy as np
-from scipy import sparse
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import torch
@@ -11,7 +10,8 @@ import copy
 
 
 def print_grad(name):
-    # to visualize the gradient of a variable use variable_name.register_hook(print_grad('variable_name'))
+    # to visualize the gradient of a variable use
+    # variable_name.register_hook(print_grad('variable_name'))
     def hook(grad):
         print(f"grad {name} = {grad}")
 
@@ -26,183 +26,6 @@ def qrot(q, v):
     return v + 2 * (qr[:, [3]] * uv + uuv)
 
 
-class MeshRGBFitter:
-    def __init__(
-        self,
-        vertices,
-        faces,
-        defaultColor,
-        defaultLight,
-        cregu=2000,
-        gamma=0.01,
-        beta=0.01,
-        inertia=0.9,
-        damping=0.1,
-        updateLights=True,
-        updateColor=True,
-    ):
-        self.cregu = cregu
-        self.gamma = gamma
-        self.beta = beta
-        self.inertia = inertia
-        self.damping = damping
-        self.defaultColor = defaultColor
-        self.defaultLight = defaultLight
-        self.updateLights = updateLights
-        self.updateColor = updateColor
-        self.mesh = TriMesh(
-            faces.copy()
-        )  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0)
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
-        self.scene = Scene3DPytorch()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
-        self.Vinit = copy.copy(vertices)
-        self.Hfactorized = None
-        self.Hpreconditioner = None
-        self.reset()
-
-    def reset(self):
-        self.V = copy.copy(self.Vinit)
-        self.handColor = copy.copy(self.defaultColor)
-        self.ligthDirectional = copy.copy(self.defaultLight["directional"])
-        self.ambiantLight = copy.copy(self.defaultLight["ambiant"])
-        self.speed = np.zeros(self.V.shape)
-        self.speed_ligthDirectional = np.zeros(self.ligthDirectional.shape)
-        self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
-        self.speed_handColor = np.zeros(self.handColor.shape)
-
-    def setImage(self, handImage, focal=None, dist=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 3
-        self.handImage = handImage
-        if focal is None:
-            focal = 2 * self.SizeW
-
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
-        intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
-        )
-        extrinsic = np.column_stack((R, T))
-        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
-        self.iter = 0
-
-    def setBackgroundColor(self, backgroundColor):
-        self.scene.setBackground(
-            np.tile(backgroundColor[None, None, :], (self.SizeH, self.SizeW, 1))
-        )
-
-    def step(self):
-        V_with_grad = torch.tensor(self.V, dtype=torch.float64, requires_grad=True)
-        ligthDirectional_with_grad = torch.tensor(
-            self.ligthDirectional, dtype=torch.float64, requires_grad=True
-        )
-        ambiantLight_with_grad = torch.tensor(
-            self.ambiantLight, dtype=torch.float64, requires_grad=True
-        )
-        handColor_with_grad = torch.tensor(
-            self.handColor, dtype=torch.float64, requires_grad=True
-        )
-
-        self.mesh.setVertices(V_with_grad)
-        self.scene.setLight(
-            ligthDirectional=ligthDirectional_with_grad,
-            ambiantLight=ambiantLight_with_grad,
-        )
-        self.mesh.setVerticesColors(handColor_with_grad.repeat([self.mesh.nbV, 1]))
-
-        Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
-        # projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
-        # projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses
-        # python loops
-        # i = np.tile(
-        # (
-        # np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
-        # + np.arange(projJac.shape[1])[None, :]
-        # )[:, :, None],
-        # (1, 1, projJac.shape[2]),
-        # )
-        # j = np.tile(
-        # (
-        # np.arange(projJac.shape[0])[:, None] * projJac.shape[2]
-        # + np.arange(projJac.shape[2])[None, :]
-        # )[:, :, None],
-        # (1, projJac.shape[1], 1),
-        # )
-        # projJacSp = sparse.coo_matrix((projJac.flatten(), (i.flatten(), j.flatten())))
-
-        diffImage = torch.sum((Abuffer - torch.tensor(self.handImage)) ** 2, dim=2)
-        loss = torch.sum(diffImage)
-
-        loss.backward()
-        EData = loss.detach().numpy()
-
-        GradData = V_with_grad.grad
-
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(self.V)
-        Energy = EData + E_rigid.numpy()
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
-
-        # update vertices
-        G = GradData.numpy() + grad_rigidity.numpy()
-
-        if self.beta == 0:
-            if self.Hfactorized is None:  # it is the allways the same for the moment
-                self.H = approx_hessian_rigidity + self.gamma * sparse.eye(
-                    approx_hessian_rigidity.shape[0]
-                )
-                self.Hfactorized = scipy.sparse.linalg.factorized(self.H.tocsc())
-            step = -self.Hfactorized(G.numpy().flatten()).reshape(self.V.shape)
-        else:
-            # if self.Hpreconditioner is None :
-            #    Happrox=approx_hessian_rigidity+self.gamma*sparse.eye(approx_hessian_rigidity.shape[0])+self.beta*(projJacSp.T*projJacSp)
-            #    self.Hpreconditioner = sparse.linalg.inv(Happrox.tocsc())
-
-            self.H = (
-                approx_hessian_rigidity
-                + self.gamma * sparse.eye(approx_hessian_rigidity.shape[0])
-                + self.beta
-                * (projJacSp.T * projJacSp)
-                * sparse.kron(sparse.diags(self.mesh.DegreeVE), sparse.eye(3))
-            )
-            # step = - sparse.linalg.cg(self.H,G.numpy().flatten(),tol=0.001,maxiter=50,M=self.Hpreconditioner)[0].reshape(self.V.shape)
-            step = -sparse.linalg.spsolve(self.H, G.flatten()).reshape(self.V.shape)
-            # step = - sparse.linalg.cg(self.H,G.numpy().flatten(),tol=0.01,maxiter=20)[0].reshape(self.V.shape)
-            # self.Hfactorized = scipy.sparse.linalg.factorized(self.H.tocsc())
-            # step = - self.Hfactorized(G.numpy().flatten()).reshape(self.V.shape)
-
-        self.speed = (1 - self.damping) * (
-            self.speed * self.inertia + (1 - self.inertia) * step
-        )
-        self.V = self.V + torch.tensor(self.speed)
-
-        # update lights
-        if self.updateLights:
-            step = -ligthDirectional_with_grad.grad.numpy() * 0.0001
-            self.speed_ligthDirectional = (1 - self.damping) * (
-                self.speed_ligthDirectional * self.inertia + (1 - self.inertia) * step
-            )
-            self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional
-            step = -ambiantLight_with_grad.grad.numpy() * 0.0001
-            self.speed_ambiantLight = (1 - self.damping) * (
-                self.speed_ambiantLight * self.inertia + (1 - self.inertia) * step
-            )
-            self.ambiantLight = self.ambiantLight + self.speed_ambiantLight
-        if self.updateColor:
-            # update hand color
-            step = -handColor_with_grad.grad.numpy() * 0.00001
-            self.speed_handColor = (1 - self.damping) * (
-                self.speed_handColor * self.inertia + (1 - self.inertia) * step
-            )
-            self.handColor = self.handColor + self.speed_handColor
-        self.iter += 1
-        return Energy, Abuffer.detach().numpy(), diffImage.detach().numpy()
-
-
 class MeshDepthFitterEnergy(torch.nn.Module):
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000):
         super(MeshDepthFitterEnergy, self).__init__()
@@ -212,7 +35,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([-0.5, 0, 5]) * objectRadius
-        self.scene = Scene2D()
+        self.scene = Scene3DPytorch()
         self.scene.setMesh(self.mesh)
         self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(self.mesh.vertices)
@@ -294,12 +117,13 @@ class MeshDepthFitterPytorchOptim:
             vertices, faces, euler_init, translation_init, cregu
         )
         params = self.energy.parameters()
-        self.optimizer = torch.optim.LBFGS(self.energy.parameters(), lr=0.8, max_iter=1)
+        self.optimizer = torch.optim.LBFGS(params, lr=0.8, max_iter=1)
         # self.optimizer = torch.optim.SGD(params, lr=0.000005, momentum=0.1,
         # dampening=0.1        )
         # self.optimizer =torch.optim.RMSprop(params, lr=1e-3, alpha=0.99,  eps=1e-8,
         # weight_decay=0,  momentum=0.001)
-        # self.optimizer = torch.optim.Adadelta(params, lr=0.1, rho=0.95,     eps=1e-6,  weight_decay=0)
+        # self.optimizer = torch.optim.Adadelta(params, lr=0.1, rho=0.95,
+        #   eps=1e-6,  weight_decay=0)
         # self.optimizer = torch.optim.Adagrad(self.energy.parameters(), lr=0.02)
 
     def setImage(self, depth_image, focal):

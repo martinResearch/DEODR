@@ -52,7 +52,7 @@ def render_mesh(obj_file, SizeW=640, SizeH=480):
     plt.imshow(Abuffer)
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
+    ax = fig.add_subplot(111, projection=Axes3D.name)
     mesh.plot(ax, plot_normals=True)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
