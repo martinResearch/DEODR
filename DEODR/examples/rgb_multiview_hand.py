@@ -1,4 +1,4 @@
-from DEODR import readObj
+from deodr import readObj
 from imageio import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,18 +8,20 @@ import datetime
 import glob
 import json
 import os
+from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
 
 
 def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, display=True):
 
-    from DEODR.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
+    file_folder = os.path.dirname(__file__)
 
     handImages = [
-        imread(file).astype(np.double) / 255 for file in glob.glob("./sfm/*.jpg")
+        imread(file).astype(np.double) / 255
+        for file in glob.glob(os.path.join(file_folder, "./sfm/*.jpg"))
     ]
     nbFrames = len(handImages)
 
-    objFile = "hand.obj"
+    objFile = os.path.join(file_folder, "hand.obj")
     faces, vertices = readObj(objFile)
 
     defaultColor = np.array([0.4, 0.3, 0.25]) * 1.5

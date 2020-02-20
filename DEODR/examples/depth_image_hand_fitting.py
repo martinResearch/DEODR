@@ -1,4 +1,4 @@
-from DEODR import readObj
+from deodr import readObj
 from scipy.misc import imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,25 +13,28 @@ import json
 def example_depth_image_hand_fitting(
     dl_library="pytorch", plot_curves=True, save_images=True, display=True
 ):
+    file_folder = os.path.dirname(__file__)
 
     if dl_library == "pytorch":
-        from DEODR.pytorch import MeshDepthFitter
+        from deodr.pytorch import MeshDepthFitter
     elif dl_library == "tensorflow":
-        from DEODR.tensorflow import MeshDepthFitter
+        from deodr.tensorflow import MeshDepthFitter
     elif dl_library == "none":
-        from DEODR.mesh_fitter import MeshDepthFitter
+        from deodr.mesh_fitter import MeshDepthFitter
     else:
         raise BaseException(f"unkown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
-        np.fromfile("depth.bin", dtype=np.float32).reshape(240, 320).astype(np.float)
+        np.fromfile(os.path.join(file_folder, "depth.bin"), dtype=np.float32)
+        .reshape(240, 320)
+        .astype(np.float)
     )
     depth_image = depth_image[20:-20, 60:-60]
     max_depth = 450
     depth_image[depth_image == 0] = max_depth
     depth_image = depth_image / max_depth
 
-    objFile = "hand.obj"
+    objFile = os.path.join(file_folder, "hand.obj")
     faces, vertices = readObj(objFile)
 
     euler_init = np.array([0.1, 0.1, 0.1])
@@ -49,7 +52,7 @@ def example_depth_image_hand_fitting(
     durations = []
     start = time.time()
 
-    iterfolder = "./iterations/depth"
+    iterfolder = os.path.join(file_folder, "./iterations/depth")
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 

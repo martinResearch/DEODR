@@ -1,5 +1,5 @@
-from DEODR import differentiable_renderer_cython
-from DEODR.differentiable_renderer import Scene2D
+from deodr import differentiable_renderer_cython
+from deodr.differentiable_renderer import Scene2D
 from scipy.misc import imread
 import numpy as np
 import matplotlib.pyplot as plt

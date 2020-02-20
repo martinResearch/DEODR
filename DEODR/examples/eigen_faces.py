@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from sklearn import decomposition
 from scipy.spatial import Delaunay
 import numpy as np
-from DEODR.differentiable_renderer import Scene2D
+from deodr.differentiable_renderer import Scene2D
 import cv2
 
 faces = sklearn.datasets.fetch_olivetti_faces()

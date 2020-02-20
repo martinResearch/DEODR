@@ -1,5 +1,5 @@
-from DEODR import Scene3D, Camera, LaplacianRigidEnergy
-from DEODR import TriMesh, ColoredTriMesh
+from deodr import Scene3D, Camera, LaplacianRigidEnergy
+from deodr import TriMesh, ColoredTriMesh
 import numpy as np
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation

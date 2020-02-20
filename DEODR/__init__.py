@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""DEODR
+"""deodr
 
 Discontinuity-Edge-Overdraw Differentiable Rendering
 

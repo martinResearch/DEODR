@@ -1,7 +1,7 @@
-from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch, CameraPytorch
-from DEODR import LaplacianRigidEnergy
-from DEODR.pytorch import TriMeshPytorch as TriMesh
-from DEODR.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
+from deodr.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch, CameraPytorch
+from deodr import LaplacianRigidEnergy
+from deodr.pytorch import TriMeshPytorch as TriMesh
+from deodr.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
 import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg

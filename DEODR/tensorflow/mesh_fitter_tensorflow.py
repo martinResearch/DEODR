@@ -1,11 +1,11 @@
-from DEODR.tensorflow import (
+from deodr.tensorflow import (
     Scene3DTensorflow,
     LaplacianRigidEnergyTensorflow,
     CameraTensorflow,
 )
-from DEODR.tensorflow import TriMeshTensorflow as TriMesh
-from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
-from DEODR import LaplacianRigidEnergy
+from deodr.tensorflow import TriMeshTensorflow as TriMesh
+from deodr.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
+from deodr import LaplacianRigidEnergy
 import numpy as np
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation

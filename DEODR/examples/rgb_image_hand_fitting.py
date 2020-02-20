@@ -1,4 +1,4 @@
-from DEODR import readObj
+from deodr import readObj
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,16 +14,18 @@ def example_rgb_hand_fitting(
     dl_library="pytorch", plot_curves=True, save_images=True, display=True
 ):
     if dl_library == "pytorch":
-        from DEODR.pytorch import MeshRGBFitterWithPose
+        from deodr.pytorch import MeshRGBFitterWithPose
     elif dl_library == "tensorflow":
-        from DEODR.tensorflow import MeshRGBFitterWithPose
+        from deodr.tensorflow import MeshRGBFitterWithPose
     elif dl_library == "none":
-        from DEODR.mesh_fitter import MeshRGBFitterWithPose
+        from deodr.mesh_fitter import MeshRGBFitterWithPose
     else:
         raise BaseException(f"unkown deep learning library {dl_library}")
 
-    handImage = imread("hand.png").astype(np.double) / 255
-    objFile = "hand.obj"
+    file_folder = os.path.dirname(__file__)
+
+    handImage = imread(os.path.join(file_folder, "hand.png")).astype(np.double) / 255
+    objFile = os.path.join(file_folder, "hand.obj")
     faces, vertices = readObj(objFile)
 
     defaultColor = np.array([0.4, 0.3, 0.25])
@@ -142,12 +144,6 @@ def example_rgb_hand_fitting(
 if __name__ == "__main__":
     display = True
     save_images = False
-    example_rgb_hand_fitting(
-        dl_library="tensorflow",
-        plot_curves=True,
-        display=display,
-        save_images=save_images,
-    )
 
     example_rgb_hand_fitting(
         dl_library="pytorch",
@@ -158,4 +154,10 @@ if __name__ == "__main__":
 
     example_rgb_hand_fitting(
         dl_library="none", plot_curves=False, display=display, save_images=save_images
+    )
+    example_rgb_hand_fitting(
+        dl_library="tensorflow",
+        plot_curves=True,
+        display=display,
+        save_images=save_images,
     )

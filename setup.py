@@ -12,11 +12,11 @@ import numpy as np
    #)    
 #]
 
-extensions="DEODR/differentiable_renderer_cython.pyx"
+extensions="deodr/differentiable_renderer_cython.pyx"
 
 my_modules=cythonize(extensions,annotate=True,language="c++")
 
-libname="DEODR"
+libname="deodr"
 setup(
 name = libname,
 version="0.1",

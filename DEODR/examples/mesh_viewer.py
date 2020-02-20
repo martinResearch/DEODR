@@ -1,5 +1,5 @@
-from DEODR.triangulated_mesh import ColoredTriMesh
-from DEODR import differentiable_renderer
+from deodr.triangulated_mesh import ColoredTriMesh
+from deodr import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
 import trimesh
