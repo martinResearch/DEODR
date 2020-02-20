@@ -62,13 +62,13 @@ add the decompressed folder in your matlab path
 
 ## Iterative Mesh fitting in Python 
  
-Example of fitting a hand mesh to a depth sensor image [*DEODR/examples/depth_image_hand_fitting.py*](DEODR/examples/depth_image_hand_fitting.py)
+Example of fitting a hand mesh to a depth sensor image [*deodr/examples/depth_image_hand_fitting.py*](DEODR/examples/depth_image_hand_fitting.py)
  ![animation](./images/python_depth_hand.gif)
 
-Example of fitting a hand mesh to a RGB sensor image [*DEODR/examples/rgb_image_hand_fitting.py*](DEODR/examples/rgb_image_hand_fitting.py)
+Example of fitting a hand mesh to a RGB sensor image [*deodr/examples/rgb_image_hand_fitting.py*](DEODR/examples/rgb_image_hand_fitting.py)
  ![animation](./images/python_rgb_hand.gif)
 
-Example of fitting a hand mesh to several RGB sensor images [*DEODR/examples/rgb_multiview_hand.py*](DEODR/examples/rgb_multiview_hand.py)
+Example of fitting a hand mesh to several RGB sensor images [*deodr/examples/rgb_multiview_hand.py*](DEODR/examples/rgb_multiview_hand.py)
  ![animation](./images/multiview.gif)
 
 
