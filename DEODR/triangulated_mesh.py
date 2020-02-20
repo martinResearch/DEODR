@@ -305,7 +305,7 @@ class ColoredTriMesh(TriMesh):
             faces,
             vertices,
             clockwise=False,
-            faces_uv=mesh.faces,
+            faces_uv=np.array(mesh.faces),
             uv=uv,
             texture=texture,
             colors=colors2,

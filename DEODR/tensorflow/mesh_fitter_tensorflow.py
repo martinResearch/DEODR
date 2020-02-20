@@ -356,9 +356,14 @@ class MeshRGBFitterWithPose:
                 ambiantLight_with_grad,
                 handColor_with_grad,
             ]
-            vertices_grad, quaternion_grad, translation_grad, ligthDirectional_grad, ambiantLight_grad, handColor_grad = tape.gradient(
-                loss, trainable_variables
-            )
+            (
+                vertices_grad,
+                quaternion_grad,
+                translation_grad,
+                ligthDirectional_grad,
+                ambiantLight_grad,
+                handColor_grad,
+            ) = tape.gradient(loss, trainable_variables)
 
         EData = loss.numpy()
 

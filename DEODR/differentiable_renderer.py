@@ -4,7 +4,9 @@ import copy
 
 
 class Camera:
-    def __init__(self, extrinsic, intrinsic, resolution, dist=None, checks=True):
+    def __init__(
+        self, extrinsic, intrinsic, resolution, dist=None, checks=True, tol=1e-6
+    ):
         """camera with same distortion paramterization as opencv"""
         if checks:
             assert extrinsic.shape == (3, 4)
@@ -12,7 +14,7 @@ class Camera:
             assert np.all(intrinsic[2, :] == [0, 0, 1])
             assert (
                 np.linalg.norm(extrinsic[:3, :3].T.dot(extrinsic[:3, :3]) - np.eye(3))
-                < 1e-8
+                < tol
             )
             if dist is not None:
                 assert len(dist) == 5
@@ -56,7 +58,6 @@ class Camera:
             projectedImageCoordinates = self.leftMulIntrinsic(distorted)
             if store_backward is not None:
                 store_backward["projectPoints"] = (
-                    points3D,
                     pCam,
                     depths,
                     projected,
@@ -74,13 +75,13 @@ class Camera:
     ):
 
         if self.dist is None:
-            points3D, pCam, depths, projected = store_backward["projectPoints"]
+            pCam, depths, projected = store_backward["projectPoints"]
             projected_b = projectedImageCoordinates_b.dot(
                 self.intrinsic[:2, :2].T
             )  # not sure about transpose
 
         else:
-            points3D, pCam, depths, projected, r2, radialDistortion = store_backward[
+            pCam, depths, projected, r2, radialDistortion = store_backward[
                 "projectPoints"
             ]
             k1, k2, p1, p2, k3, = self.dist
@@ -351,18 +352,19 @@ class Scene3D:
         self.texture_b = np.zeros((0, 0))
 
     def setLight(self, ligthDirectional, ambiantLight):
-        self.ligthDirectional = ligthDirectional
+        self.ligthDirectional = np.array(ligthDirectional)
         self.ambiantLight = ambiantLight
 
     def setMesh(self, mesh):
         self.mesh = mesh
 
     def setBackground(self, backgroundImage):
+        assert backgroundImage.dtype == np.double
         self.background = backgroundImage
 
     def computeVerticesLuminosity(self):
         directional = np.maximum(
-            0, -np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
+            0, - np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
         )
         self.store_backward_current["computeVerticesLuminosity"] = directional
         return directional + self.ambiantLight
@@ -408,7 +410,7 @@ class Scene3D:
         if self.store_backward_current is not None:
             self.store_backward_current["render2D"] = (ij, colors, Abuffer, Zbuffer)
 
-        return Abuffer
+        return Abuffer, Zbuffer
 
     def _render2D_backward(self, Abuffer_b):
         ij, colors, Abuffer, Zbuffer = self.store_backward_current["render2D"]
@@ -419,7 +421,7 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, camera):
+    def render(self, camera, return_zbuffer=False):
         self.store_backward_current = {}
         self.mesh.computeVertexNormals()
 
@@ -460,14 +462,16 @@ class Scene3D:
         self.image_W = camera.resolution[0]
 
         self.clockwise = self.mesh.clockwise
-        Abuffer = self._render2D(ij, colors)
-        if self.store_backward_current is not None:
+        Abuffer, Zbuffer = self._render2D(ij, colors)
+        if not self.store_backward_current is None:
             self.store_backward_current["render"] = (
                 camera,
                 self.edgeflags,
-            )  # store this field as it could be overwritten when
-            # rendering several views
-        return Abuffer
+            )  # store this field as it could be overwritten when rendering several views
+        if return_zbuffer:
+            return Abuffer, Zbuffer
+        else:
+            return Abuffer
 
     def render_backward(self, Abuffer_b):
 
@@ -507,7 +511,7 @@ class Scene3D:
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
-        Abuffer = self._render2D(ij, colors)
+        Abuffer, _ = self._render2D(ij, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["renderDepth"] = (camera, depth_scale)
         return Abuffer
