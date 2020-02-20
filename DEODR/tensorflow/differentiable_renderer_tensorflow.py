@@ -95,4 +95,4 @@ class Scene3DTensorflow(Scene3D):
 
     def _render2D(self, ij, colors):
 
-        return TensorflowDifferentiableRender2D(ij, colors, self)
+        return TensorflowDifferentiableRender2D(ij, colors, self), self.depths

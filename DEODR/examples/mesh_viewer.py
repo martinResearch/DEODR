@@ -89,7 +89,7 @@ class Interactor:
                 self.x_last = x
                 self.y_last = y
             else:
-                raise (baseException(f"unkown camera mode {self.mode}"))
+                raise (BaseException(f"unkown camera mode {self.mode}"))
 
         if self.right_is_down:
             if self.mode == "camera_centered":
@@ -105,7 +105,7 @@ class Interactor:
                 self.x_last = x
                 self.y_last = y
             else:
-                raise (baseException(f"unkown camera mode {self.mode}"))
+                raise (BaseException(f"unkown camera mode {self.mode}"))
 
         if self.middle_is_down:
             object_depth = (
@@ -142,7 +142,8 @@ def mesh_viewer(
     else:
         raise (
             BaseException(
-                f"unkown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh, can be string or trimesh.base.Trimesh"
+                f"unkown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh,"
+                " can be string or trimesh.base.Trimesh"
             )
         )
 
@@ -219,7 +220,7 @@ def mesh_viewer(
         cv2.imshow(windowname, Abuffer)
         stop = time.clock()
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
-        key = cv2.waitKey(1)
+        cv2.waitKey(1)
 
 
 def example():

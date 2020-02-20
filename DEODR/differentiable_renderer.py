@@ -463,11 +463,12 @@ class Scene3D:
 
         self.clockwise = self.mesh.clockwise
         Abuffer, Zbuffer = self._render2D(ij, colors)
-        if not self.store_backward_current is None:
+        if self.store_backward_current is not None:
             self.store_backward_current["render"] = (
                 camera,
                 self.edgeflags,
-            )  # store this field as it could be overwritten when rendering several views
+            )  # store this field as it could be overwritten when
+            # rendering several views
         if return_zbuffer:
             return Abuffer, Zbuffer
         else:

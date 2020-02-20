@@ -80,4 +80,4 @@ class Scene3DPytorch(Scene3D):
 
     def _render2D(self, ij, colors):
         self.depths = self.depths.detach()
-        return TorchDifferentiableRender2D(ij, colors, self)
+        return TorchDifferentiableRender2D(ij, colors, self), self.depths
