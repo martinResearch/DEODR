@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 from ..laplacian_rigid_energy import LaplacianRigidEnergy
 from .tools import scipy_sparse_matrix_to_tensorflow

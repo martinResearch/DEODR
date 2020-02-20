@@ -1,12 +1,11 @@
 from scipy import sparse
 import numpy as np
-
 from .tools import normalize, normalize_backward, cross_backward
-import inspect
 
 
 class TriMeshAdjacencies:
-    """this class stores adjacency matrices and methods that use this adjacencies. Unlike the TriMesh class there are no vertices stored in this class"""
+    """this class stores adjacency matrices and methods that use this adjacencies.
+    Unlike the TriMesh class there are no vertices stored in this class"""
 
     def __init__(self, faces, clockwise=False):
         self.faces = faces
@@ -107,7 +106,8 @@ class TriMeshAdjacencies:
         return faceNormals_b
 
     def edgeOnSilhouette(self, vertices2D):
-        """this computes the a boolean for each of edges of each face that is true if and only if the edge is one the silhouette of the mesh given a view point"""
+        """this computes the a boolean for each of edges of each face that is true if
+        and only if the edge is one the silhouette of the mesh given a view point"""
         tris = vertices2D[self.faces, :]
         u = tris[:, 1, :] - tris[:, 0, :]
         v = tris[:, 2, :] - tris[:, 0, :]
@@ -133,7 +133,7 @@ class TriMesh:
         self.computeAdjacencies()
         assert self.adjacencies.isManifold
 
-        if not vertices is None:
+        if vertices is not None:
             self.setVertices(vertices)
             self.checkOrientation()
 
@@ -146,8 +146,9 @@ class TriMesh:
         self.vertexNormals = None
 
     def computeVolume(self):
-        """Compute the volume enclosed by the triangulated surface. It assumes the surfaces is a closed manifold. 
-        This is done by summing the volumes of the simplices formed by joining the origin and the vertices of each triangle"""
+        """Compute the volume enclosed by the triangulated surface. It assumes the
+        surfaces is a closed manifold. This is done by summing the volumes of the
+        simplices formed by joining the origin and the vertices of each triangle"""
         return (
             (1 if self.clockwise else -1)
             * np.sum(
@@ -165,11 +166,13 @@ class TriMesh:
         )
 
     def checkOrientation(self):
-        """check the mesh faces are properly oriented for the normals to point outward"""
+        """check the mesh faces are properly oriented for the normals to point
+         outward"""
         if self.computeVolume() > 0:
             raise (
                 BaseException(
-                    "The volume within the surface is negative. It seems that you faces are not oriented cooreclt accourding to the clockwise flag"
+                    "The volume within the surface is negative. It seems that you faces"
+                    "are not oriented cooreclt accourding to the clockwise flag"
                 )
             )
 
@@ -190,7 +193,8 @@ class TriMesh:
         )
 
     def edgeOnSilhouette(self, points2D):
-        """this computes the a boolean for each of edges that is true if and only if the edge is one the silhouette of the mesh"""
+        """this computes the a boolean for each of edges that is true if and only if
+        the edge is one the silhouette of the mesh"""
 
         return self.adjacencies.edgeOnSilhouette(points2D)
 
@@ -242,9 +246,7 @@ class ColoredTriMesh(TriMesh):
         ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True, color=[0, 1, 0])
 
     @staticmethod
-    def from_trimesh(mesh):  # inpired from pyrender
-        import trimesh  # get trimesh module here instead of importing at the top of the file to keep the dependency on trimesh optional
-
+    def from_trimesh(mesh):  # inspired from pyrender
         """Gets the vertex colors, texture coordinates, and material properties
         from a :class:`~trimesh.base.Trimesh`.
         """
@@ -278,8 +280,10 @@ class ColoredTriMesh(TriMesh):
                     )
                 )
 
-        # merge identical 3D vertices even if their uv are different to keep surface manifold
-        # trimesh seem to split vertices that have different uvs (using unmerge_faces texture.py), making the surface not watertight, while there were only seems in the texture
+        # merge identical 3D vertices even if their uv are different to keep surface
+        # manifold. trimesh seem to split vertices that have different uvs (using
+        # unmerge_faces texture.py), making the surface not watertight, while there
+        # were only seems in the texture
 
         vertices, return_index, inv_ids = np.unique(
             mesh.vertices, axis=0, return_index=True, return_inverse=True
@@ -290,7 +294,8 @@ class ColoredTriMesh(TriMesh):
             if np.any(colors != colors2[inv_ids, :]):
                 raise (
                     BaseException(
-                        "vertices at the same 3D location should have the same color for the rendering to be differentiable"
+                        "vertices at the same 3D location should have the same color"
+                        "for the rendering to be differentiable"
                     )
                 )
         else:

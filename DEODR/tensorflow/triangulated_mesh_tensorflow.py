@@ -1,7 +1,5 @@
-from scipy import sparse
-import numpy as np
 import tensorflow as tf
-from ..triangulated_mesh import *
+from ..triangulated_mesh import TriMeshAdjacencies, TriMesh
 from .tools import scipy_sparse_matrix_to_tensorflow
 
 
@@ -19,13 +17,13 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
             n = -tf.linalg.cross(u, v)
         else:
             n = tf.linalg.cross(u, v)
-        l = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
-        return n / l[:, None]
+        norm = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
+        return n / norm[:, None]
 
     def computeVertexNormals(self, faceNormals):
         n = tf.sparse.sparse_dense_matmul(self.Vertices_Faces_tf, faceNormals)
-        l = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
-        return n / l[:, None]
+        norm = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
+        return n / norm[:, None]
 
     def edgeOnSilhouette(self, vertices2D):
         return super().edgeOnSilhouette(vertices2D.numpy())

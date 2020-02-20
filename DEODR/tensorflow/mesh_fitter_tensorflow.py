@@ -7,12 +7,9 @@ from DEODR.tensorflow import TriMeshTensorflow as TriMesh
 from DEODR.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from DEODR import LaplacianRigidEnergy
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import sparse
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import copy
-import cv2
 import tensorflow as tf
 
 
@@ -110,7 +107,6 @@ class MeshDepthFitter:
         self.vertices = (
             self.vertices - tf.reduce_mean(self.vertices, axis=0)[None, :]
         )  # centervertices because we have another paramter to control translations
-        x = tf.ones((2, 2))
 
         with tf.GradientTape() as tape:
 

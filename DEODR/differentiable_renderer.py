@@ -14,7 +14,7 @@ class Camera:
                 np.linalg.norm(extrinsic[:3, :3].T.dot(extrinsic[:3, :3]) - np.eye(3))
                 < 1e-8
             )
-            if not dist is None:
+            if dist is not None:
                 assert len(dist) == 5
 
         self.extrinsic = extrinsic
@@ -40,7 +40,7 @@ class Camera:
 
         if self.dist is None:
             projectedImageCoordinates = self.leftMulIntrinsic(projected)
-            if not store_backward is None:
+            if store_backward is not None:
                 store_backward["projectPoints"] = (points3D, pCam, depths, projected)
         else:
             k1, k2, p1, p2, k3, = self.dist
@@ -54,7 +54,7 @@ class Camera:
             distortedy = y * radialDistortion + tangentialDistortiony
             distorted = self.column_stack((distortedx, distortedy))
             projectedImageCoordinates = self.leftMulIntrinsic(distorted)
-            if not store_backward is None:
+            if store_backward is not None:
                 store_backward["projectPoints"] = (
                     points3D,
                     pCam,
@@ -123,7 +123,8 @@ class Camera:
 
 
 class Scene2DBase:
-    """this class represents the structure representing the 2.5 scene expect by the C++ code"""
+    """this class represents the structure representing the 2.5
+    scene expect by the C++ code"""
 
     def __init__(
         self,
@@ -163,7 +164,8 @@ class Scene2DBase:
 
 
 class Scene2D(Scene2DBase):
-    """this class represents a 2.5D scene. It contains a set of 2D vertices with associated depths and a list of faces that are triplets of vertices indexes"""
+    """this class represents a 2.5D scene. It contains a set of 2D vertices with
+    associated depths and a list of faces that are triplets of vertices indexes"""
 
     def __init__(
         self,
@@ -229,7 +231,6 @@ class Scene2D(Scene2DBase):
     def render(self, sigma=1):
         Abuffer = np.zeros((self.image_H, self.image_W, self.nbColors))
         Zbuffer = np.zeros((self.image_H, self.image_W))
-        ErrBuffer = None
         antialiaseError = False
         differentiable_renderer_cython.renderScene(
             self, sigma, Abuffer, Zbuffer, antialiaseError, None, None
@@ -270,7 +271,8 @@ class Scene2D(Scene2DBase):
         antialiaseError = False
         if (
             make_copies
-        ):  # if we make copies we keep the antialized image unchanged Abuffer along the occlusion boundaries
+        ):  # if we make copies we keep the antialized image unchanged Abuffer
+            # along the occlusion boundaries
             differentiable_renderer_cython.renderSceneB(
                 self,
                 sigma,
@@ -330,7 +332,9 @@ class Scene2D(Scene2DBase):
 
 
 class Scene3D:
-    """this class represents a 3D scene containing a single mesh, a directional light and an ambiant light. The parameter sigma control the width of antialiasing edge overdraw"""
+    """this class represents a 3D scene containing a single mesh, a directional light
+    and an ambiant light. The parameter sigma control the width of
+    antialiasing edge overdraw"""
 
     def __init__(self, sigma=1):
         self.mesh = None
@@ -367,7 +371,7 @@ class Scene3D:
 
         verticesLuminosity = self.computeVerticesLuminosity()
         colors = self.mesh.verticesColors * verticesLuminosity[:, None]
-        if not self.store_backward_current is None:
+        if self.store_backward_current is not None:
             self.store_backward_current[
                 "computeVerticesColorsWithIllumination"
             ] = verticesLuminosity
@@ -401,7 +405,7 @@ class Scene3D:
         self.colors = np.array(colors)
         differentiable_renderer_cython.renderScene(self, self.sigma, Abuffer, Zbuffer)
 
-        if not self.store_backward_current is None:
+        if self.store_backward_current is not None:
             self.store_backward_current["render2D"] = (ij, colors, Abuffer, Zbuffer)
 
         return Abuffer
@@ -422,7 +426,6 @@ class Scene3D:
         ij, depths = camera.projectPoints(
             self.mesh.vertices, store_backward=self.store_backward_current
         )
-        cameraCenter3D = camera.getCenter()
 
         # compute silhouette edges
         self.edgeflags = self.mesh.edgeOnSilhouette(ij)
@@ -430,7 +433,7 @@ class Scene3D:
         self.faces = self.mesh.faces.astype(np.uint32)
 
         self.depths = depths
-        if not self.mesh.uv is None:
+        if self.mesh.uv is not None:
             self.uv = self.mesh.uv
             self.faces_uv = self.mesh.faces_uv
             self.textured = np.ones((self.mesh.nbF), dtype=np.bool)
@@ -458,11 +461,12 @@ class Scene3D:
 
         self.clockwise = self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
-        if not self.store_backward_current is None:
+        if self.store_backward_current is not None:
             self.store_backward_current["render"] = (
                 camera,
                 self.edgeflags,
-            )  # store this field as it could be overwritten when rendering several views
+            )  # store this field as it could be overwritten when
+            # rendering several views
         return Abuffer
 
     def render_backward(self, Abuffer_b):
@@ -504,7 +508,7 @@ class Scene3D:
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
         Abuffer = self._render2D(ij, colors)
-        if not self.store_backward_current is None:
+        if self.store_backward_current is not None:
             self.store_backward_current["renderDepth"] = (camera, depth_scale)
         return Abuffer
 
@@ -526,7 +530,8 @@ class Scene3D:
 
         verticesLuminosity = self.computeVerticesLuminosity()
 
-        # construct triangle soup (loosing connectivity), needed to render discontinuous uv maps and face ids
+        # construct triangle soup (loosing connectivity), needed to render
+        # discontinuous uv maps and face ids
         soup_nbF = self.mesh.nbF
         soup_nbV = 3 * self.mesh.nbF
         soup_faces = np.arange(0, soup_nbV, dtype=np.uint32).reshape(self.mesh.nbF, 3)
@@ -536,9 +541,6 @@ class Scene3D:
         soup_faceids = np.tile(np.arange(0, self.mesh.nbF)[:, None], (1, 3)).reshape(
             soup_nbV, 1
         )
-        soup_verticesLuminosity = self.computeVerticesLuminosity()[
-            self.mesh.faces
-        ].reshape(soup_nbV, 1)
         soup_depths = depths[self.mesh.faces].reshape(soup_nbV, 1)
         soup_normals = self.mesh.vertexNormals[self.mesh.faces].reshape(soup_nbV, 3)
         soup_luminosity = verticesLuminosity[self.mesh.faces].reshape(soup_nbV, 1)
@@ -579,7 +581,6 @@ class Scene3D:
             (soup_nbF), dtype=np.bool
         )  # eventually used when using texture
         texture = np.zeros((0, 0))
-        clockwise = self.mesh.clockwise
 
         background = np.zeros((image_H, image_W, nbColors))
         background[:, :, 0] = depths.max()
@@ -604,7 +605,7 @@ class Scene3D:
         Zbuffer = np.empty((self.image_H, self.image_W))
         differentiable_renderer_cython.renderScene(scene2D, 0, Abuffer, Zbuffer)
 
-        if not self.mesh.uv is None:
+        if self.mesh.uv is not None:
             return {
                 "depth": Abuffer[:, :, 0],
                 "faceid": Abuffer[:, :, 1],

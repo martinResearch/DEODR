@@ -1,14 +1,10 @@
 from DEODR import Scene3D, Camera, LaplacianRigidEnergy
-from DEODR import LaplacianRigidEnergy
 from DEODR import TriMesh, ColoredTriMesh
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import sparse
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import copy
-import cv2
-from .tools import *
+from .tools import qrot, normalize, qrot_backward, normalize_backward
 
 
 class MeshDepthFitter:
@@ -508,7 +504,6 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def render(self, idframe=None):
         unormalized_quaternion = self.transformQuaternion[idframe]
-        translation = self.transformTranslation[idframe]
         q_normalized = normalize(
             unormalized_quaternion
         )  # that will lead to a gradient that is in the tangeant space

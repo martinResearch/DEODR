@@ -1,20 +1,15 @@
-from DEODR.obj import readObj
 from DEODR.triangulated_mesh import ColoredTriMesh
 from DEODR import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import trimesh
 import cv2
 import time
 from scipy.spatial.transform import Rotation
+import os
 
-# obj_file="../../data/hand.obj"
-obj_file = "models/crate.obj"
-obj_file = "models/duck.obj"
-# obj_file="models/drill.obj"
-# obj_file="models/fuze.obj"
-
+file_folder = os.path.dirname(__file__)
+obj_file = os.path.join(file_folder, "models/duck.obj")
 
 mesh_trimesh = trimesh.load(obj_file)
 mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)

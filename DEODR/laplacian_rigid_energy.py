@@ -1,4 +1,3 @@
-import numpy as np
 import scipy
 import copy
 import scipy.sparse

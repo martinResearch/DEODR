@@ -1,6 +1,5 @@
 from DEODR import readObj
-
-from scipy.misc import imread, imsave
+from scipy.misc import imsave
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -32,8 +31,6 @@ def example_depth_image_hand_fitting(
     depth_image[depth_image == 0] = max_depth
     depth_image = depth_image / max_depth
 
-    w = depth_image.shape[1]
-    h = depth_image.shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
 
@@ -71,7 +68,7 @@ def example_depth_image_hand_fitting(
                     os.path.join(iterfolder, f"depth_hand_iter_{iter}.png"),
                     combinedIMage,
                 )
-        key = cv2.waitKey(1)
+        cv2.waitKey(1)
 
     with open(
         os.path.join(

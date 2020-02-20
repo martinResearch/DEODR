@@ -1,11 +1,8 @@
-from DEODR.obj import readObj
 from DEODR.triangulated_mesh import ColoredTriMesh
 from DEODR import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-
+import os
 from cache_to_disk import cache_to_disk
 
 
@@ -17,11 +14,8 @@ def loadmesh(file):
     return ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 
-# obj_file="../../data/hand.obj"
-obj_file = "models/crate.obj"
-obj_file = "models/duck.obj"
-# obj_file="models/drill.obj"
-# obj_file="models/fuze.obj"
+file_folder = os.path.dirname(__file__)
+obj_file = os.path.join(file_folder, "models/duck.obj")
 
 mesh = loadmesh(obj_file)
 
@@ -59,24 +53,6 @@ Abuffer = scene.render(camera)
 
 plt.figure()
 plt.imshow(Abuffer)
-
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-mesh.plot(ax, plot_normals=True)
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-u, v, w = scene.ligthDirectional
-ax.quiver(
-    np.array([0.0]),
-    np.array([0.0]),
-    np.array([0.0]),
-    np.array([u]),
-    np.array([v]),
-    np.array([w]),
-    color=[1, 1, 0.5],
-)
-
 
 channels = scene.renderDeffered(camera)
 plt.figure()

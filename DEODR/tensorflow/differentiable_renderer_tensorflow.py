@@ -1,7 +1,6 @@
 import numpy as np
 from .. import differentiable_renderer_cython
 import tensorflow as tf
-import copy
 from ..differentiable_renderer import Scene3D, Camera
 
 
@@ -38,9 +37,8 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
         nbColorChanels = colors.shape[1]
         Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
         Zbuffer = np.empty((scene.image_H, scene.image_W))
-        scene.ij = np.array(
-            ij
-        )  # should automatically detached according to https://pytorch.org/docs/master/notes/extending.html
+        scene.ij = np.array(ij)  # should automatically detached according to
+        # https://pytorch.org/docs/master/notes/extending.html
         scene.colors = np.array(colors)
         scene.depths = np.array(scene.depths)
         differentiable_renderer_cython.renderScene(scene, 1, Abuffer, Zbuffer)
@@ -53,7 +51,9 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
             scene.texture_b = np.zeros(scene.texture.shape)
             Abuffer_copy = (
                 Abuffer.copy()
-            )  # making a copy to avoid removing antializaing on the image returned by the forward pass (the c++ backpropagation undo antializating), could be optional if we don't care about getting aliased images
+            )  # making a copy to avoid removing antializaing on the image returned by
+            # the forward pass (the c++ backpropagation undo antializating), could be
+            # optional if we don't care about getting aliased images
             differentiable_renderer_cython.renderSceneB(
                 scene, 1, Abuffer_copy, Zbuffer, Abuffer_b.numpy()
             )

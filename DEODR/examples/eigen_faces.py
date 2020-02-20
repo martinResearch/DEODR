@@ -161,7 +161,7 @@ def fun(points_deformed, pca_coefs):
     cv2.imshow(
         "animation", np.column_stack((A_gt_zoomed, Abuffer_zoomed, diffImage_zoomed))
     )
-    key = cv2.waitKey(1)
+    cv2.waitKey(1)
 
     # get gradient on pca coefs
     coefs_grad = faces_pca.components_.dot(scene.texture_b.flatten())
@@ -190,4 +190,4 @@ for iter in range(nbIter):
 
     variables["points_deformed"][on_border] = points[on_border]
 
-key = cv2.waitKey()
+cv2.waitKey()

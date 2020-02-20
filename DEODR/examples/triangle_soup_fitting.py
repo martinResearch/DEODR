@@ -53,9 +53,9 @@ def create_example_scene():
         else:
             triangle["uv"] = np.zeros((3, 2))
             triangle["shade"] = np.zeros((3, 1))
-            triangle["colors"] = np.random.rand(
-                3, 3
-            )  # colors of the vertices (can be gray, rgb color,or even other dimension vectors) when using simple linear interpolation across triangles
+            triangle["colors"] = np.random.rand(3, 3)
+            # colors of the vertices (can be gray, rgb color,or even other dimension
+            # vectors) when using simple linear interpolation across triangles
             triangle["shaded"] = False
 
         triangle["edgeflags"] = np.array(
@@ -84,11 +84,8 @@ def create_example_scene():
 def main():
     print("process id=%d" % os.getpid())
 
-    display = True
     np.random.seed(2)
     scene_gt = create_example_scene()
-    display = True
-    save_images = True
     antialiaseError = False
     sigma = 1
 
@@ -109,9 +106,7 @@ def main():
     beta_uv = 0.80
     alpha_color = 0.001
     beta_color = 0.70
-    scale_material = np.array(
-        [[scene_gt.texture.shape[0] - 1, 0], [0, scene_gt.texture.shape[1] - 1]]
-    )
+
     max_uv = np.array(scene_gt.texture.shape[:2]) - 1
 
     scene_init = copy.deepcopy(scene_gt)
@@ -143,7 +138,7 @@ def main():
             )
 
             # imsave(os.path.join(iterfolder,f'soup_{iter}.png'), combinedIMage)
-            key = cv2.waitKey(1)
+            cv2.waitKey(1)
             losses.append(loss)
             if lossImage.ndim == 2:
                 lossImage = np.broadcast_to(lossImage[:, :, None], Image.shape)
@@ -157,11 +152,13 @@ def main():
                 scene_iter.ij = scene_iter.ij + speed_ij
 
             if displacement_magnitude_colors > 0:
-                speed_color = beta_color * speed_color - scene2b.colors_b * alpha_color
+                speed_color = (
+                    beta_color * speed_color - scene_iter.colors_b * alpha_color
+                )
                 scene_iter.colors = scene_iter.colors + speed_color
 
             if displacement_magnitude_uv > 0:
-                speed_uv = beta_uv * speed_uv - scene2b.uv_b * alpha_uv
+                speed_uv = beta_uv * speed_uv - scene_iter.uv_b * alpha_uv
                 scene_iter.uv = scene_iter.uv + speed_uv
                 scene_iter.uv = max(scene_iter.uv, 0)
                 scene_iter.uv = min(scene_iter.uv, max_uv)

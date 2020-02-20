@@ -1,7 +1,6 @@
 import numpy as np
 from .. import differentiable_renderer_cython
 import torch
-import copy
 from ..differentiable_renderer import Scene3D, Camera
 
 
@@ -31,15 +30,15 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
         Zbuffer = np.empty((scene.image_H, scene.image_W))
         ctx.scene = scene
-        scene.ij = (
-            ij.detach().numpy()
-        )  # should automatically detached according to https://pytorch.org/docs/master/notes/extending.html
+        scene.ij = ij.detach().numpy()  # should automatically detached according to
+        # https://pytorch.org/docs/master/notes/extending.html
         scene.colors = colors.detach().numpy()
         differentiable_renderer_cython.renderScene(scene, 1, Abuffer, Zbuffer)
         ctx.save_for_backward(ij, colors)
         ctx.Abuffer = (
             Abuffer.copy()
-        )  # making a copy to keep the antializaed image for visualization , could be optional
+        )  # making a copy to keep the antializaed image for visualization ,
+        # could be optional
         ctx.Zbuffer = Zbuffer
         return torch.as_tensor(Abuffer)
 
@@ -69,12 +68,6 @@ class Scene3DPytorch(Scene3D):
             ligthDirectional = torch.tensor(ligthDirectional)
         self.ligthDirectional = ligthDirectional
         self.ambiantLight = ambiantLight
-
-    def _cameraProject(self, cameraMatrix, P3D):
-
-        depths = r[:, 2]
-        P2D = r[:, :2] / depths[:, None]
-        return P2D, depths
 
     def _computeVerticesColorsWithIllumination(self):
         verticesLuminosity = (

@@ -27,7 +27,8 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
             return E
         else:
             diff = (V - torch.tensor(self.Vref)).flatten()
-            # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V) #40x slower than scipy !
+            # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
+            # 40x slower than scipy !
             gradV = torch.tensor(
                 self.cregu * (self.cT * (diff[:, None].numpy())).reshape(V.shape)
             )

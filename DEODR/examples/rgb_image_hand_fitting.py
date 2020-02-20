@@ -2,7 +2,6 @@ from DEODR import readObj
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
-import copy
 import cv2
 import time
 import datetime
@@ -24,8 +23,6 @@ def example_rgb_hand_fitting(
         raise BaseException(f"unkown deep learning library {dl_library}")
 
     handImage = imread("hand.png").astype(np.double) / 255
-    w = handImage.shape[1]
-    h = handImage.shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
 
@@ -92,7 +89,7 @@ def example_rgb_hand_fitting(
                 )
             if save_images:
                 imsave(os.path.join(iterfolder, f"hand_iter_{iter}.png"), combinedIMage)
-        key = cv2.waitKey(1)
+        cv2.waitKey(1)
 
     # save convergence curve
     with open(

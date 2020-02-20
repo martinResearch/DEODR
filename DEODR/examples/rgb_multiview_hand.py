@@ -2,7 +2,6 @@ from DEODR import readObj
 from imageio import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
-import copy
 import cv2
 import time
 import datetime
@@ -20,8 +19,6 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
     ]
     nbFrames = len(handImages)
 
-    w = handImages[0].shape[1]
-    h = handImages[0].shape[0]
     objFile = "hand.obj"
     faces, vertices = readObj(objFile)
 
@@ -52,7 +49,8 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
         translation_init=translation_init,
         cregu=2000,
     )
-    #        handFitter = MeshRGBFitter(vertices,faces,defaultColor,defaultLight,  updateLights =  True, updateColor= True,cregu=1000)
+    #  handFitter = MeshRGBFitter(vertices,faces,defaultColor,defaultLight,
+    # updateLights =  True, updateColor= True,cregu=1000)
 
     handFitter.reset()
     maxIter = 150
@@ -102,7 +100,7 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
                     os.path.join(iterfolder, f"hand_iter_{iter}.png"),
                     (combinedIMage * 255).astype(np.uint8),
                 )
-        key = cv2.waitKey(1)
+        cv2.waitKey(1)
 
     # save convergence curve
     with open(

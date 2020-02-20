@@ -1,4 +1,3 @@
-from scipy import sparse
 import numpy as np
 import tensorflow as tf
 

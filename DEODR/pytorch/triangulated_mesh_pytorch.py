@@ -1,7 +1,6 @@
-from scipy import sparse
 import numpy as np
 import torch
-from ..triangulated_mesh import *
+from ..triangulated_mesh import TriMesh, TriMeshAdjacencies
 
 
 def print_grad(name):
@@ -17,7 +16,6 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         self.faces_torch = torch.LongTensor(faces)
         i = self.faces_torch.flatten()
         j = torch.LongTensor(np.tile(np.arange(self.nbF)[:, None], [1, 3]).flatten())
-        v = np.ones((self.nbF, 3)).flatten()
         self.Vertices_Faces_torch = torch.sparse.DoubleTensor(
             torch.stack((i, j)),
             torch.ones((self.nbF, 3), dtype=torch.float64).flatten(),
@@ -33,15 +31,15 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         else:
             n = torch.cross(u, v)
         l2 = (n ** 2).sum(dim=1)
-        l = l2.sqrt()
-        nn = n / l[:, None]
+        norm = l2.sqrt()
+        nn = n / norm[:, None]
         return nn
 
     def computeVertexNormals(self, faceNormals):
         n = self.Vertices_Faces_torch.mm(faceNormals)
         l2 = (n ** 2).sum(dim=1)
-        l = l2.sqrt()
-        return n / l[:, None]
+        norm = l2.sqrt()
+        return n / norm[:, None]
 
     def edgeOnSilhouette(self, vertices2D):
         return super().edgeOnSilhouette(vertices2D.detach().numpy())

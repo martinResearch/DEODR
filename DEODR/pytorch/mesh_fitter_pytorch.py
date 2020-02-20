@@ -2,15 +2,12 @@ from DEODR.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch, CameraPyt
 from DEODR import LaplacianRigidEnergy
 from DEODR.pytorch import TriMeshPytorch as TriMesh
 from DEODR.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
-
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy import sparse
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import torch
 import copy
-import cv2
 
 
 def print_grad(name):
@@ -56,7 +53,7 @@ class MeshRGBFitter:
         self.mesh = TriMesh(
             faces.copy()
         )  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0) + translation_init
+        objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
         self.scene = Scene3DPytorch()
@@ -120,7 +117,8 @@ class MeshRGBFitter:
 
         Abuffer = self.scene.render(self.camera, resolution=(self.SizeW, self.SizeH))
         # projJac = self.scene.projectionsJacobian(self.CameraMatrix, self.V)
-        ## projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses python loops
+        # projJacSp=sparse.block_diag(projJac,format='csr')# horribly slow as it uses
+        # python loops
         # i = np.tile(
         # (
         # np.arange(projJac.shape[0])[:, None] * projJac.shape[1]
@@ -214,7 +212,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         objectCenter = vertices.mean(axis=0)
         objectRadius = np.max(np.std(vertices, axis=0))
         self.cameraCenter = objectCenter + np.array([-0.5, 0, 5]) * objectRadius
-        self.scene = Scene()
+        self.scene = Scene2D()
         self.scene.setMesh(self.mesh)
         self.rigidEnergy = LaplacianRigidEnergyPytorch(self.mesh, vertices, cregu)
         self.Vinit = copy.copy(self.mesh.vertices)
@@ -297,8 +295,10 @@ class MeshDepthFitterPytorchOptim:
         )
         params = self.energy.parameters()
         self.optimizer = torch.optim.LBFGS(self.energy.parameters(), lr=0.8, max_iter=1)
-        # self.optimizer = torch.optim.SGD(params, lr=0.000005, momentum=0.1,  dampening=0.1        )
-        # self.optimizer =torch.optim.RMSprop(params, lr=1e-3, alpha=0.99,  eps=1e-8,  weight_decay=0,  momentum=0.001)
+        # self.optimizer = torch.optim.SGD(params, lr=0.000005, momentum=0.1,
+        # dampening=0.1        )
+        # self.optimizer =torch.optim.RMSprop(params, lr=1e-3, alpha=0.99,  eps=1e-8,
+        # weight_decay=0,  momentum=0.001)
         # self.optimizer = torch.optim.Adadelta(params, lr=0.1, rho=0.95,     eps=1e-6,  weight_decay=0)
         # self.optimizer = torch.optim.Adagrad(self.energy.parameters(), lr=0.02)
 
