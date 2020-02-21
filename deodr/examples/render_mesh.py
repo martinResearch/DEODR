@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 import imageio
-
+import trimesh
 
 
 def loadmesh(file):
-    import trimesh
 
     mesh_trimesh = trimesh.load(file)
     return ColoredTriMesh.from_trimesh(mesh_trimesh)
