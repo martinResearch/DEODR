@@ -20,14 +20,12 @@ jobs:
     - name: Build and publish to testPyPI      
       uses: pypa/gh-action-pypi-publish@master      
       with:
-        repository_url: https://test.pypi.org/legacy/  
-        user: ${{ secrets.test_pypi_username }} 
+        repository_url: https://test.pypi.org/legacy/ 
         password: ${{ secrets.test_pypi_password }}
     - name: Build and publish to PyPI
       if: startsWith(github.event.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
-        user: ${{ secrets.pypi_username }} 
         password: ${{ secrets.pypi_password }}
       
     
