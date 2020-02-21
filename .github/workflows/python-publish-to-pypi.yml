@@ -18,9 +18,9 @@ jobs:
         pip install setuptools wheel 
         python setup.py sdist bdist_wheel
     - name: Build and publish to testPyPI      
-      uses: pypa/gh-action-pypi-publish@master
-      repository_url: https://test.pypi.org/legacy/
+      uses: pypa/gh-action-pypi-publish@master      
       with:
+        repository_url: https://test.pypi.org/legacy/  
         user: ${{ secrets.test_pypi_username }} 
         password: ${{ secrets.test_pypi_password }}
     - name: Build and publish to PyPI
