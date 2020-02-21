@@ -3,11 +3,11 @@ from deodr import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from cache_to_disk import cache_to_disk
 import os
+import imageio
 
 
-@cache_to_disk(3)
+
 def loadmesh(file):
     import trimesh
 
@@ -15,7 +15,7 @@ def loadmesh(file):
     return ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 
-def render_mesh(obj_file, SizeW=640, SizeH=480):
+def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
 
     mesh = loadmesh(obj_file)
 
@@ -37,9 +37,6 @@ def render_mesh(obj_file, SizeW=640, SizeH=480):
         extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(SizeW, SizeH)
     )
 
-    handColor = np.array([200, 100, 100]) / 255
-    mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
-
     scene = differentiable_renderer.Scene3D()
     scene.setLight(ligthDirectional=np.array([-0.5, 0, -0.5]), ambiantLight=0.3)
     scene.setMesh(mesh)
@@ -47,46 +44,51 @@ def render_mesh(obj_file, SizeW=640, SizeH=480):
     scene.setBackground(backgroundImage)
 
     Abuffer = scene.render(camera)
+    if display:
+        plt.figure()
+        plt.imshow(Abuffer)
 
-    plt.figure()
-    plt.imshow(Abuffer)
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection=Axes3D.name)
-    mesh.plot(ax, plot_normals=True)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    u, v, w = scene.ligthDirectional
-    ax.quiver(
-        np.array([0.0]),
-        np.array([0.0]),
-        np.array([0.0]),
-        np.array([u]),
-        np.array([v]),
-        np.array([w]),
-        color=[1, 1, 0.5],
-    )
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection=Axes3D.name)
+        mesh.plot(ax, plot_normals=True)
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
+        u, v, w = scene.ligthDirectional
+        ax.quiver(
+            np.array([0.0]),
+            np.array([0.0]),
+            np.array([0.0]),
+            np.array([u]),
+            np.array([v]),
+            np.array([w]),
+            color=[1, 1, 0.5],
+        )
 
     channels = scene.renderDeffered(camera)
-    plt.figure()
-    for i, (name, v) in enumerate(channels.items()):
-        ax = plt.subplot(2, 3, i + 1)
-        ax.set_title(name)
-        if v.ndim == 3 and v.shape[2] < 3:
-            nv = np.zeros((v.shape[0], v.shape[1], 3))
-            nv[:, :, : v.shape[2]] = v
-            ax.imshow((nv - nv.min()) / (nv.max() - nv.min()))
-        else:
-            ax.imshow((v - v.min()) / (v.max() - v.min()))
+    if display:
+        plt.figure()
+        for i, (name, v) in enumerate(channels.items()):
+            ax = plt.subplot(2, 3, i + 1)
+            ax.set_title(name)
+            if v.ndim == 3 and v.shape[2] < 3:
+                nv = np.zeros((v.shape[0], v.shape[1], 3))
+                nv[:, :, : v.shape[2]] = v
+                ax.imshow((nv - nv.min()) / (nv.max() - nv.min()))
+            else:
+                ax.imshow((v - v.min()) / (v.max() - v.min()))
 
-    plt.show()
+        plt.show()
+    return Abuffer, channels
 
 
-def example():
+def example(save_image=False):
     obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
-    render_mesh(obj_file)
-
+    Abuffer, channels = render_mesh(obj_file,SizeW=320, SizeH=240)
+    image_file =  os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/test/duck.png"))
+    os.makedirs(os.path.dirname(image_file),exist_ok=True)
+    Abuffer_uint8 = (Abuffer*255).astype(np.uint8)
+    imageio.imwrite(image_file,Abuffer_uint8)
 
 if __name__ == "__main__":
-    example()
+    example(save_image=False)
