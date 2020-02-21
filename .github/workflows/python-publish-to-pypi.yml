@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows
     steps:
     - uses: actions/checkout@v2
     - name: Publish python wheel to testPyPI and PyPI
