@@ -18,8 +18,7 @@ jobs:
         python -m pip install --upgrade pip        
         pip install setuptools wheel 
         python setup.py sdist bdist_wheel
-    - name: Build and publish to testPyPI
-      if: startsWith(github.event.ref, 'refs/tags')
+    - name: Build and publish to testPyPI      
       uses: pypa/gh-action-pypi-publish@master
       repository_url: https://test.pypi.org/legacy/
       with:
