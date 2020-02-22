@@ -35,7 +35,6 @@ environment:
     PYTHON_VERSION: "3.7"
     PYTHON_ARCH: "64"
   
-
     
 install:
   # If there is a newer build queued for the same PR, cancel this one.
