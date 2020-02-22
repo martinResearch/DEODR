@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 import cv2
 import copy
 import os
-
+import deodr
 
 def create_example_scene():
 
     Ntri = 30
     SizeW = 200
     SizeH = 200
-    file_folder = os.path.dirname(os.path.abspath(__file__))
-    material = np.double(imread(os.path.join(file_folder, "trefle.jpg"))) / 255
+
+    material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
     Hmaterial = material.shape[0]
     Wmaterial = material.shape[1]
 

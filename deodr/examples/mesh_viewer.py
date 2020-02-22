@@ -1,5 +1,6 @@
 from deodr.triangulated_mesh import ColoredTriMesh
 from deodr import differentiable_renderer
+import deodr
 import numpy as np
 import matplotlib.pyplot as plt
 import trimesh
@@ -224,7 +225,7 @@ def mesh_viewer(
 
 
 def run():
-    obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
     mesh_viewer(obj_file)
 
 

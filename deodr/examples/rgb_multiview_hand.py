@@ -9,7 +9,7 @@ import glob
 import json
 import os
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
-
+import deodr
 
 def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
 
@@ -17,11 +17,11 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
 
     handImages = [
         imread(file).astype(np.double) / 255
-        for file in glob.glob(os.path.join(file_folder, "./sfm/*.jpg"))
+        for file in glob.glob(os.path.join(deodr.data_path, "./hand_multiview/*.jpg"))
     ]
     nbFrames = len(handImages)
 
-    objFile = os.path.join(file_folder, "hand.obj")
+    objFile = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = readObj(objFile)
 
     defaultColor = np.array([0.4, 0.3, 0.25]) * 1.5

@@ -24,6 +24,7 @@ author='Martin de La Gorce',
 author_email='martin.delagorce@gmail.com',
 license='BSD',
 packages= find_packages(),
+package_data={'deodr': ['data/**/*.*']},
 ext_modules = my_modules,  # additional source file(s)),
 include_dirs=[ np.get_include()],
 install_requires=['cython','numpy','scipy']

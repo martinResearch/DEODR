@@ -8,7 +8,7 @@ import datetime
 import glob
 import json
 import os
-
+import deodr
 
 def run(
     dl_library="pytorch", plot_curves=True, save_images=True, display=True
@@ -24,8 +24,8 @@ def run(
 
     file_folder = os.path.dirname(__file__)
 
-    handImage = imread(os.path.join(file_folder, "hand.png")).astype(np.double) / 255
-    objFile = os.path.join(file_folder, "hand.obj")
+    handImage = imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
+    objFile = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = readObj(objFile)
 
     defaultColor = np.array([0.4, 0.3, 0.25])

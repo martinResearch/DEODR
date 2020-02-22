@@ -1,4 +1,5 @@
 from deodr import readObj
+import deodr
 from scipy.misc import imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +26,7 @@ def run(
         raise BaseException(f"unkown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
-        np.fromfile(os.path.join(file_folder, "depth.bin"), dtype=np.float32)
+        np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
         .reshape(240, 320)
         .astype(np.float)
     )
@@ -34,7 +35,7 @@ def run(
     depth_image[depth_image == 0] = max_depth
     depth_image = depth_image / max_depth
 
-    objFile = os.path.join(file_folder, "hand.obj")
+    objFile = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = readObj(objFile)
 
     euler_init = np.array([0.1, 0.1, 0.1])
