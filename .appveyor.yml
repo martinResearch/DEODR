@@ -47,7 +47,7 @@ test_script:
   - pip uninstall -y deodr
   - pip install pytest
   - ps: "ls dist"
-  - cmd : dir /b /a-d "dist/*.whl" >WheelFile.txt & set /p _wheel= < WheelFile.txt
+  - cmd : dir /b /a-d "dist\*.whl" >WheelFile.txt & set /p _wheel= < WheelFile.txt
   - pip install %_wheel%
   - pytest
 
