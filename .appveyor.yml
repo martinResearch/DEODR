@@ -45,22 +45,22 @@ install:
 
   # Python(set before conda command call)
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;"
-  - python -m pip install --upgrade pip
-  - pip install -r requirements.txt
+  - python3 -m pip install --upgrade pip
+  - pip3 install -r requirements.txt
 
 build_script:
 
-  - python setup.py build_ext -i
-  - python setup.py install
-  - python setup.py bdist_wheel
-  - python -m pip list
+  - python3 setup.py build_ext -i
+  - python3 setup.py install
+  - python3 setup.py bdist_wheel
+  - python3 -m pip list
   
 test_script:
-  - pip uninstall -y deodr
-  - pip install pytest
+  - pip3 uninstall -y deodr
+  - pip3 install pytest
   - ps: "ls dist"
   - cmd : dir /b /a-d "dist\*.whl" >WheelFile.txt & set /p _wheel= < WheelFile.txt
-  - pip install dist\%_wheel%
+  - pip3 install dist\%_wheel%
   - pytest
 
   
@@ -82,16 +82,16 @@ after_test:
   (
   IF "%APPVEYOR_REPO_TAG%" == "true"
   (
-  python -m pip install twine &&
+  python3 -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %REPO% -u __token__ -p %PYPI_PASSWORD%
+  python3 -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %REPO% -u __token__ -p %PYPI_PASSWORD%
   )
   )
 - >
   IF "%APPVEYOR_REPO_BRANCH%" == "pypi_test"
   (
-  python -m pip install twine &&
+  python3 -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %TESTREPO% -u __token__ -p %PYPI_TEST_PASSWORD%
+  python3 -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %TESTREPO% -u __token__ -p %PYPI_TEST_PASSWORD%
   )
 - cmd: echo TASK COMPLETED
