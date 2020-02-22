@@ -29,6 +29,12 @@ environment:
     PYTHON_VERSION: "3.7"
     PYTHON_ARCH: "64"
     
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    os: Windows Server 2019
+    PYTHON: "C:\\Python38-x64"
+    PYTHON_VERSION: "3.7"
+    PYTHON_ARCH: "64"
+  
 
     
 install:
