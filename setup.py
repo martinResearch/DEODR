@@ -27,6 +27,7 @@ packages= find_packages(),
 package_data={'deodr': ['data/*.*','data/**/*.*']},
 ext_modules = my_modules,  # additional source file(s)),
 include_dirs=[ np.get_include()],
-install_requires=['cython','numpy','scipy','cython']
+setup_requires = ['cython','numpy','scipy'],
+install_requires=['cython','numpy','scipy']
 )
 
