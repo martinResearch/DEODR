@@ -62,7 +62,6 @@ artifacts:
 after_test:
 - cmd: set REPO=https://upload.pypi.org/legacy/
 - cmd: set TESTREPO=https://test.pypi.org/legacy/
-- cmd: set USERNAME=%PYPI_USERNAME%
 
 # Ensure only master branch can trigger build
 - >
@@ -72,7 +71,7 @@ after_test:
   (
   python -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %REPO% -u %PYPI_USERNAME% -p %PYPI_PASSWORD%
+  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %REPO%  -p %PYPI_PASSWORD%
   )
   )
 - >
@@ -80,6 +79,6 @@ after_test:
   (
   python -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %TESTREPO% -u %PYPI_USERNAME% -p %PYPI_TEST_PASSWORD%
+  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %TESTREPO%  -p %PYPI_TEST_PASSWORD%
   )
 - cmd: echo TASK COMPLETED
