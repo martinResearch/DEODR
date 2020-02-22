@@ -2,7 +2,7 @@
 # you need to create the API key TWIN_PASSWORD in here https://ci.appveyor.com/api-keys
 environment:
   global:
-    CIBW_BUILD: cp36-*
+    CIBW_BUILD: "cp36-*"
     TWINE_USERNAME: __token__
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
 build_script:
