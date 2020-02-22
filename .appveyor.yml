@@ -2,12 +2,13 @@
 # you need to create the API key TWIN_PASSWORD in here https://ci.appveyor.com/api-keys
 
 # Skip Python 2.7 and Python 3.5
-CIBW_SKIP: cp27-* cp35-*
+
 
 environment:
   TWINE_USERNAME: __token__
   # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
-
+  global:
+    CIBW_SKIP: cp27-* cp35-*
 build_script:
   - pip install cibuildwheel==1.0.0
   - cibuildwheel --output-dir wheelhouse
