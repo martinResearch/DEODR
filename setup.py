@@ -19,7 +19,7 @@ my_modules=cythonize(extensions,annotate=True,language="c++")
 libname="deodr"
 setup(
 name = libname,
-version="0.1.1",
+version="0.1.2",
 author='Martin de La Gorce',
 author_email='martin.delagorce@gmail.com',
 license='BSD',
