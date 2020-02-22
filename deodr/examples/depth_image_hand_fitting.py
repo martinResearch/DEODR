@@ -11,9 +11,7 @@ import os
 import json
 
 
-def run(
-    dl_library="none", plot_curves=False, save_images=False, display=True
-):
+def run(dl_library="none", plot_curves=False, save_images=False, display=True):
     file_folder = os.path.dirname(__file__)
 
     if dl_library == "pytorch":
@@ -115,23 +113,16 @@ def run(
         plt.legend()
         plt.show()
 
+
 def main():
     display = True
 
-    run(
-        dl_library="none", plot_curves=False, save_images=False, display=display
-    )
+    run(dl_library="none", plot_curves=False, save_images=False, display=display)
 
-    run(
-        dl_library="pytorch", plot_curves=False, save_images=False, display=display
-    )
+    run(dl_library="pytorch", plot_curves=False, save_images=False, display=display)
 
-    run(
-        dl_library="tensorflow", plot_curves=True, save_images=False, display=display
-    )
+    run(dl_library="tensorflow", plot_curves=True, save_images=False, display=display)
+
 
 if __name__ == "__main__":
     main()
-	
-
-   

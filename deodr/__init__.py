@@ -23,4 +23,5 @@ from .obj import readObj
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .triangulated_mesh import TriMesh, ColoredTriMesh
 import os
-data_path=os.path.join(os.path.dirname(__file__),'data')
+
+data_path = os.path.join(os.path.dirname(__file__), "data")

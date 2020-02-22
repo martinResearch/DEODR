@@ -8,6 +8,7 @@ import copy
 import os
 import deodr
 
+
 def create_example_scene():
 
     Ntri = 30

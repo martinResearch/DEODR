@@ -10,9 +10,8 @@ import json
 import os
 import deodr
 
-def run(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True
-):
+
+def run(dl_library="pytorch", plot_curves=True, save_images=True, display=True):
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
     elif dl_library == "tensorflow":
@@ -22,9 +21,9 @@ def run(
     else:
         raise BaseException(f"unkown deep learning library {dl_library}")
 
-    file_folder = os.path.dirname(__file__)
-
-    handImage = imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
+    handImage = (
+        imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
+    )
     objFile = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = readObj(objFile)
 
@@ -140,6 +139,7 @@ def run(
         plt.legend()
         plt.show()
 
+
 def main():
 
     display = True
@@ -152,15 +152,14 @@ def main():
         save_images=save_images,
     )
 
-    run(
-        dl_library="none", plot_curves=False, display=display, save_images=save_images
-    )
+    run(dl_library="none", plot_curves=False, display=display, save_images=save_images)
     run(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
     )
-	
+
+
 if __name__ == "__main__":
-	main()
+    main()

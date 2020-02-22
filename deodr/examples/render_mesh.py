@@ -6,6 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 import imageio
 import trimesh
+import deodr
 
 
 def loadmesh(file):
@@ -83,11 +84,12 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
 
 def run(save_image=False):
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    Abuffer, channels = render_mesh(obj_file,SizeW=320, SizeH=240)
-    image_file =  os.path.abspath(os.path.join(deodr.data_path, "/test/duck.png"))
-    os.makedirs(os.path.dirname(image_file),exist_ok=True)
-    Abuffer_uint8 = (Abuffer*255).astype(np.uint8)
-    imageio.imwrite(image_file,Abuffer_uint8)
+    Abuffer, channels = render_mesh(obj_file, SizeW=320, SizeH=240)
+    image_file = os.path.abspath(os.path.join(deodr.data_path, "/test/duck.png"))
+    os.makedirs(os.path.dirname(image_file), exist_ok=True)
+    Abuffer_uint8 = (Abuffer * 255).astype(np.uint8)
+    imageio.imwrite(image_file, Abuffer_uint8)
+
 
 if __name__ == "__main__":
     run(save_image=False)

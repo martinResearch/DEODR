@@ -43,7 +43,7 @@ class Camera:
         if self.dist is None:
             projectedImageCoordinates = self.leftMulIntrinsic(projected)
             if store_backward is not None:
-                store_backward["projectPoints"] = ( pCam, depths, projected)
+                store_backward["projectPoints"] = (pCam, depths, projected)
         else:
             k1, k2, p1, p2, k3, = self.dist
             x = projected[:, 0]
@@ -364,7 +364,7 @@ class Scene3D:
 
     def computeVerticesLuminosity(self):
         directional = np.maximum(
-            0, - np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
+            0, -np.sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
         )
         self.store_backward_current["computeVerticesLuminosity"] = directional
         return directional + self.ambiantLight

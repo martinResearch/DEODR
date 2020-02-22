@@ -11,9 +11,8 @@ import os
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
 import deodr
 
-def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
 
-    file_folder = os.path.dirname(__file__)
+def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
 
     handImages = [
         imread(file).astype(np.double) / 255
@@ -155,6 +154,4 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
 if __name__ == "__main__":
     display = True
     save_images = False
-    run(
-        dl_library="none", plot_curves=True, display=display, save_images=save_images
-    )
+    run(dl_library="none", plot_curves=True, display=display, save_images=save_images)
