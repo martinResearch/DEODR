@@ -81,7 +81,7 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
     return Abuffer, channels
 
 
-def example(save_image=False):
+def run(save_image=False):
     obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
     Abuffer, channels = render_mesh(obj_file,SizeW=320, SizeH=240)
     image_file =  os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/test/duck.png"))
@@ -90,4 +90,4 @@ def example(save_image=False):
     imageio.imwrite(image_file,Abuffer_uint8)
 
 if __name__ == "__main__":
-    example(save_image=False)
+    run(save_image=False)

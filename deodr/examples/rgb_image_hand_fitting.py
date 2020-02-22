@@ -10,7 +10,7 @@ import json
 import os
 
 
-def example_rgb_hand_fitting(
+def run(
     dl_library="pytorch", plot_curves=True, save_images=True, display=True
 ):
     if dl_library == "pytorch":
@@ -140,24 +140,27 @@ def example_rgb_hand_fitting(
         plt.legend()
         plt.show()
 
+def main():
 
-if __name__ == "__main__":
     display = True
     save_images = False
 
-    example_rgb_hand_fitting(
+    run(
         dl_library="pytorch",
         plot_curves=False,
         display=display,
         save_images=save_images,
     )
 
-    example_rgb_hand_fitting(
+    run(
         dl_library="none", plot_curves=False, display=display, save_images=save_images
     )
-    example_rgb_hand_fitting(
+    run(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
     )
+	
+if __name__ == "__main__":
+	main()

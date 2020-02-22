@@ -223,10 +223,10 @@ def mesh_viewer(
         cv2.waitKey(1)
 
 
-def example():
+def run():
     obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
     mesh_viewer(obj_file)
 
 
 if __name__ == "__main__":
-    example()
+    run()

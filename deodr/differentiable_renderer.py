@@ -43,7 +43,7 @@ class Camera:
         if self.dist is None:
             projectedImageCoordinates = self.leftMulIntrinsic(projected)
             if store_backward is not None:
-                store_backward["projectPoints"] = (points3D, pCam, depths, projected)
+                store_backward["projectPoints"] = ( pCam, depths, projected)
         else:
             k1, k2, p1, p2, k3, = self.dist
             x = projected[:, 0]

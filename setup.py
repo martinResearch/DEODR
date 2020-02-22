@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup,find_packages
 from Cython.Build import cythonize
 from distutils.extension import Extension
 import numpy as np
@@ -23,7 +23,7 @@ version="0.1",
 author='Martin de La Gorce',
 author_email='martin.delagorce@gmail.com',
 license='BSD',
-packages= ['deodr'],
+packages= find_packages(),
 ext_modules = my_modules,  # additional source file(s)),
 include_dirs=[ np.get_include()],
 install_requires=['cython','numpy','scipy']

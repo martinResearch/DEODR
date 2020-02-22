@@ -10,8 +10,8 @@ import os
 import json
 
 
-def example_depth_image_hand_fitting(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True
+def run(
+    dl_library="none", plot_curves=False, save_images=False, display=True
 ):
     file_folder = os.path.dirname(__file__)
 
@@ -114,18 +114,23 @@ def example_depth_image_hand_fitting(
         plt.legend()
         plt.show()
 
-
-if __name__ == "__main__":
+def main():
     display = True
 
-    example_depth_image_hand_fitting(
+    run(
         dl_library="none", plot_curves=False, save_images=False, display=display
     )
 
-    example_depth_image_hand_fitting(
+    run(
         dl_library="pytorch", plot_curves=False, save_images=False, display=display
     )
 
-    example_depth_image_hand_fitting(
+    run(
         dl_library="tensorflow", plot_curves=True, save_images=False, display=display
     )
+
+if __name__ == "__main__":
+    main()
+	
+
+   

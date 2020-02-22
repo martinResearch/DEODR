@@ -11,7 +11,7 @@ import os
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
 
 
-def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, display=True):
+def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
 
     file_folder = os.path.dirname(__file__)
 
@@ -155,6 +155,6 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 if __name__ == "__main__":
     display = True
     save_images = False
-    example_sfm(
+    run(
         dl_library="none", plot_curves=True, display=display, save_images=save_images
     )

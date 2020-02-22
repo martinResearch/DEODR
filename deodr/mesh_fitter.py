@@ -435,7 +435,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def setBackgroundColor(self, backgroundColor):
         self.scene.setBackground(
-            np.tile(backgroundColor[None, None, :], (self.SizeH, self.SizeW, 1))
+            np.tile(backgroundColor[None, None, :].astype(np.float), (self.SizeH, self.SizeW, 1))
         )
 
     def setMeshTransformInit(self, euler, translation):
