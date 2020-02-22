@@ -1,13 +1,17 @@
 # taken from https://github.com/joerick/cibuildwheel-autopypi-example/blob/master/appveyor.yml
 # you need to create the API key TWIN_PASSWORD in here https://ci.appveyor.com/api-keys
+platform:
+  - x64
 environment:
   global:
-    CIBW_BUILD: "cp36-*"
+    CIBW_SKIP: cp27-* cp33-* cp34-* cp35-*
     TWINE_USERNAME: __token__
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
+
 build_script:
+
   - pip install cibuildwheel==1.0.0
-  - pip install -r requirements.txt
+  - pip install cython
   - cibuildwheel --output-dir wheelhouse
   - >
     IF "%APPVEYOR_REPO_TAG%" == "true"
