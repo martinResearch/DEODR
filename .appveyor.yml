@@ -1,6 +1,19 @@
+# largely inspired from https://github.com/onnx/wheel-builder/blob/master/appveyor.yml
+# some doc how to write this file here https://packaging.python.org/guides/supporting-windows-using-appveyor/
+
 os:
 - Windows Server 2012 R2
 environment:
+  # these encrypted password and username are generated on the “Encrypt configuration data” page 
+  # in AppVeyor (https://ci.appveyor.com/tools/encrypt), this page can be found in  Account → Encrypt YAML).
+  # more doc here https://www.appveyor.com/docs/packaging-artifacts/
+  PYPI_TEST_PASSWORD:
+    secure: ARdkNyeJ7/le3QQal2if2OAqqjtcLGuOiZ9N0wdTMQl1MDKESIuF0XMQHhjdCWgSTgWOQkmCsACi+XBAIFzXoQDdsQYd8UVe11KH5AZFyZdndNLhXKANYJMvVDmZKQapP/2yHxHbBkPhm7Aa8/P9ylmKLgLGtS1M4/bxroNWHkAUQAsRCgQTN0/Po/aSBRHOayyQVnz239wZV2FMyEBe15ur4GgbD3EI+/sVZKYvGswNQjAFkKjQz880Oe2RoIgL
+  PYPI_PASSWORD:
+    secure: fNsmdisSE4Xu6Z7tsGXuPnm9izcaNenbHsOfQAAL3wxVq4cczzs9/pgi6qBcwVg6vCctS31VZIGK1qVTCV8PU6ZWFxQzFK7n1nfFGcBDwvue89OhIZiXCeOtnPOYNPPLgVB+a4c/K4h0I5kT8ZMd7n2TyvWu/tx4yG3RVuBDchoPj8VfZo/yXDqvqEQhKdIqZlrxvy8nh17q7xAY+fYjn2Lc65z5hxFuBJyrjqjp9ok=
+  PYPI_USERNAME:
+    secure: 6XuHd1GQ/kRe6xY73ed/kQ==
+    
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
     PYTHON: "C:\\Miniconda36-x64"
@@ -31,15 +44,47 @@ build_script:
   - python -m pip list
   
 test_script:
+  - pip uninstall deodr
   - pip install pytest
-  - pytest
-after_test:
-  # If tests are successful, create binary packages for the project.
-  - python setup.py bdist_wheel"
-  - python setup.py bdist_wininst"
-  - python setup.py bdist_msi"
   - ps: "ls dist"
+  - cmd : dir /b /a-d "dist/*.whl" >WheelFile.txt & set /p _wheel= < WheelFile.txt
+  - pip install %_wheel%
+  - pytest
+
   
 artifacts:
   # Archive the generated packages in the ci.appveyor.com build report.
 - path: dist\*
+  name: DEODRWheel
+
+
+# publish artifacts
+after_test:
+- cmd: set REPO=https://upload.pypi.org/legacy/
+- cmd: set TESTREPO=https://test.pypi.org/legacy/
+- cmd: set USERNAME=%PYPI_USERNAME%
+# The package twine requires python >= 3.6, so
+# we upgrade python before doing anything related
+# to twine. Note that twine is only for publishing
+# packages, so this change won't affect the package
+# we built.
+- cmd: conda upgrade -y python
+# Ensure only master branch can trigger build
+- >
+  IF "%APPVEYOR_REPO_BRANCH%" == "master"
+  (
+  IF "%APPVEYOR_REPO_TAG%" == "true"
+  (
+  python -m pip install twine &&
+  set HOME=%USERPROFILE% &&
+  python -m twine upload --verbose --skip-existing %_wheel% --repository-url %REPO% -u %USERNAME% -p %PYPI_PASSWORD%
+  )
+  )
+- >
+  IF "%APPVEYOR_REPO_BRANCH%" == "pypi_test"
+  (
+  python -m pip install twine &&
+  set HOME=%USERPROFILE% &&
+  python -m twine upload --verbose --skip-existing %_wheel% --repository-url %TESTREPO% -u %USERNAME% -p %PYPI_TEST_PASSWORD%
+  )
+- cmd: echo TASK COMPLETED
