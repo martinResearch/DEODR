@@ -48,7 +48,7 @@ test_script:
   - pip install pytest
   - ps: "ls dist"
   - cmd : dir /b /a-d "dist\*.whl" >WheelFile.txt & set /p _wheel= < WheelFile.txt
-  - pip install %_wheel%
+  - pip install dist\%_wheel%
   - pytest
 
   
@@ -77,7 +77,7 @@ after_test:
   (
   python -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing %_wheel% --repository-url %REPO% -u %USERNAME% -p %PYPI_PASSWORD%
+  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %REPO% -u %USERNAME% -p %PYPI_PASSWORD%
   )
   )
 - >
@@ -85,6 +85,6 @@ after_test:
   (
   python -m pip install twine &&
   set HOME=%USERPROFILE% &&
-  python -m twine upload --verbose --skip-existing %_wheel% --repository-url %TESTREPO% -u %USERNAME% -p %PYPI_TEST_PASSWORD%
+  python -m twine upload --verbose --skip-existing dist\%_wheel% --repository-url %TESTREPO% -u %USERNAME% -p %PYPI_TEST_PASSWORD%
   )
 - cmd: echo TASK COMPLETED
