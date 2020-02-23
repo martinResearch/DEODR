@@ -12,7 +12,7 @@ environment:
  
 build_script:
   - sudo pip install cibuildwheel==1.0.0
-  - cibuildwheel --output-dir wheelhouse
+  - sudo cibuildwheel --output-dir wheelhouse
   - >
     IF "%APPVEYOR_REPO_TAG%" == "true"
     (
