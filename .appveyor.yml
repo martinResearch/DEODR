@@ -18,7 +18,7 @@ build_script:
   - sh: sudo pip install cibuildwheel==1.0.0 
   - cmd: pip install cibuildwheel==1.0.0
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
-  - cmd: cibuildwheel --output-dir wheelhouse --platform linux
+  - cmd: cibuildwheel --output-dir wheelhouse
   - sh: sudo pip install twine
   - cmd: pip install twine
   - python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/
