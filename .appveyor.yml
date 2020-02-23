@@ -11,8 +11,8 @@ environment:
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
  
 build_script:
-  - sudo pip install cibuildwheel==1.0.0
-  - sudo cibuildwheel --output-dir wheelhouse
+  - pip install cibuildwheel==1.0.0 --user
+  - cibuildwheel --output-dir wheelhouse
   - >
     IF "%APPVEYOR_REPO_TAG%" == "true"
     (
