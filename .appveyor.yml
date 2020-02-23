@@ -15,7 +15,7 @@ environment:
 build_script:
   - sudo pip install cibuildwheel==1.0.0 
   - cibuildwheel --output-dir wheelhouse --platform linux
-  - python -m pip install twine
+  - sudo pip install twine
   - python -m twine upload wheelhouse/*.whl --skip-existing
     
   
