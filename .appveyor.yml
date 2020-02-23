@@ -7,11 +7,10 @@ environment:
     CIBW_SKIP: cp27-* cp33-* cp34-* cp35-*
     TWINE_USERNAME: __token__
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
-
+before_build:
+   - pip install cython   
 build_script:
-
   - pip install cibuildwheel==1.0.0
-  - pip install cython
   - cibuildwheel --output-dir wheelhouse
   - >
     IF "%APPVEYOR_REPO_TAG%" == "true"
