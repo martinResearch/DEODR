@@ -7,8 +7,8 @@
 #create the API key TWINE_PASSWORD in here https://ci.appveyor.com/api-keys
 
 image: 
-    - ubuntu
-
+    #- ubuntu
+    - Visual Studio 2019
 platform:
   - x64
 environment:
@@ -32,8 +32,8 @@ build_script:
   - cmd: cibuildwheel --output-dir wheelhouse
   - sh: sudo pip install twine
   - cmd: pip install twine
-  - python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/ -p $encrypted_test_pypi_api_token
-   
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/ -p $encrypted_test_pypi_api_token
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/ -p %encrypted_test_pypi_api_token%  
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
