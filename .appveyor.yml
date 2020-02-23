@@ -11,7 +11,7 @@ environment:
     CIBW_BEFORE_BUILD: pip install cython && pip install numpy
     CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
     TWINE_USERNAME: __token__
-    CIBW_PLATFORM: linux
+    # CIBW_PLATFORM: linux
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
  
 build_script:
