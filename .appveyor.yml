@@ -20,9 +20,9 @@ for:
           
   environment:
     global:
-      encrypted_pypi_api_token:
+      TWINE_PASSWORD:
         secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
-      pypi_url:   https://pypi.org/legacy/
+      TWINE_REPOSITORY_URL :   https://pypi.org/legacy/
       CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp37-* cp38-* *-win32
       CIBW_BEFORE_BUILD: pip install cython && pip install numpy
       CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
@@ -35,9 +35,9 @@ for:
           
   environment:
     global:
-      encrypted_pypi_api_token:
+      TWINE_PASSWORD:
           secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
-      pypi_url:   https://test.pypi.org/legacy/
+      TWINE_REPOSITORY_URL :   https://test.pypi.org/legacy/
       CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp37-* cp38-* *-win32
       CIBW_BEFORE_BUILD: pip install cython && pip install numpy
       CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
@@ -51,8 +51,7 @@ build_script:
   - cmd: cibuildwheel --output-dir wheelhouse
   - sh: sudo pip install twine
   - cmd: pip install twine
-  - sh: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  pypi_url -p $encrypted_pypi_api_token
-  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url pypi_url -p %encrypted_pypi_api_token%  
+  - python -m twine upload wheelhouse/*.whl --skip-existing 
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
