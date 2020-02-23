@@ -1,6 +1,8 @@
 # taken from https://github.com/joerick/cibuildwheel-autopypi-example/blob/master/appveyor.yml
 # you need to create the API key TWIN_PASSWORD in here https://ci.appveyor.com/api-keys
-image: ubuntu
+image: 
+    - ubuntu
+    - Visual Studio 2019
 platform:
   - x64
 environment:
@@ -13,9 +15,11 @@ environment:
     # Note: TWINE_PASSWORD is set to an API token in Appveyor settings
  
 build_script:
-  - sudo pip install cibuildwheel==1.0.0 
+  - sh: sudo pip install cibuildwheel==1.0.0 
+  - cmd: pip install cibuildwheel==1.0.0
   - cibuildwheel --output-dir wheelhouse --platform linux
-  - sudo pip install twine
+  - sh: sudo pip install twine
+  - cmd: pip install twine
   - python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/
    
 artifacts:
