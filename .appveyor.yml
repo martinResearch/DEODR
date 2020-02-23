@@ -1,5 +1,6 @@
 # taken from https://github.com/joerick/cibuildwheel-autopypi-example/blob/master/appveyor.yml
 # you need to create the API key TWIN_PASSWORD in here https://ci.appveyor.com/api-keys
+image: ubuntu
 platform:
   - x64
 environment:
