@@ -1,29 +1,47 @@
 # taken from https://github.com/joerick/cibuildwheel-autopypi-example/blob/master/appveyor.yml
 # you need to 
 # 1) create account on pypi.org, test.pypi.org and ci.appveryor.com 
-# 2) on test.pypi.org create an API token an copy the stringyou can call it "<ProjetName> Appveyor"(let the browser window open)
-# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy in in the secure sibfielkd of "encrypted_pypi_api_token" 
-# 4) do step 3 and 4 but this time on pypi.org
+# 2) on pypi.org create an API token an copy the stringyou can call it "<ProjetName> Appveyor"(let the browser window open)
+# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy in in the secure subflied  of "encrypted_pypi_api_token"  in the branches/only/master part
+# 4) do step 3 and 4 but this time on test.pypi.org , fill in of "encrypted_pypi_api_token"  in the branches/only/pypi_test part
 #create the API key TWINE_PASSWORD in here https://ci.appveyor.com/api-keys
 
 image: 
-    #- ubuntu
+    - ubuntu
     - Visual Studio 2019
 platform:
   - x64
-environment:
-  global:
-    encrypted_pypi_api_token:
-        secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
-    encrypted_test_pypi_api_token:
-        secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
-
-
-    CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp37-* cp38-* *-win32
-    CIBW_BEFORE_BUILD: pip install cython && pip install numpy
-    CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
-    TWINE_USERNAME: __token__
-    
+  
+-
+  branches:
+    only:
+      - master
+          
+    environment:
+      global:
+        encrypted_pypi_api_token:
+            secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
+        pypi_url:   https://pypi.org/legacy/
+        CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp37-* cp38-* *-win32
+        CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+        CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+        TWINE_USERNAME: __token__
+ 
+-
+  branches:
+    only:
+      - pypi_test
+          
+    environment:
+      global:
+        encrypted_pypi_api_token:
+            secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
+        pypi_url:   https://test.pypi.org/legacy/
+        CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp37-* cp38-* *-win32
+        CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+        CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+        TWINE_USERNAME: __token__ 
+        
  
 build_script:
   - sh: sudo pip install cibuildwheel==1.0.0 
@@ -32,8 +50,8 @@ build_script:
   - cmd: cibuildwheel --output-dir wheelhouse
   - sh: sudo pip install twine
   - cmd: pip install twine
-  - sh: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/ -p $encrypted_test_pypi_api_token
-  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  https://test.pypi.org/legacy/ -p %encrypted_test_pypi_api_token%  
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url  pypi_url -p $encrypted_pypi_api_token
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing --repository-url pypi_url -p %encrypted_pypi_api_token%  
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
