@@ -12,8 +12,7 @@ image:
 platform:
   - x64
   
--
-  branches:
+- branches:
     only:
       - master
           
@@ -27,8 +26,7 @@ platform:
         CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
         TWINE_USERNAME: __token__
  
--
-  branches:
+- branches:
     only:
       - pypi_test
           
