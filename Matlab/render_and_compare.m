@@ -1,48 +1,48 @@
-function [scene,Err,image]= render_and_compare(scene,sigma,Aobs,antialiaseError,mask)
+function [scene,err,combined_image]= render_and_compare(scene,sigma,obs,antialiaseError,mask)
 
 if nargin<4
     antialiaseError=false;
 end
 if nargin<5
     if antialiaseError
-        mask=ones(size(Aobs,2),size(Aobs,3));
+        mask=ones(size(obs,2),size(obs,3));
     else
-        mask=ones(size(Aobs));
+        mask=ones(size(obs));
     end
 end
 
 if antialiaseError
-    [Abuffer,Zbuffer,ErrBuffer]=render(scene,sigma,antialiaseError,Aobs);
+    [image,z_buffer,err_buffer]=render(scene,sigma,antialiaseError,obs);
     
-    ErrBuffer=ErrBuffer.*mask;
+    err_buffer=err_buffer.*mask;
     if nargout>1
-        Err=sum(ErrBuffer(:));
+        err=sum(err_buffer(:));
     end
-    ErrBuffer_B=double(mask);
+    err_buffer_B=double(mask);
     scene.ij_b=zeros(size(scene.ij));
     scene.colors_b=zeros(size(scene.colors));
     scene.uv_b=zeros(size(scene.uv));
     scene.shade_b=zeros(size(scene.shade));
     if nargout==3
-        image=cat(3,Aobs,Abuffer,repmat(reshape(sqrt(ErrBuffer)/sqrt(3),1,size(ErrBuffer,1),size(ErrBuffer,2)),3,1,1));
+        image=cat(3,obs,image,repmat(reshape(sqrt(err_buffer)/sqrt(3),1,size(err_buffer,1),size(err_buffer,2)),3,1,1));
     end
-    render_b(scene,Abuffer,Zbuffer,[],sigma,antialiaseError,Aobs,ErrBuffer,ErrBuffer_B);
+    render_b(scene,image,z_buffer,[],sigma,antialiaseError,obs,err_buffer,err_buffer_B);
     
 else
     
-    [Abuffer,Zbuffer]=render(scene,sigma);
-    %imwrite(permute(uint8(floor(Abuffer*255)),[2,3,1]),'Abuffer.png')
+    [image,z_buffer]=render(scene,sigma);
+    %imwrite(permute(uint8(floor(image*255)),[2,3,1]),'image.png')
     
-    diff=(Abuffer-Aobs).*mask;
+    diff=(image-obs).*mask;
     if nargout==3
-        ErrBuffer=max(0, sum((diff).^2,1));
-        image=cat(3,Aobs,Abuffer,repmat(sqrt(ErrBuffer)/sqrt(3),3,1,1));
+        err_buffer=max(0, sum((diff).^2,1));
+        combined_image=cat(3,obs,image,repmat(sqrt(err_buffer)/sqrt(3),3,1,1));
     end
     
     if nargout>1
-        Err=sum(diff(:).^2);
+        err=sum(diff(:).^2);
     end
-    Abuffer_b=2*diff;
+    image_b=2*diff;
     
     
     scene.ij_b=zeros(size(scene.ij));
@@ -50,7 +50,7 @@ else
     scene.uv_b=zeros(size(scene.uv));
     scene.texture_b=zeros(size(scene.texture));
     scene.shade_b=zeros(size(scene.shade));
-    render_b(scene,Abuffer,Zbuffer,Abuffer_b,sigma);
+    render_b(scene,image,z_buffer,image_b,sigma);
     
 end
 

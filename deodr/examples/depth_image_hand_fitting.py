@@ -1,4 +1,4 @@
-from deodr import readObj
+from deodr import read_obj
 from scipy.misc import imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,21 +34,21 @@ def example_depth_image_hand_fitting(
     depth_image[depth_image == 0] = max_depth
     depth_image = depth_image / max_depth
 
-    objFile = os.path.join(file_folder, "hand.obj")
-    faces, vertices = readObj(objFile)
+    obj_file = os.path.join(file_folder, "hand.obj")
+    faces, vertices = read_obj(obj_file)
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
 
-    handFitter = MeshDepthFitter(
+    hand_fitter = MeshDepthFitter(
         vertices, faces, euler_init, translation_init, cregu=1000
     )
-    maxIter = 150
+    max_iter = 150
 
-    handFitter.setImage(depth_image, focal=241, dist=[1, 0, 0, 0, 0])
-    handFitter.setMaxDepth(1)
-    handFitter.setDepthScale(110 / max_depth)
-    Energies = []
+    hand_fitter.set_image(depth_image, focal=241, dist=[1, 0, 0, 0, 0])
+    hand_fitter.set_max_depth(1)
+    hand_fitter.set_depth_scale(110 / max_depth)
+    energies = []
     durations = []
     start = time.time()
 
@@ -56,20 +56,20 @@ def example_depth_image_hand_fitting(
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
-    for iter in range(maxIter):
-        Energy, syntheticDepth, diffImage = handFitter.step()
-        Energies.append(Energy)
+    for iter in range(max_iter):
+        energy, synthetic_depth, diff_image = hand_fitter.step()
+        energies.append(energy)
         durations.append(time.time() - start)
         if save_images or display:
-            combinedIMage = np.column_stack(
-                (depth_image, syntheticDepth, 3 * diffImage)
+            combined_image = np.column_stack(
+                (depth_image, synthetic_depth, 3 * diff_image)
             )
             if display:
-                cv2.imshow("animation", cv2.resize(combinedIMage, None, fx=2, fy=2))
+                cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
             if save_images:
                 imsave(
                     os.path.join(iterfolder, f"depth_hand_iter_{iter}.png"),
-                    combinedIMage,
+                    combined_image,
                 )
         cv2.waitKey(1)
 
@@ -85,7 +85,7 @@ def example_depth_image_hand_fitting(
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",
                 "durations": durations,
-                "energies": Energies,
+                "energies": energies,
             },
             f,
             indent=4,
@@ -118,6 +118,7 @@ def example_depth_image_hand_fitting(
 if __name__ == "__main__":
     display = True
 
+
     example_depth_image_hand_fitting(
         dl_library="none", plot_curves=False, save_images=False, display=display
     )
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     example_depth_image_hand_fitting(
         dl_library="pytorch", plot_curves=False, save_images=False, display=display
     )
-
+    
     example_depth_image_hand_fitting(
         dl_library="tensorflow", plot_curves=True, save_images=False, display=display
     )

@@ -10,7 +10,7 @@ sigma=1;
 
 scene1=example_scene();
 
-[Abuffer1,Zbuffer]=render(scene1,sigma);
+[image1,z_buffer]=render(scene1,sigma);
 
 
 Ntri=length(scene1.faces);
@@ -42,16 +42,16 @@ speed_uv=zeros(2,3*Ntri);
 speed_color=zeros(3,3*Ntri);
 
 
-nbMaxIter=500;
+nb_max_iter=500;
 lisframesGif=ceil((1:2:500.^(1/1.5)).^1.5);
 
 figure(1);
 mkdir('./images/')
 filename='./images/soup_fitting.gif';
-Err=zeros(1,nbMaxIter);
-for iter=1:nbMaxIter
+Err=zeros(1,nb_max_iter);
+for iter=1:nb_max_iter
     
-    [ scene2b,Err(iter),image]= render_and_compare(scene2,sigma,Abuffer1,antialiaseError);
+    [ scene2b,Err(iter),image]= render_and_compare(scene2,sigma,image1,antialiaseError);
     
     if display
         if iter==1

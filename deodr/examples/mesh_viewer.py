@@ -29,7 +29,7 @@ class Interactor:
         self.xy_translation_speed = xy_translation_speed
         self.camera = camera
 
-    def mouseCallback(self, event, x, y, flags, param):
+    def mouse_callback(self, event, x, y, flags, param):
 
         if event == cv2.EVENT_LBUTTONDOWN:
             self.left_is_down = True
@@ -56,7 +56,7 @@ class Interactor:
 
         if self.left_is_down:
             if self.mode == "camera_centered":
-                Rot = Rotation.from_rotvec(
+                rotation = Rotation.from_rotvec(
                     np.array(
                         [
                             -self.rotation_speed * (y - self.y_last),
@@ -65,12 +65,12 @@ class Interactor:
                         ]
                     )
                 )
-                self.camera.extrinsic = Rot.as_dcm().dot(self.camera.extrinsic)
+                self.camera.extrinsic = rotation.as_dcm().dot(self.camera.extrinsic)
                 self.x_last = x
                 self.y_last = y
             if self.mode == "object_centered_trackball":
 
-                Rot = Rotation.from_rotvec(
+                rotation = Rotation.from_rotvec(
                     np.array(
                         [
                             self.rotation_speed * (y - self.y_last),
@@ -79,13 +79,13 @@ class Interactor:
                         ]
                     )
                 )
-                nR = Rot.as_dcm().dot(self.camera.extrinsic[:, :3])
+                n_rotation = rotation.as_dcm().dot(self.camera.extrinsic[:, :3])
                 nt = (
                     self.camera.extrinsic[:, :3].dot(self.object_center)
                     + self.camera.extrinsic[:, 3]
-                    - nR.dot(self.object_center)
+                    - n_rotation.dot(self.object_center)
                 )
-                self.camera.extrinsic = np.column_stack((nR, nt))
+                self.camera.extrinsic = np.column_stack((n_rotation, nt))
                 self.x_last = x
                 self.y_last = y
             else:
@@ -126,8 +126,8 @@ class Interactor:
 def mesh_viewer(
     obj_file_or_trimesh,
     display_texture_map=True,
-    SizeW=640,
-    SizeH=480,
+    width=640,
+    height=480,
     display_fps=True,
     title=None,
 ):
@@ -153,30 +153,30 @@ def mesh_viewer(
         if mesh.textured:
             mesh.plot_uv_map(ax)
 
-    objectCenter = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
-    objectRadius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
+    object_center = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
+    object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
 
-    cameraCenter = objectCenter + np.array([0, 0, 3]) * objectRadius
-    focal = 2 * SizeW
+    camera_center = object_center + np.array([0, 0, 3]) * object_radius
+    focal = 2 * width
 
-    R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    T = -R.T.dot(cameraCenter)
-    extrinsic = np.column_stack((R, T))
-    intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
+    rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    translation = -rotation.T.dot(camera_center)
+    extrinsic = np.column_stack((rotation, translation))
+    intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
 
     dist = [0, 0, 0, 0, 0]
     camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, resolution=(SizeW, SizeH), dist=dist
+        extrinsic=extrinsic, intrinsic=intrinsic, resolution=(width, height), dist=dist
     )
 
-    handColor = np.array([200, 100, 100]) / 255
-    mesh.setVerticesColors(np.tile(handColor, [mesh.nbV, 1]))
+    hand_color = np.array([200, 100, 100]) / 255
+    mesh.set_vertices_colors(np.tile(hand_color, [mesh.nb_vertices, 1]))
 
     scene = differentiable_renderer.Scene3D()
-    scene.setLight(ligthDirectional=np.array([-0.5, 0, -0.5]), ambiantLight=0.3)
-    scene.setMesh(mesh)
-    backgroundImage = np.ones((SizeH, SizeW, 3))
-    scene.setBackground(backgroundImage)
+    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
+    scene.set_mesh(mesh)
+    background_image = np.ones((height, width, 3))
+    scene.set_background(background_image)
 
     mesh.texture = mesh.texture[
         :, :, ::-1
@@ -188,36 +188,36 @@ def mesh_viewer(
 
     interactor = Interactor(
         camera=camera,
-        object_center=objectCenter,
-        z_translation_speed=0.01 * objectRadius,
-        xy_translation_speed=1e-7 * objectRadius,
+        object_center=object_center,
+        z_translation_speed=0.01 * object_radius,
+        xy_translation_speed=1e-7 * object_radius,
     )
 
     cv2.namedWindow(windowname)
-    cv2.setMouseCallback(windowname, interactor.mouseCallback)
+    cv2.setMouseCallback(windowname, interactor.mouse_callback)
 
     while cv2.getWindowProperty(windowname, 0) >= 0:
-        # mesh.setVertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+        # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
         start = time.clock()
-        Abuffer = scene.render(interactor.camera)
+        image = scene.render(interactor.camera)
 
         if display_fps:
             font = cv2.FONT_HERSHEY_SIMPLEX
-            bottomLeftCornerOfText = (20, SizeH - 20)
-            fontScale = 1
-            fontColor = (0, 0, 255)
+            bottom_left_corner_of_text = (20, height - 20)
+            font_scale = 1
+            font_color = (0, 0, 255)
             thickness = 2
             cv2.putText(
-                Abuffer,
+                image,
                 "fps:%0.1f" % fps,
-                bottomLeftCornerOfText,
+                bottom_left_corner_of_text,
                 font,
-                fontScale,
-                fontColor,
+                font_scale,
+                font_color,
                 thickness,
             )
 
-        cv2.imshow(windowname, Abuffer)
+        cv2.imshow(windowname, image)
         stop = time.clock()
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
         cv2.waitKey(1)

@@ -1,4 +1,4 @@
-from deodr import readObj
+from deodr import read_obj
 from scipy.misc import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,12 +24,12 @@ def example_rgb_hand_fitting(
 
     file_folder = os.path.dirname(__file__)
 
-    handImage = imread(os.path.join(file_folder, "hand.png")).astype(np.double) / 255
-    objFile = os.path.join(file_folder, "hand.obj")
-    faces, vertices = readObj(objFile)
+    hand_image = imread(os.path.join(file_folder, "hand.png")).astype(np.double) / 255
+    obj_file = os.path.join(file_folder, "hand.obj")
+    faces, vertices = read_obj(obj_file)
 
-    defaultColor = np.array([0.4, 0.3, 0.25])
-    defaultLight = {
+    default_color = np.array([0.4, 0.3, 0.25])
+    default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
@@ -39,37 +39,37 @@ def example_rgb_hand_fitting(
     # centering vertices
     vertices = vertices - translation_init[None, :]
 
-    handFitter = MeshRGBFitterWithPose(
+    hand_fitter = MeshRGBFitterWithPose(
         vertices,
         faces,
-        defaultColor=defaultColor,
-        defaultLight=defaultLight,
-        updateLights=True,
-        updateColor=True,
+        default_color=default_color,
+        default_light=default_light,
+        update_lights=True,
+        update_color=True,
         euler_init=euler_init,
         translation_init=translation_init,
         cregu=1000,
     )
 
-    handFitter.reset()
-    maxIter = 100
+    hand_fitter.reset()
+    max_iter = 100
 
-    backgroundColor = np.median(
+    background_color = np.median(
         np.row_stack(
             (
-                handImage[:10, :10, :].reshape(-1, 3),
-                handImage[-10:, :10, :].reshape(-1, 3),
-                handImage[-10:, -10:, :].reshape(-1, 3),
-                handImage[:10, -10:, :].reshape(-1, 3),
+                hand_image[:10, :10, :].reshape(-1, 3),
+                hand_image[-10:, :10, :].reshape(-1, 3),
+                hand_image[-10:, -10:, :].reshape(-1, 3),
+                hand_image[:10, -10:, :].reshape(-1, 3),
             )
         ),
         axis=0,
     )
 
-    backgroundColor = np.array([0.5, 0.6, 0.7])
-    handFitter.setImage(handImage, dist=[-1, 0, 0, 0, 0])
-    handFitter.setBackgroundColor(backgroundColor)
-    Energies = []
+    background_color = np.array([0.5, 0.6, 0.7])
+    hand_fitter.set_image(hand_image, dist=[-1, 0, 0, 0, 0])
+    hand_fitter.set_background_color(background_color)
+    energies = []
     durations = []
     start = time.time()
 
@@ -77,20 +77,23 @@ def example_rgb_hand_fitting(
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
-    for iter in range(maxIter):
-        Energy, Abuffer, diffImage = handFitter.step()
-        Energies.append(Energy)
+    for iter in range(max_iter):
+        energy, image, diff_image = hand_fitter.step()
+        energies.append(energy)
         durations.append(time.time() - start)
         if display or save_images:
-            combinedIMage = np.column_stack(
-                (handImage, Abuffer, np.tile(diffImage[:, :, None], (1, 1, 3)))
+            combined_image = np.column_stack(
+                (hand_image, image, np.tile(diff_image[:, :, None], (1, 1, 3)))
             )
             if display:
                 cv2.imshow(
-                    "animation", cv2.resize(combinedIMage[:, :, ::-1], None, fx=2, fy=2)
+                    "animation",
+                    cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
                 )
             if save_images:
-                imsave(os.path.join(iterfolder, f"hand_iter_{iter}.png"), combinedIMage)
+                imsave(
+                    os.path.join(iterfolder, f"hand_iter_{iter}.png"), combined_image
+                )
         cv2.waitKey(1)
 
     # save convergence curve
@@ -106,7 +109,7 @@ def example_rgb_hand_fitting(
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",
                 "durations": durations,
-                "energies": Energies,
+                "energies": energies,
             },
             f,
             indent=4,
@@ -146,15 +149,16 @@ if __name__ == "__main__":
     save_images = False
 
     example_rgb_hand_fitting(
+        dl_library="none", plot_curves=False, display=display, save_images=save_images
+    )
+
+    example_rgb_hand_fitting(
         dl_library="pytorch",
         plot_curves=False,
         display=display,
         save_images=save_images,
     )
 
-    example_rgb_hand_fitting(
-        dl_library="none", plot_curves=False, display=display, save_images=save_images
-    )
     example_rgb_hand_fitting(
         dl_library="tensorflow",
         plot_curves=True,

@@ -13,27 +13,27 @@ cimport numpy as np
 @cython.wraparound(False)
 def renderScene(scene, 
 		double sigma,
-		np.ndarray[double,ndim = 3,mode = "c"] Abuffer, 
-		np.ndarray[double,ndim = 2,mode = "c"] Zbuffer,
-		bool antialiaseError  = 0,
-		np.ndarray[double,ndim = 3,mode = "c"] Aobs = None,
-		np.ndarray[double,ndim = 2,mode = "c"] ErrBuffer = None):
+		np.ndarray[double,ndim = 3,mode = "c"] image, 
+		np.ndarray[double,ndim = 2,mode = "c"] z_buffer,
+		bool antialiase_error  = 0,
+		np.ndarray[double,ndim = 3,mode = "c"] obs = None,
+		np.ndarray[double,ndim = 2,mode = "c"] err_buffer = None):
  
 	cdef _differentiable_renderer.Scene scene_c 	
-	assert (not(Abuffer is None))
-	assert (not(Zbuffer is None))
-	heigth  =  Abuffer.shape[0]
-	width  =  Abuffer.shape[1]
-	nbColors  =  Abuffer.shape[2]
+	assert (not(image is None))
+	assert (not(z_buffer is None))
+	heigth  =  image.shape[0]
+	width  =  image.shape[1]
+	nb_colors  =  image.shape[2]
 	
-	nbTriangles  =  scene.faces.shape[0]
-	assert(nbTriangles  ==  scene.faces_uv.shape[0])
-	nbVertices  =  scene.depths.shape[0]
-	nbVerticesUv  =  scene.uv.shape[0]
+	nb_triangles  =  scene.faces.shape[0]
+	assert(nb_triangles  ==  scene.faces_uv.shape[0])
+	nb_vertices  =  scene.depths.shape[0]
+	nb_vertices_uv  =  scene.uv.shape[0]
 	
 	assert(scene.faces.dtype  ==  np.uint32)
-	assert(np.all(scene.faces<nbVertices))
-	assert(np.all(scene.faces_uv<nbVerticesUv))
+	assert(np.all(scene.faces < nb_vertices))
+	assert(np.all(scene.faces_uv < nb_vertices_uv))
 			
 	assert(scene.colors.ndim  ==  2)
 	assert(scene.uv.ndim  ==  2)
@@ -43,30 +43,30 @@ def renderScene(scene,
 	assert(scene.textured.ndim  ==  1)
 	assert(scene.shaded.ndim  ==  1)		
 	assert(scene.uv.shape[1]  ==  2)	
-	assert(scene.ij.shape[0]  ==  nbVertices)
+	assert(scene.ij.shape[0]  ==  nb_vertices)
 	assert(scene.ij.shape[1]  ==  2)
-	assert(scene.shade.shape[0]  ==  nbVertices)
-	assert(scene.colors.shape[0]  ==  nbVertices)
-	assert(scene.colors.shape[1]  ==  nbColors)
-	assert(scene.edgeflags.shape[0]  ==  nbTriangles)
+	assert(scene.shade.shape[0]  ==  nb_vertices)
+	assert(scene.colors.shape[0]  ==  nb_vertices)
+	assert(scene.colors.shape[1]  ==  nb_colors)
+	assert(scene.edgeflags.shape[0]  ==  nb_triangles)
 	assert(scene.edgeflags.shape[1]  ==  3)
-	assert(scene.textured.shape[0]  ==  nbTriangles)
-	assert(scene.shaded.shape[0]  ==  nbTriangles)
+	assert(scene.textured.shape[0]  ==  nb_triangles)
+	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
 	assert(scene.background.shape[0]  ==  heigth)
 	assert(scene.background.shape[1]  ==  width)
-	assert(scene.background.shape[2]  ==  nbColors)
+	assert(scene.background.shape[2]  ==  nb_colors)
 	
 	if scene.texture.size>0:
 		assert(scene.texture.ndim  ==  3)
 		assert(scene.texture.shape[0]>0)
 		assert(scene.texture.shape[1]>0)
-		assert(scene.texture.shape[2]  ==  nbColors)
+		assert(scene.texture.shape[2]  ==  nb_colors)
 	
-	assert Zbuffer.shape[0]  ==  heigth 
-	assert Zbuffer.shape[1]  ==  width 
+	assert z_buffer.shape[0]  ==  heigth 
+	assert z_buffer.shape[1]  ==  width 
 
-	scene_c.nbColors = nbColors
+	scene_c.nb_colors = nb_colors
 	cdef np.ndarray[np.uint32_t, mode = "c"] faces_c  =  np.ascontiguousarray(scene.faces.flatten(), dtype = np.uint32)
 	cdef np.ndarray[np.uint32_t, mode = "c"] faces_uv_c  =  np.ascontiguousarray(scene.faces_uv.flatten(), dtype = np.uint32)		
 	cdef np.ndarray[np.double_t, mode = "c"] depths_c  =  np.ascontiguousarray(scene.depths.flatten(), dtype = np.double)	
@@ -80,12 +80,12 @@ def renderScene(scene,
 	cdef np.ndarray[np.double_t, mode = "c"] texture_c  =  np.ascontiguousarray(scene.texture.flatten(), dtype = np.double)
 	cdef np.ndarray[np.double_t, mode = "c"] background_c  =  np.ascontiguousarray(scene.background.flatten(), dtype = np.double)
 	
-	scene_c.image_H = <int> scene.image_H
-	scene_c.image_W = <int> scene.image_W	
-	scene_c.nbTriangles = nbTriangles
-	scene_c.nbVertices = nbVertices
+	scene_c.height = <int> scene.height
+	scene_c.width = <int> scene.width	
+	scene_c.nb_triangles = nb_triangles
+	scene_c.nb_vertices = nb_vertices
 	scene_c.clockwise= scene.clockwise
-	scene_c.nbUV = nbVerticesUv
+	scene_c.nb_uv = nb_vertices_uv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data
 	scene_c.depths = <double*> depths_c.data
@@ -98,78 +98,78 @@ def renderScene(scene,
 	scene_c.shaded = <bool*> shaded_c.data
 	scene_c.texture = <double*> texture_c.data
 	scene_c.background = <double*> background_c.data
-	scene_c.texture_H = scene.texture.shape[0]
-	scene_c.texture_W = scene.texture.shape[1]
+	scene_c.texture_height = scene.texture.shape[0]
+	scene_c.texture_width = scene.texture.shape[1]
 	
 
 
-	cdef double* Aobs_ptr = NULL
-	cdef double* ErrBuffer_ptr = NULL
+	cdef double* obs_ptr = NULL
+	cdef double* err_buffer_ptr = NULL
 	
-	cdef double* Abuffer_ptr =  <double*> Abuffer.data
-	cdef double* Zbuffer_ptr =  <double*> Zbuffer.data
+	cdef double* image_ptr =  <double*> image.data
+	cdef double* z_buffer_ptr =  <double*> z_buffer.data
 	
-	if Abuffer_ptr  ==  NULL:
-		raise BaseException('Abuffer_ptr is NULL')
-	if Zbuffer_ptr  ==  NULL:
-		raise BaseException('Zbuffer_ptr is NULL')
+	if image_ptr  ==  NULL:
+		raise BaseException('image_ptr is NULL')
+	if z_buffer_ptr  ==  NULL:
+		raise BaseException('z_buffer_ptr is NULL')
 
 	
-	if antialiaseError:
-		assert ErrBuffer.shape[0]  ==  heigth 
-		assert ErrBuffer.shape[1]  ==  width
-		assert Aobs.shape[0]  ==  heigth 
-		assert Aobs.shape[1]  ==  width
-		assert Aobs.shape[2]  ==  nbColors 
+	if antialiase_error:
+		assert err_buffer.shape[0]  ==  heigth 
+		assert err_buffer.shape[1]  ==  width
+		assert obs.shape[0]  ==  heigth 
+		assert obs.shape[1]  ==  width
+		assert obs.shape[2]  ==  nb_colors 
 		
-		Aobs_ptr  =  <double*>Aobs.data
-		ErrBuffer_ptr = <double*>ErrBuffer.data
+		obs_ptr  =  <double*>obs.data
+		err_buffer_ptr = <double*>err_buffer.data
 		
-		if ErrBuffer_ptr  ==  NULL:
-			raise BaseException('ErrBuffer_ptr is NULL')
-		if Aobs_ptr  ==  NULL:
-			raise BaseException('Aobs_ptr is NULL')
+		if err_buffer_ptr  ==  NULL:
+			raise BaseException('err_buffer_ptr is NULL')
+		if obs_ptr  ==  NULL:
+			raise BaseException('obs_ptr is NULL')
 	
 
-	_differentiable_renderer.renderScene( scene_c,Abuffer_ptr, Zbuffer_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr)
+	_differentiable_renderer.renderScene( scene_c,image_ptr, z_buffer_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr)
 	
 @cython.boundscheck(False)
 @cython.wraparound(False)	
 def renderSceneB(scene, 
 		double sigma,
-		np.ndarray[double,ndim = 3,mode = "c"] Abuffer, 
-		np.ndarray[double,ndim = 2,mode = "c"] Zbuffer,
-		np.ndarray[double,ndim = 3,mode = "c"] Abuffer_b = None,
-		bool antialiaseError  = 0,
-		np.ndarray[double,ndim = 3,mode = "c"] Aobs = None,
-		np.ndarray[double,ndim = 2,mode = "c"] ErrBuffer = None,
-		np.ndarray[double,ndim = 2,mode = "c"] ErrBuffer_b = None):
+		np.ndarray[double,ndim = 3,mode = "c"] image, 
+		np.ndarray[double,ndim = 2,mode = "c"] z_buffer,
+		np.ndarray[double,ndim = 3,mode = "c"] image_b = None,
+		bool antialiase_error  = 0,
+		np.ndarray[double,ndim = 3,mode = "c"] obs = None,
+		np.ndarray[double,ndim = 2,mode = "c"] err_buffer = None,
+		np.ndarray[double,ndim = 2,mode = "c"] err_buffer_b = None):
 
 	cdef _differentiable_renderer.Scene scene_c 
 	
-	assert (not(Abuffer is None))
-	assert (not(Zbuffer is None))
+	assert (not(image is None))
+	assert (not(z_buffer is None))
 	
 	
-	heigth = Abuffer.shape[0]
-	width  = Abuffer.shape[1]
-	nbColors = Abuffer.shape[2]
+	heigth = image.shape[0]
+	width  = image.shape[1]
+	nb_colors = image.shape[2]
 	
 
-	assert(nbColors  ==  scene.colors.shape[1])
+	assert(nb_colors  ==  scene.colors.shape[1])
 	
 	
-	assert Zbuffer.shape[0]  ==  heigth 
-	assert Zbuffer.shape[1]  ==  width 
+	assert z_buffer.shape[0]  ==  heigth 
+	assert z_buffer.shape[1]  ==  width 
 
-	nbTriangles  =  scene.faces.shape[0]
-	assert(nbTriangles  ==  scene.faces_uv.shape[0])
-	nbVertices  =  scene.depths.shape[0]
-	nbVerticesUv  =  scene.uv.shape[0]
+	nb_triangles  =  scene.faces.shape[0]
+	assert(nb_triangles  ==  scene.faces_uv.shape[0])
+	nb_vertices  =  scene.depths.shape[0]
+	nb_vertices_uv  =  scene.uv.shape[0]
 	
 	assert(scene.faces.dtype == np.uint32)
-	assert(np.all(scene.faces<nbVertices))
-	assert(np.all(scene.faces_uv<nbVerticesUv))
+	assert(np.all(scene.faces<nb_vertices))
+	assert(np.all(scene.faces_uv<nb_vertices_uv))
 			
 	assert(scene.colors.ndim  ==  2)
 	assert(scene.uv.ndim  ==  2)
@@ -179,19 +179,19 @@ def renderSceneB(scene,
 	assert(scene.textured.ndim  ==  1)
 	assert(scene.shaded.ndim  ==  1)		
 	assert(scene.uv.shape[1]  ==  2)	
-	assert(scene.ij.shape[0]  ==  nbVertices)
+	assert(scene.ij.shape[0]  ==  nb_vertices)
 	assert(scene.ij.shape[1]  ==  2)
-	assert(scene.shade.shape[0]  ==  nbVertices)
-	assert(scene.colors.shape[0]  ==  nbVertices)
-	assert(scene.colors.shape[1]  ==  nbColors)
-	assert(scene.edgeflags.shape[0]  ==  nbTriangles)
+	assert(scene.shade.shape[0]  ==  nb_vertices)
+	assert(scene.colors.shape[0]  ==  nb_vertices)
+	assert(scene.colors.shape[1]  ==  nb_colors)
+	assert(scene.edgeflags.shape[0]  ==  nb_triangles)
 	assert(scene.edgeflags.shape[1]  ==  3)
-	assert(scene.textured.shape[0]  ==  nbTriangles)
-	assert(scene.shaded.shape[0]  ==  nbTriangles)
+	assert(scene.textured.shape[0]  ==  nb_triangles)
+	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
 	assert(scene.background.shape[0]  ==  heigth)
 	assert(scene.background.shape[1]  ==  width)
-	assert(scene.background.shape[2]  ==  nbColors)
+	assert(scene.background.shape[2]  ==  nb_colors)
 	
 	
 	assert(scene.uv_b.ndim  ==  2)
@@ -200,21 +200,21 @@ def renderSceneB(scene,
 	assert(scene.edgeflags.ndim  ==  2)
 	assert(scene.textured.ndim  ==  1)
 	assert(scene.shaded.ndim  ==  1)	
-	assert(scene.uv_b.shape[0]  ==  nbVerticesUv)
+	assert(scene.uv_b.shape[0]  ==  nb_vertices_uv)
 	assert(scene.uv_b.shape[1]  ==  2)
-	assert(scene.ij_b.shape[0]  ==  nbVertices)
+	assert(scene.ij_b.shape[0]  ==  nb_vertices)
 	assert(scene.ij_b.shape[1]  ==  2)
-	assert(scene.shade_b.shape[0]  ==  nbVertices)	
-	assert(scene.colors_b.shape[0]  ==  nbVertices)
-	assert(scene.colors_b.shape[1]  ==  nbColors)
-	assert(scene.edgeflags.shape[0]  ==  nbTriangles)
+	assert(scene.shade_b.shape[0]  ==  nb_vertices)	
+	assert(scene.colors_b.shape[0]  ==  nb_vertices)
+	assert(scene.colors_b.shape[1]  ==  nb_colors)
+	assert(scene.edgeflags.shape[0]  ==  nb_triangles)
 	assert(scene.edgeflags.shape[1]  ==  3)
-	assert(scene.textured.shape[0]  ==  nbTriangles)
-	assert(scene.shaded.shape[0]  ==  nbTriangles)
+	assert(scene.textured.shape[0]  ==  nb_triangles)
+	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
 	assert(scene.background.shape[0]  ==  heigth)
 	assert(scene.background.shape[1]  ==  width)
-	assert(scene.background.shape[2]  ==  nbColors)
+	assert(scene.background.shape[2]  ==  nb_colors)
 	if scene.texture.size>0:
 		assert(scene.texture.ndim  ==  3)
 		assert(scene.texture_b.ndim  ==  3)	
@@ -222,9 +222,9 @@ def renderSceneB(scene,
 		assert(scene.texture.shape[1]>0)		
 		assert(scene.texture.shape[0]  ==  scene.texture_b.shape[0])
 		assert(scene.texture.shape[1]  ==  scene.texture_b.shape[1])
-		assert(scene.texture.shape[2]  ==  nbColors)	
-		assert(scene.texture_b.shape[2]  ==  nbColors)
-	scene_c.nbColors = nbColors
+		assert(scene.texture.shape[2]  ==  nb_colors)	
+		assert(scene.texture_b.shape[2]  ==  nb_colors)
+	scene_c.nb_colors = nb_colors
 	
 	cdef np.ndarray[np.uint32_t, mode = "c"] faces_c  =  np.ascontiguousarray(scene.faces.flatten(), dtype = np.uint32)
 	cdef np.ndarray[np.uint32_t, mode = "c"] faces_uv_c  =  np.ascontiguousarray(scene.faces_uv.flatten(), dtype = np.uint32)
@@ -246,12 +246,12 @@ def renderSceneB(scene,
 	
 
 
-	scene_c.image_H = <int> scene.image_H
-	scene_c.image_W = <int> scene.image_W
-	scene_c.nbTriangles = nbTriangles
-	scene_c.nbVertices = nbVertices
+	scene_c.height = <int> scene.height
+	scene_c.width = <int> scene.width
+	scene_c.nb_triangles = nb_triangles
+	scene_c.nb_vertices = nb_vertices
 	scene_c.clockwise = scene.clockwise
-	scene_c.nbUV = nbVerticesUv
+	scene_c.nb_uv = nb_vertices_uv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data	
 	scene_c.depths = <double*> depths_c.data
@@ -269,51 +269,51 @@ def renderSceneB(scene,
 	scene_c.texture = <double*> texture_c.data
 	scene_c.texture_b = <double*> texture_b_c.data
 	scene_c.background = <double*> background_c.data
-	scene_c.texture_H = scene.texture.shape[0]
-	scene_c.texture_W = scene.texture.shape[1]
+	scene_c.texture_height = scene.texture.shape[0]
+	scene_c.texture_width = scene.texture.shape[1]
 	
 	
 	if scene_c.background  ==  NULL:
 		raise BaseException('scene_c.background is NULL')
 
-	cdef double* Aobs_ptr  =  NULL
-	cdef double* ErrBuffer_ptr  =  NULL
-	cdef double* ErrBuffer_b_ptr  =  NULL	
-	cdef double* Abuffer_ptr  =  <double*> Abuffer.data
+	cdef double* obs_ptr  =  NULL
+	cdef double* err_buffer_ptr  =  NULL
+	cdef double* err_buffer_b_ptr  =  NULL	
+	cdef double* image_ptr  =  <double*> image.data
 	
-	cdef double* Abuffer_b_ptr  =  NULL
-	cdef double* ZBuffer_ptr  =  <double*> Zbuffer.data
+	cdef double* image_b_ptr  =  NULL
+	cdef double* z_buffer_ptr  =  <double*> z_buffer.data
 	
-	if Abuffer_ptr  ==  NULL:
-		raise BaseException('Abuffer_ptr is NULL')		
-	if ZBuffer_ptr  ==  NULL:
+	if image_ptr  ==  NULL:
+		raise BaseException('image_ptr is NULL')		
+	if z_buffer_ptr  ==  NULL:
 		raise BaseException('ZBuffer_ptr is NULL')
 	
-	if antialiaseError:
-		assert ErrBuffer.shape[0]  ==  heigth 
-		assert ErrBuffer.shape[1]  ==  width 
-		assert Aobs.shape[0]  ==  heigth 
-		assert Aobs.shape[1]  ==  width 
+	if antialiase_error:
+		assert err_buffer.shape[0]  ==  heigth 
+		assert err_buffer.shape[1]  ==  width 
+		assert obs.shape[0]  ==  heigth 
+		assert obs.shape[1]  ==  width 
 	
-		ErrBuffer_ptr = <double*>ErrBuffer.data
-		ErrBuffer_b_ptr = <double*>ErrBuffer_b.data
-		Aobs_ptr = <double*>Aobs.data
+		err_buffer_ptr = <double*>err_buffer.data
+		err_buffer_b_ptr = <double*>err_buffer_b.data
+		obs_ptr = <double*>obs.data
 		
-		if ErrBuffer_ptr  ==  NULL:
-			raise BaseException('ErrBuffer_ptr is NULL')
-		if ErrBuffer_b_ptr  ==  NULL:
-			raise BaseException('ErrBuffer_b_ptr is NULL')
-		if Aobs_ptr  ==  NULL:
-			raise BaseException('Aobs_ptr is NULL')
+		if err_buffer_ptr  ==  NULL:
+			raise BaseException('err_buffer_ptr is NULL')
+		if err_buffer_b_ptr  ==  NULL:
+			raise BaseException('err_buffer_b_ptr is NULL')
+		if obs_ptr  ==  NULL:
+			raise BaseException('obs_ptr is NULL')
 	else:
-		assert (not(Abuffer_b is None))
-		assert Abuffer_b.shape[0]  ==  heigth 
-		assert Abuffer_b.shape[1]  ==  width 
-		Abuffer_b_ptr  =  <double*> Abuffer_b.data
-		if Abuffer_b_ptr  ==  NULL:
-			raise BaseException('Abuffer_b_ptr is NULL')
+		assert (not(image_b is None))
+		assert image_b.shape[0]  ==  heigth 
+		assert image_b.shape[1]  ==  width 
+		image_b_ptr  =  <double*> image_b.data
+		if image_b_ptr  ==  NULL:
+			raise BaseException('image_b_ptr is NULL')
 	
-	_differentiable_renderer.renderScene_B( scene_c, Abuffer_ptr, ZBuffer_ptr, Abuffer_b_ptr, sigma, antialiaseError ,Aobs_ptr, ErrBuffer_ptr, ErrBuffer_b_ptr)
+	_differentiable_renderer.renderScene_B( scene_c, image_ptr, z_buffer_ptr, image_b_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr, err_buffer_b_ptr)
 	scene.uv_b = uv_b_c.reshape(scene.uv_b.shape)
 	scene.ij_b = ij_b_c.reshape(scene.ij_b.shape)
 	scene.shade_b = shade_b_c.reshape(scene.shade_b.shape)

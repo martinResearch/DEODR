@@ -8,14 +8,17 @@ class CameraTensorflow(Camera):
     def __init__(self, extrinsic, intrinsic, resolution, dist=None):
         super().__init__(extrinsic, intrinsic, resolution, dist=dist, checks=False)
 
-    def worldToCamera(self, P3D):
-        assert isinstance(P3D, tf.Tensor)
+    def world_to_camera(self, points_3d):
+        assert isinstance(points_3d, tf.Tensor)
         return tf.linalg.matmul(
-            tf.concat((P3D, tf.ones((P3D.shape[0], 1), dtype=P3D.dtype)), axis=1),
+            tf.concat(
+                (points_3d, tf.ones((points_3d.shape[0], 1), dtype=points_3d.dtype)),
+                axis=1,
+            ),
             tf.constant(self.extrinsic.T),
         )
 
-    def leftMulIntrinsic(self, projected):
+    def left_mul_intrinsic(self, projected):
         assert isinstance(projected, tf.Tensor)
         return tf.linalg.matmul(
             tf.concat(
@@ -34,32 +37,32 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
     def forward(
         ij, colors
     ):  # using inner function as we don't differentate w.r.t scene
-        nbColorChanels = colors.shape[1]
-        Abuffer = np.empty((scene.image_H, scene.image_W, nbColorChanels))
-        Zbuffer = np.empty((scene.image_H, scene.image_W))
+        nb_color_chanels = colors.shape[1]
+        image = np.empty((scene.height, scene.width, nb_color_chanels))
+        z_buffer = np.empty((scene.height, scene.width))
         scene.ij = np.array(ij)  # should automatically detached according to
         # https://pytorch.org/docs/master/notes/extending.html
         scene.colors = np.array(colors)
         scene.depths = np.array(scene.depths)
-        differentiable_renderer_cython.renderScene(scene, 1, Abuffer, Zbuffer)
+        differentiable_renderer_cython.renderScene(scene, 1, image, z_buffer)
 
-        def backward(Abuffer_b):
+        def backward(image_b):
             scene.uv_b = np.zeros(scene.uv.shape)
             scene.ij_b = np.zeros(scene.ij.shape)
             scene.shade_b = np.zeros(scene.shade.shape)
             scene.colors_b = np.zeros(scene.colors.shape)
             scene.texture_b = np.zeros(scene.texture.shape)
-            Abuffer_copy = (
-                Abuffer.copy()
+            image_copy = (
+                image.copy()
             )  # making a copy to avoid removing antializaing on the image returned by
             # the forward pass (the c++ backpropagation undo antializating), could be
             # optional if we don't care about getting aliased images
             differentiable_renderer_cython.renderSceneB(
-                scene, 1, Abuffer_copy, Zbuffer, Abuffer_b.numpy()
+                scene, 1, image_copy, z_buffer, image_b.numpy()
             )
             return tf.constant(scene.ij_b), tf.constant(scene.colors_b)
 
-        return tf.convert_to_tensor(Abuffer), backward
+        return tf.convert_to_tensor(image), backward
 
     return forward(ij, colors)
 
@@ -68,31 +71,21 @@ class Scene3DTensorflow(Scene3D):
     def __init__(self):
         super().__init__()
 
-    def setLight(self, ligthDirectional, ambiantLight):
-        if not (isinstance(ligthDirectional, tf.Tensor)):
-            ligthDirectional = tf.constant(ligthDirectional)
-        self.ligthDirectional = ligthDirectional
-        self.ambiantLight = ambiantLight
+    def set_light(self, ligth_directional, ambiant_light):
+        if not (isinstance(ligth_directional, tf.Tensor)):
+            ligth_directional = tf.constant(ligth_directional)
+        self.ligth_directional = ligth_directional
+        self.ambiant_light = ambiant_light
 
-    def _cameraProject(self, cameraMatrix, P3D):
-        assert isinstance(P3D, tf.Tensor)
-        r = tf.linalg.matmul(
-            tf.concat((P3D, tf.ones((P3D.shape[0], 1), dtype=P3D.dtype)), axis=1),
-            tf.constant(cameraMatrix.T),
-        )
-        depths = r[:, 2]
-        P2D = r[:, :2] / depths[:, None]
-        return P2D, depths
-
-    def _computeVerticesColorsWithIllumination(self):
-        verticesLuminosity = (
+    def _compute_vertices_colors_with_illumination(self):
+        vertices_luminosity = (
             tf.nn.relu(
-                -tf.reduce_sum(self.mesh.vertexNormals * self.ligthDirectional, axis=1)
+                -tf.reduce_sum(self.mesh.vertex_normals * self.ligth_directional, axis=1)
             )
-            + self.ambiantLight
+            + self.ambiant_light
         )
-        return self.mesh.verticesColors * verticesLuminosity[:, None]
+        return self.mesh.vertices_colors * vertices_luminosity[:, None]
 
-    def _render2D(self, ij, colors):
+    def _render_2d(self, ij, colors):
 
         return TensorflowDifferentiableRender2D(ij, colors, self), self.depths

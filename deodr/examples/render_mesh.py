@@ -14,7 +14,7 @@ def loadmesh(file):
     return ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 
-def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
+def render_mesh(obj_file, width=640, height=480, display=True):
 
     mesh = loadmesh(obj_file)
 
@@ -22,30 +22,30 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
     if mesh.textured:
         mesh.plot_uv_map(ax)
 
-    objectCenter = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
-    objectRadius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
-    cameraCenter = objectCenter + np.array([0, 0, 3]) * objectRadius
-    focal = 2 * SizeW
+    object_center = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
+    object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
+    camera_center = object_center + np.array([0, 0, 3]) * object_radius
+    focal = 2 * width
 
-    R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    T = -R.T.dot(cameraCenter)
-    extrinsic = np.column_stack((R, T))
-    intrinsic = np.array([[focal, 0, SizeW / 2], [0, focal, SizeH / 2], [0, 0, 1]])
+    rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    trans = -rot.T.dot(camera_center)
+    extrinsic = np.column_stack((rot, trans))
+    intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
     dist = [-2, 0, 0, 0, 0]
     camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(SizeW, SizeH)
+        extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(width, height)
     )
 
     scene = differentiable_renderer.Scene3D()
-    scene.setLight(ligthDirectional=np.array([-0.5, 0, -0.5]), ambiantLight=0.3)
-    scene.setMesh(mesh)
-    backgroundImage = np.ones((SizeH, SizeW, 3))
-    scene.setBackground(backgroundImage)
+    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
+    scene.set_mesh(mesh)
+    background_image = np.ones((height, width, 3))
+    scene.set_background(background_image)
 
-    Abuffer = scene.render(camera)
+    image = scene.render(camera)
     if display:
         plt.figure()
-        plt.imshow(Abuffer)
+        plt.imshow(image)
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection=Axes3D.name)
@@ -53,7 +53,7 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
-        u, v, w = scene.ligthDirectional
+        u, v, w = scene.ligth_directional
         ax.quiver(
             np.array([0.0]),
             np.array([0.0]),
@@ -64,7 +64,7 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
             color=[1, 1, 0.5],
         )
 
-    channels = scene.renderDeffered(camera)
+    channels = scene.render_deffered(camera)
     if display:
         plt.figure()
         for i, (name, v) in enumerate(channels.items()):
@@ -78,16 +78,19 @@ def render_mesh(obj_file, SizeW=640, SizeH=480, display=True):
                 ax.imshow((v - v.min()) / (v.max() - v.min()))
 
         plt.show()
-    return Abuffer, channels
+    return image, channels
 
 
 def example(save_image=False):
     obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
-    Abuffer, channels = render_mesh(obj_file,SizeW=320, SizeH=240)
-    image_file =  os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/test/duck.png"))
-    os.makedirs(os.path.dirname(image_file),exist_ok=True)
-    Abuffer_uint8 = (Abuffer*255).astype(np.uint8)
-    imageio.imwrite(image_file,Abuffer_uint8)
+    image, channels = render_mesh(obj_file, width=320, height=240)
+    image_file = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../data/test/duck.png")
+    )
+    os.makedirs(os.path.dirname(image_file), exist_ok=True)
+    image_uint8 = (image * 255).astype(np.uint8)
+    imageio.imwrite(image_file, image_uint8)
+
 
 if __name__ == "__main__":
     example(save_image=False)

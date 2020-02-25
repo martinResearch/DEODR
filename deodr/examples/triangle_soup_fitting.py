@@ -10,19 +10,19 @@ import os
 
 def create_example_scene():
 
-    Ntri = 30
-    SizeW = 200
-    SizeH = 200
+    n_tri = 30
+    width = 200
+    height = 200
     file_folder = os.path.dirname(os.path.abspath(__file__))
     material = np.double(imread(os.path.join(file_folder, "trefle.jpg"))) / 255
-    Hmaterial = material.shape[0]
-    Wmaterial = material.shape[1]
+    height_material = material.shape[0]
+    width_material = material.shape[1]
 
-    scale_matrix = np.array([[SizeH, 0], [0, SizeW]])
-    scale_material = np.array([[Hmaterial - 1, 0], [0, Wmaterial - 1]])
+    scale_matrix = np.array([[height, 0], [0, width]])
+    scale_material = np.array([[height_material - 1, 0], [0, width_material - 1]])
 
     triangles = []
-    for k in range(Ntri):
+    for k in range(n_tri):
 
         tmp = scale_matrix.dot(
             np.random.rand(2, 1).dot(np.ones((1, 3)))
@@ -68,15 +68,15 @@ def create_example_scene():
         scene[key] = np.squeeze(
             np.vstack([np.array(triangle[key]) for triangle in triangles])
         )
-    scene["faces"] = np.arange(3 * Ntri).reshape(-1, 3).astype(np.uint32)
-    scene["faces_uv"] = np.arange(3 * Ntri).reshape(-1, 3).astype(np.uint32)
+    scene["faces"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
+    scene["faces_uv"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
 
-    scene["image_H"] = SizeH
-    scene["image_W"] = SizeW
+    scene["height"] = height
+    scene["width"] = width
     scene["texture"] = material
-    scene["nbColors"] = 3
+    scene["nb_colors"] = 3
     scene["background"] = np.tile(
-        np.array([0.3, 0.5, 0.7])[None, None, :], (SizeH, SizeW, 1)
+        np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1)
     )
     return Scene2D(**scene)
 
@@ -86,15 +86,15 @@ def main():
 
     np.random.seed(2)
     scene_gt = create_example_scene()
-    antialiaseError = False
+    antialiase_error = False
     sigma = 1
 
-    AbufferTarget = np.zeros((scene_gt.image_H, scene_gt.image_W, scene_gt.nbColors))
+    image_target = np.zeros((scene_gt.height, scene_gt.width, scene_gt.nb_colors))
 
-    Zbuffer = np.zeros((scene_gt.image_H, scene_gt.image_W))
-    differentiable_renderer_cython.renderScene(scene_gt, sigma, AbufferTarget, Zbuffer)
+    z_buffer = np.zeros((scene_gt.height, scene_gt.width))
+    differentiable_renderer_cython.renderScene(scene_gt, sigma, image_target, z_buffer)
 
-    Nvertices = len(scene_gt.depths)
+    n_vertices = len(scene_gt.depths)
 
     displacement_magnitude_ij = 10
     displacement_magnitude_uv = 0
@@ -111,40 +111,40 @@ def main():
 
     scene_init = copy.deepcopy(scene_gt)
     scene_init.ij = (
-        scene_gt.ij + np.random.randn(Nvertices, 2) * displacement_magnitude_ij
+        scene_gt.ij + np.random.randn(n_vertices, 2) * displacement_magnitude_ij
     )
     scene_init.uv = (
-        scene_gt.uv + np.random.randn(Nvertices, 2) * displacement_magnitude_uv
+        scene_gt.uv + np.random.randn(n_vertices, 2) * displacement_magnitude_uv
     )
     scene_init.uv = np.maximum(scene_init.uv, 0)
     scene_init.uv = np.minimum(scene_init.uv, max_uv)
     scene_init.colors = (
-        scene_gt.colors + np.random.randn(Nvertices, 3) * displacement_magnitude_colors
+        scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
     )
 
-    for antialiaseError in [True, False]:
+    for antialiase_error in [True, False]:
         np.random.seed(2)
         scene_iter = copy.deepcopy(scene_init)
 
-        speed_ij = np.zeros((Nvertices, 2))
-        speed_uv = np.zeros((Nvertices, 2))
-        speed_color = np.zeros((Nvertices, 3))
+        speed_ij = np.zeros((n_vertices, 2))
+        speed_uv = np.zeros((n_vertices, 2))
+        speed_color = np.zeros((n_vertices, 3))
 
-        nbMaxIter = 500
+        nb_max_iter = 500
         losses = []
-        for iter in range(nbMaxIter):
-            Image, depth, lossImage, loss = scene_iter.render_compare_and_backward(
-                sigma, antialiaseError, AbufferTarget
+        for iter in range(nb_max_iter):
+            image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
+                sigma, antialiase_error, image_target
             )
 
             # imsave(os.path.join(iterfolder,f'soup_{iter}.png'), combinedIMage)
             cv2.waitKey(1)
             losses.append(loss)
-            if lossImage.ndim == 2:
-                lossImage = np.broadcast_to(lossImage[:, :, None], Image.shape)
+            if loss_image.ndim == 2:
+                loss_image = np.broadcast_to(loss_image[:, :, None], image.shape)
             cv2.imshow(
                 "animation",
-                np.column_stack((AbufferTarget, Image, lossImage))[:, :, ::-1],
+                np.column_stack((image_target, image, loss_image))[:, :, ::-1],
             )
 
             if displacement_magnitude_ij > 0:
@@ -162,7 +162,7 @@ def main():
                 scene_iter.uv = scene_iter.uv + speed_uv
                 scene_iter.uv = max(scene_iter.uv, 0)
                 scene_iter.uv = min(scene_iter.uv, max_uv)
-        plt.plot(losses, label="antialiaseError=%d" % antialiaseError)
+        plt.plot(losses, label="antialiaseError=%d" % antialiase_error)
 
     plt.legend()
     plt.show()
