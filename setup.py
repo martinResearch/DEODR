@@ -22,8 +22,9 @@ setup(
     version="0.1.4",
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
-    description="A differentiable renderer with Pytorch, Tensorflow and Matlab interfaces",
-    url= "https://github.com/martinResearch/DEODR"
+    description="A differentiable renderer with Pytorch,\
+    Tensorflow and Matlab interfaces",
+    url="https://github.com/martinResearch/DEODR",
     license="BSD",
     packages=find_packages(),
     package_data={"deodr": ["data/*.*", "data/**/*.*"]},
