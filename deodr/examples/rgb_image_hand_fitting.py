@@ -1,5 +1,5 @@
 from deodr import read_obj
-from scipy.misc import imread, imsave
+from imageio import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2

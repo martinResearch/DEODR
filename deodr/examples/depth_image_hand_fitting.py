@@ -1,6 +1,6 @@
 from deodr import read_obj
 import deodr
-from scipy.misc import imsave
+from imageio import imsave
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
