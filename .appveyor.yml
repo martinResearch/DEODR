@@ -10,7 +10,7 @@ image:
     - Visual Studio 2019
 platform:
   - x64
-  
+
 for: 
 -
   branches:
@@ -31,7 +31,7 @@ for:
   branches:
     only:
       - pypi_test
-          
+
   environment:
     global:
       encrypted_pypi_api_token:
@@ -41,8 +41,8 @@ for:
       CIBW_BEFORE_BUILD: pip install cython && pip install numpy
       CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
       TWINE_USERNAME: __token__ 
-        
- 
+
+
 build_script:
   # on linux
   - sh: sudo pip install cibuildwheel==1.0.0 
