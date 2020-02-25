@@ -5,3 +5,5 @@ cython
 imageio
 trimesh
 opencv-python
+torch
+tensorflow
