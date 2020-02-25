@@ -27,6 +27,6 @@ setup(
     package_data={"deodr": ["data/*.*", "data/**/*.*"]},
     ext_modules=my_modules,  # additional source file(s)),
     include_dirs=[np.get_include()],
-    setup_requires=["cython", "numpy", "scipy"],
-    install_requires=["cython", "numpy", "scipy"],
+    setup_requires=["numpy", "scipy"],
+    install_requires=["numpy", "scipy"],
 )
