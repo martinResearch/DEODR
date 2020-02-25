@@ -33,9 +33,8 @@ for:
       TWINE_USERNAME: __token__
 
 -
-  branches:
-    only:
-      - pypi_test
+  on: # test wheel deployement to test.pypi only for branch with active PR onto master 
+      APPVEYOR_REPO_BRANCH: master
           
   environment:
     global:

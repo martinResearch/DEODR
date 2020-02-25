@@ -14,6 +14,8 @@ import json
 def run(
     dl_library="none", plot_curves=False, save_images=False, display=True, max_iter=150
 ):
+    if display:
+        
     file_folder = os.path.dirname(__file__)
 
     if dl_library == "pytorch":
