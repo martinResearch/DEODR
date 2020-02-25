@@ -11,6 +11,11 @@ image:
 platform:
   - x64
   
+branches:
+  only:
+    - master
+    - pypi_test
+  
 for: 
 -
   branches:
