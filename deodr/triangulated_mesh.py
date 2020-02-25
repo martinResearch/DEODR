@@ -14,9 +14,15 @@ class TriMeshAdjacencies:
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
-        self._vertices_Faces = sparse.coo_matrix((v, (i, j)), shape=(self.nb_vertices, self.nb_faces))
+        self._vertices_Faces = sparse.coo_matrix(
+            (v, (i, j)), shape=(self.nb_vertices, self.nb_faces)
+        )
         id_faces = np.hstack(
-            (np.arange(self.nb_faces), np.arange(self.nb_faces), np.arange(self.nb_faces))
+            (
+                np.arange(self.nb_faces),
+                np.arange(self.nb_faces),
+                np.arange(self.nb_faces),
+            )
         )
         self.clockwise = clockwise
         edges = np.vstack(
@@ -41,7 +47,8 @@ class TriMeshAdjacencies:
         self.is_closed = self.isManifold and np.all(unique_counts == 2)
 
         self.edges_faces_Ones = sparse.coo_matrix(
-            (np.ones((len(id_edge))), (id_edge, id_faces)), shape=(self.nb_edges, self.nb_faces)
+            (np.ones((len(id_edge))), (id_edge, id_faces)),
+            shape=(self.nb_edges, self.nb_faces),
         )
         v = np.hstack(
             (
@@ -129,8 +136,8 @@ class TriMesh:
     def __init__(self, faces, vertices=None, clockwise=False):
 
         self.faces = faces
-        self.nb_vertices= np.max(faces) + 1
-        self.nb_faces= faces.shape[0]
+        self.nb_vertices = np.max(faces) + 1
+        self.nb_faces = faces.shape[0]
 
         self.vertices = None
         self.faceNormals = None

@@ -1,5 +1,5 @@
 from deodr import read_obj
-from scipy.misc import imread, imsave
+from imageio import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -8,10 +8,11 @@ import datetime
 import glob
 import json
 import os
+import deodr
 
 
-def example_rgb_hand_fitting(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True
+def run(
+    dl_library="pytorch", plot_curves=True, save_images=True, display=True, max_iter=100
 ):
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
@@ -22,10 +23,10 @@ def example_rgb_hand_fitting(
     else:
         raise BaseException(f"unkown deep learning library {dl_library}")
 
-    file_folder = os.path.dirname(__file__)
-
-    hand_image = imread(os.path.join(file_folder, "hand.png")).astype(np.double) / 255
-    obj_file = os.path.join(file_folder, "hand.obj")
+    hand_image = (
+        imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
+    )
+    obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
     default_color = np.array([0.4, 0.3, 0.25])
@@ -52,7 +53,6 @@ def example_rgb_hand_fitting(
     )
 
     hand_fitter.reset()
-    max_iter = 100
 
     background_color = np.median(
         np.row_stack(
@@ -142,26 +142,29 @@ def example_rgb_hand_fitting(
                 plt.ylabel("energies")
         plt.legend()
         plt.show()
+    return energies
 
 
-if __name__ == "__main__":
+def main():
+
     display = True
     save_images = False
 
-    example_rgb_hand_fitting(
-        dl_library="none", plot_curves=False, display=display, save_images=save_images
-    )
-
-    example_rgb_hand_fitting(
+    run(
         dl_library="pytorch",
         plot_curves=False,
         display=display,
         save_images=save_images,
     )
 
-    example_rgb_hand_fitting(
+    run(dl_library="none", plot_curves=False, display=display, save_images=save_images)
+    run(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
     )
+
+
+if __name__ == "__main__":
+    main()

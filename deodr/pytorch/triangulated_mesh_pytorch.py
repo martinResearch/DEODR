@@ -15,7 +15,9 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         super().__init__(faces, clockwise)
         self.faces_torch = torch.LongTensor(faces)
         i = self.faces_torch.flatten()
-        j = torch.LongTensor(np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten())
+        j = torch.LongTensor(
+            np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
+        )
         self._vertices_Faces_torch = torch.sparse.DoubleTensor(
             torch.stack((i, j)),
             torch.ones((self.nb_faces, 3), dtype=torch.float64).flatten(),

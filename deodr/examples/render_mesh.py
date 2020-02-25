@@ -6,12 +6,17 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 import imageio
 import trimesh
+import deodr
 
 
 def loadmesh(file):
 
     mesh_trimesh = trimesh.load(file)
     return ColoredTriMesh.from_trimesh(mesh_trimesh)
+
+
+def run(obj_file, width=640, height=480, display=True):
+    render_mesh(obj_file, width=width, height=height, display=display)
 
 
 def render_mesh(obj_file, width=640, height=480, display=True):
@@ -82,15 +87,13 @@ def render_mesh(obj_file, width=640, height=480, display=True):
 
 
 def example(save_image=False):
-    obj_file = os.path.join(os.path.dirname(__file__), "models/duck.obj")
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
     image, channels = render_mesh(obj_file, width=320, height=240)
-    image_file = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../data/test/duck.png")
-    )
+    image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
     os.makedirs(os.path.dirname(image_file), exist_ok=True)
     image_uint8 = (image * 255).astype(np.uint8)
     imageio.imwrite(image_file, image_uint8)
 
 
 if __name__ == "__main__":
-    example(save_image=False)
+    run(save_image=False)

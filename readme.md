@@ -13,7 +13,8 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 5. [License](#License)
 5. [Alternatives](#Alternatives)
 6. [References](#References)
-
+# Build and test status
+[![Build status](https://ci.appveyor.com/api/projects/status/mh640uc20poycuww?svg=true)](https://ci.appveyor.com/project/martinResearch/deodr)
 # Features
 
 * linearly interpolated color triangles with arbitrary number of color channels

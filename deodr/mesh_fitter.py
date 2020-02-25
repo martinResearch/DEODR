@@ -288,7 +288,9 @@ class MeshRGBFitterWithPose:
         self.scene.set_light(
             ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
         )
-        self.mesh.set_vertices_colors(np.tile(self.hand_color, (self.mesh.nb_vertices, 1)))
+        self.mesh.set_vertices_colors(
+            np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
+        )
         image = self.scene.render(self.camera)
         return image
 
@@ -435,7 +437,10 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def set_background_color(self, background_color):
         self.scene.set_background(
-            np.tile(background_color[None, None, :].astype(np.float), (self.height, self.width, 1))
+            np.tile(
+                background_color[None, None, :].astype(np.float),
+                (self.height, self.width, 1),
+            )
         )
 
     def set_mesh_transform_init(self, euler, translation):
@@ -514,7 +519,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.scene.set_light(
             ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
         )
-        self.mesh.set_vertices_colors(np.tile(self.hand_color, (self.mesh.nb_vertices, 1)))
+        self.mesh.set_vertices_colors(
+            np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
+        )
         image = self.scene.render(self.camera)
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
         return image

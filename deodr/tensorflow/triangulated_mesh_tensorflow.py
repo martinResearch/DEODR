@@ -7,7 +7,9 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
     def __init__(self, faces):
         super().__init__(faces)
         self.faces_tf = tf.constant(faces)
-        self._vertices_Faces_tf = scipy_sparse_matrix_to_tensorflow(self._vertices_Faces)
+        self._vertices_Faces_tf = scipy_sparse_matrix_to_tensorflow(
+            self._vertices_Faces
+        )
 
     def compute_face_normals(self, vertices):
         tris = tf.gather(vertices, self.faces)

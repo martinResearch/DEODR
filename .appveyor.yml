@@ -1,45 +1,66 @@
-os:
-- Windows Server 2012 R2
-environment:
-  matrix:
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-    PYTHON: "C:\\Miniconda36-x64"
-    PYTHON_VERSION: "3.6"
-    PYTHON_ARCH: "64"
+# taken from https://github.com/joerick/cibuildwheel-autopypi-example/blob/master/appveyor.yml
+# to replicate on you own repository you need to 
+# 1) create account on pypi.org, test.pypi.org and ci.appveryor.com 
+# 2) on pypi.org create an API token y(ou can call it "<ProjetName> Appveyor") and  an copy the string or let the browser window open
+# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy the encrypted string in the secure subflied  of "encrypted_pypi_api_token"  in the branches/only/master part
+# 4) do step 3 and 4 but this time on test.pypi.org , fill in of "encrypted_pypi_api_token"  in the branches/only/pypi_test part
 
-install:
-  # If there is a newer build queued for the same PR, cancel this one.
-  # The AppVeyor 'rollout builds' option is supposed to serve the same
-  # purpose but it is problematic because it tends to cancel builds pushed
-  # directly to master instead of just PR builds (or the converse).
-  # credits: JuliaLang developers.
-  - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
-        https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
-        Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
-          throw "There are newer queued builds for this pull request, failing early." }
+image: 
+    - ubuntu
+    - Visual Studio 2019
+platform:
+  - x64
+  
+branches:
+  only:
+    - master
+    - pypi_test
+  
+for: 
+-
+  branches:
+    only:
+      - master
+          
+  environment:
+    global:
+      encrypted_pypi_api_token:
+        secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
+      TWINE_REPOSITORY_URL :   https://pypi.org/legacy/
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
+      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+      TWINE_USERNAME: __token__
 
-  # Python(set before conda command call)
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;"
-  - python -m pip install --upgrade pip
-  - pip install -r requirements.txt
-
+-
+  branches:
+    only:
+      - master
+  #on: # test wheel deployement to test.pypi only for branch with active PR onto master 
+  #    APPVEYOR_REPO_BRANCH: master
+          
+  environment:
+    global:
+      encrypted_pypi_api_token:
+          secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
+      TWINE_REPOSITORY_URL :   https://test.pypi.org/legacy/
+      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
+      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+      TWINE_USERNAME: __token__ 
+        
+ 
 build_script:
-
-  - python setup.py build_ext -i
-  - python setup.py install
-  - python setup.py bdist_wheel
-  - python -m pip list
-  
-test_script:
-  - pip install pytest
-  - pytest
-after_test:
-  # If tests are successful, create binary packages for the project.
-  - python setup.py bdist_wheel"
-  - python setup.py bdist_wininst"
-  - python setup.py bdist_msi"
-  - ps: "ls dist"
-  
+  # on linux
+  - sh: sudo pip install cibuildwheel==1.0.0 
+  - sh: cibuildwheel --output-dir wheelhouse --platform linux
+  - sh: sudo pip install twine
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing  -p $encrypted_pypi_api_token
+  # on windows
+  - cmd: pip install cibuildwheel==1.0.0
+  - cmd: cibuildwheel --output-dir wheelhouse
+  - cmd: pip install twine  
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing  -p %encrypted_pypi_api_token%  
 artifacts:
-  # Archive the generated packages in the ci.appveyor.com build report.
-- path: dist\*
+  - path: "wheelhouse\\*.whl"
+    name: Wheels

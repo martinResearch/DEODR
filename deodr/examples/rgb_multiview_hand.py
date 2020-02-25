@@ -9,19 +9,18 @@ import glob
 import json
 import os
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
+import deodr
 
 
-def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, display=True):
-
-    file_folder = os.path.dirname(__file__)
+def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
 
     hand_images = [
         imread(file).astype(np.double) / 255
-        for file in glob.glob(os.path.join(file_folder, "./sfm/*.jpg"))
+        for file in glob.glob(os.path.join(deodr.data_path, "./hand_multiview/*.jpg"))
     ]
     nb_frames = len(hand_images)
 
-    obj_file = os.path.join(file_folder, "hand.obj")
+    obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
     default_color = np.array([0.4, 0.3, 0.25]) * 1.5
@@ -156,6 +155,4 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 if __name__ == "__main__":
     display = True
     save_images = False
-    example_sfm(
-        dl_library="none", plot_curves=True, display=display, save_images=save_images
-    )
+    run(dl_library="none", plot_curves=True, display=display, save_images=save_images)

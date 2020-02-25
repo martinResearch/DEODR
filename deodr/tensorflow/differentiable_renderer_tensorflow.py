@@ -80,7 +80,9 @@ class Scene3DTensorflow(Scene3D):
     def _compute_vertices_colors_with_illumination(self):
         vertices_luminosity = (
             tf.nn.relu(
-                -tf.reduce_sum(self.mesh.vertex_normals * self.ligth_directional, axis=1)
+                -tf.reduce_sum(
+                    self.mesh.vertex_normals * self.ligth_directional, axis=1
+                )
             )
             + self.ambiant_light
         )

@@ -1,20 +1,17 @@
 from deodr import differentiable_renderer_cython
 from deodr.differentiable_renderer import Scene2D
-from scipy.misc import imread
+from imageio import imread
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import copy
 import os
+import deodr
 
 
-def create_example_scene():
+def create_example_scene(n_tri=30, width=200, height=200):
 
-    n_tri = 30
-    width = 200
-    height = 200
-    file_folder = os.path.dirname(os.path.abspath(__file__))
-    material = np.double(imread(os.path.join(file_folder, "trefle.jpg"))) / 255
+    material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
     height_material = material.shape[0]
     width_material = material.shape[1]
 
@@ -81,7 +78,7 @@ def create_example_scene():
     return Scene2D(**scene)
 
 
-def main():
+def run(nb_max_iter=500, display=True):
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
@@ -122,6 +119,8 @@ def main():
         scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
     )
 
+    final_loss = {}
+
     for antialiase_error in [True, False]:
         np.random.seed(2)
         scene_iter = copy.deepcopy(scene_init)
@@ -130,7 +129,6 @@ def main():
         speed_uv = np.zeros((n_vertices, 2))
         speed_color = np.zeros((n_vertices, 3))
 
-        nb_max_iter = 500
         losses = []
         for iter in range(nb_max_iter):
             image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
@@ -138,14 +136,16 @@ def main():
             )
 
             # imsave(os.path.join(iterfolder,f'soup_{iter}.png'), combinedIMage)
-            cv2.waitKey(1)
+
             losses.append(loss)
             if loss_image.ndim == 2:
                 loss_image = np.broadcast_to(loss_image[:, :, None], image.shape)
-            cv2.imshow(
-                "animation",
-                np.column_stack((image_target, image, loss_image))[:, :, ::-1],
-            )
+            if display:
+                cv2.waitKey(1)
+                cv2.imshow(
+                    "animation",
+                    np.column_stack((image_target, image, loss_image))[:, :, ::-1],
+                )
 
             if displacement_magnitude_ij > 0:
                 speed_ij = beta_ij * speed_ij - scene_iter.ij_b * alpha_ij
@@ -162,11 +162,14 @@ def main():
                 scene_iter.uv = scene_iter.uv + speed_uv
                 scene_iter.uv = max(scene_iter.uv, 0)
                 scene_iter.uv = min(scene_iter.uv, max_uv)
-        plt.plot(losses, label="antialiaseError=%d" % antialiase_error)
-
-    plt.legend()
-    plt.show()
+        if display:
+            plt.plot(losses, label="antialiaseError=%d" % antialiase_error)
+        final_loss[antialiase_error] = loss
+    if display:
+        plt.legend()
+        plt.show()
+    return final_loss
 
 
 if __name__ == "__main__":
-    main()
+    run()

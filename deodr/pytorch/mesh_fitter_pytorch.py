@@ -454,7 +454,9 @@ class MeshRGBFitterWithPose:
             ligth_directional=ligth_directional_with_grad,
             ambiant_light=ambiant_light_with_grad,
         )
-        self.mesh.set_vertices_colors(hand_color_with_grad.repeat([self.mesh.nb_vertices, 1]))
+        self.mesh.set_vertices_colors(
+            hand_color_with_grad.repeat([self.mesh.nb_vertices, 1])
+        )
 
         image = self.scene.render(self.camera)
 

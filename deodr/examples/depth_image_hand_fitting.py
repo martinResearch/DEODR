@@ -1,5 +1,6 @@
 from deodr import read_obj
-from scipy.misc import imsave
+import deodr
+from imageio import imsave
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -10,9 +11,10 @@ import os
 import json
 
 
-def example_depth_image_hand_fitting(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True
+def run(
+    dl_library="none", plot_curves=False, save_images=False, display=True, max_iter=150
 ):
+
     file_folder = os.path.dirname(__file__)
 
     if dl_library == "pytorch":
@@ -25,7 +27,7 @@ def example_depth_image_hand_fitting(
         raise BaseException(f"unkown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
-        np.fromfile(os.path.join(file_folder, "depth.bin"), dtype=np.float32)
+        np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
         .reshape(240, 320)
         .astype(np.float)
     )
@@ -34,7 +36,7 @@ def example_depth_image_hand_fitting(
     depth_image[depth_image == 0] = max_depth
     depth_image = depth_image / max_depth
 
-    obj_file = os.path.join(file_folder, "hand.obj")
+    obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
     euler_init = np.array([0.1, 0.1, 0.1])
@@ -43,7 +45,6 @@ def example_depth_image_hand_fitting(
     hand_fitter = MeshDepthFitter(
         vertices, faces, euler_init, translation_init, cregu=1000
     )
-    max_iter = 150
 
     hand_fitter.set_image(depth_image, focal=241, dist=[1, 0, 0, 0, 0])
     hand_fitter.set_max_depth(1)
@@ -114,19 +115,18 @@ def example_depth_image_hand_fitting(
         plt.legend()
         plt.show()
 
+    return energies
 
-if __name__ == "__main__":
+
+def main():
     display = True
 
+    run(dl_library="none", plot_curves=False, save_images=False, display=display)
 
-    example_depth_image_hand_fitting(
-        dl_library="none", plot_curves=False, save_images=False, display=display
-    )
+    run(dl_library="pytorch", plot_curves=False, save_images=False, display=display)
 
-    example_depth_image_hand_fitting(
-        dl_library="pytorch", plot_curves=False, save_images=False, display=display
-    )
-    
-    example_depth_image_hand_fitting(
-        dl_library="tensorflow", plot_curves=True, save_images=False, display=display
-    )
+    run(dl_library="tensorflow", plot_curves=True, save_images=False, display=display)
+
+
+if __name__ == "__main__":
+    main()
