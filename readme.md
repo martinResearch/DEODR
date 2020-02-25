@@ -4,6 +4,9 @@
 DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a differentiable 3D mesh renderer written in C with **Python** and **Matlab** bindings. The python code provides interfaces with **Pytorch** and **Tensorflow**. It provides a differentiable rendering function and its associated reverse mode differentiation function (a.k.a adjoint function) that provides derivatives of a loss defined on the rendered image with respect to the lightning, the 3D vertices positions and the vertices colors. 
 The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projections are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. The core C++ differentiable renderer has been implemented in 2008 and described in [1,2]. Unlike most other differentiable renderers (except the recent SoftRas [8] and to some extend the differentiable ray/path tracing methods in [10] and [13]), the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with discontinuities along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
 
+[![Build status](https://ci.appveyor.com/api/projects/status/mh640uc20poycuww?svg=true)](https://ci.appveyor.com/project/martinResearch/deodr)
+![Python package](https://github.com/martinResearch/DEODR/workflows/Python%20package/badge.svg)
+
 # Table of content
 
 1. [Features](#Features)
@@ -13,8 +16,7 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 5. [License](#License)
 5. [Alternatives](#Alternatives)
 6. [References](#References)
-# Build and test status
-[![Build status](https://ci.appveyor.com/api/projects/status/mh640uc20poycuww?svg=true)](https://ci.appveyor.com/project/martinResearch/deodr)
+
 # Features
 
 * linearly interpolated color triangles with arbitrary number of color channels
@@ -48,11 +50,14 @@ Keeping the rendering differentiable everywhere when using texture is challengin
 # Installation
 ## Python
 
-### Windows
+Fr windows and linux for python 3.6 and 3.7 and you can use 
+
+	pip install deodr
+
+otherwise or if that does not work you can try
 
 	pip install git+https://github.com/martinResearch/DEODR.git
 	
-
 ## Matlab
 Simply download the zip file, decompress it, run compile.m.
 
