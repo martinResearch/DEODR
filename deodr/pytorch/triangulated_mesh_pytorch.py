@@ -15,14 +15,16 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         super().__init__(faces, clockwise)
         self.faces_torch = torch.LongTensor(faces)
         i = self.faces_torch.flatten()
-        j = torch.LongTensor(np.tile(np.arange(self.nbF)[:, None], [1, 3]).flatten())
-        self.Vertices_Faces_torch = torch.sparse.DoubleTensor(
+        j = torch.LongTensor(
+            np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
+        )
+        self._vertices_Faces_torch = torch.sparse.DoubleTensor(
             torch.stack((i, j)),
-            torch.ones((self.nbF, 3), dtype=torch.float64).flatten(),
-            torch.Size((self.nbV, self.nbF)),
+            torch.ones((self.nb_faces, 3), dtype=torch.float64).flatten(),
+            torch.Size((self.nb_vertices, self.nb_faces)),
         )
 
-    def computeFaceNormals(self, vertices):
+    def compute_face_normals(self, vertices):
         tris = vertices[self.faces_torch, :]
         u = tris[::, 1] - tris[::, 0]
         v = tris[::, 2] - tris[::, 0]
@@ -35,21 +37,21 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         nn = n / norm[:, None]
         return nn
 
-    def computeVertexNormals(self, faceNormals):
-        n = self.Vertices_Faces_torch.mm(faceNormals)
+    def compute_vertex_normals(self, face_normals):
+        n = self._vertices_Faces_torch.mm(face_normals)
         l2 = (n ** 2).sum(dim=1)
         norm = l2.sqrt()
         return n / norm[:, None]
 
-    def edgeOnSilhouette(self, vertices2D):
-        return super().edgeOnSilhouette(vertices2D.detach().numpy())
+    def edge_on_silhouette(self, vertices_2d):
+        return super().edge_on_silhouette(vertices_2d.detach().numpy())
 
 
 class TriMeshPytorch(TriMesh):
     def __init__(self, faces, vertices=None, clockwise=False):
         super().__init__(faces, vertices, clockwise)
 
-    def computeAdjacencies(self):
+    def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacenciesPytorch(self.faces)
 
 
@@ -73,5 +75,5 @@ class ColoredTriMeshPytorch(TriMeshPytorch):
         self.colors = colors
         self.textured = not (self.texture is None)
 
-    def setVerticesColors(self, colors):
-        self.verticesColors = colors
+    def set_vertices_colors(self, colors):
+        self.vertices_colors = colors

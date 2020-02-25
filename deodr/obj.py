@@ -6,12 +6,12 @@
 import numpy as np
 
 
-def readObj(filename):
+def read_obj(filename):
 
     faces = []
     vertices = []
     fid = open(filename, "r")
-    nodeCounter = 0
+    node_counter = 0
     while True:
 
         line = fid.readline()
@@ -23,7 +23,7 @@ def readObj(filename):
         if line.startswith("v"):
             coord = line.split()
             coord.pop(0)
-            nodeCounter += 1
+            node_counter += 1
             vertices.append(np.array([float(c) for c in coord]))
 
         elif line.startswith("f "):
@@ -31,13 +31,13 @@ def readObj(filename):
             fields.pop(0)
 
             # in some obj faces are defined as -70//-70 -69//-69 -62//-62
-            cleanedFields = []
+            cleaned_fields = []
             for f in fields:
                 f = int(f.split("/")[0]) - 1
                 if f < 0:
-                    f = nodeCounter + f
-                cleanedFields.append(f)
-            faces.append(np.array(cleanedFields))
+                    f = node_counter + f
+                cleaned_fields.append(f)
+            faces.append(np.array(cleaned_fields))
 
     faces = np.row_stack(faces)
     vertices = np.row_stack(vertices)

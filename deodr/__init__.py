@@ -13,13 +13,13 @@ __all__ = [
     "Scene2D",
     "Scene3D",
     "Camera",
-    "readObj",
+    "read_obj",
     "LaplacianRigidEnergy",
     "TriMesh",
     "ColoredTriMesh",
 ]
 from .differentiable_renderer import Scene2D, Scene3D, Camera
-from .obj import readObj
+from .obj import read_obj
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .triangulated_mesh import TriMesh, ColoredTriMesh
 import os

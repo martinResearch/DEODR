@@ -9,67 +9,80 @@ class TriMeshAdjacencies:
 
     def __init__(self, faces, clockwise=False):
         self.faces = faces
-        self.nbF = faces.shape[0]
-        self.nbV = np.max(faces.flat) + 1
+        self.nb_faces = faces.shape[0]
+        self.nb_vertices = np.max(faces.flat) + 1
         i = self.faces.flatten()
-        j = np.tile(np.arange(self.nbF)[:, None], [1, 3]).flatten()
-        v = np.ones((self.nbF, 3)).flatten()
-        self.Vertices_Faces = sparse.coo_matrix((v, (i, j)), shape=(self.nbV, self.nbF))
-        idF = np.hstack((np.arange(self.nbF), np.arange(self.nbF), np.arange(self.nbF)))
+        j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
+        v = np.ones((self.nb_faces, 3)).flatten()
+        self._vertices_Faces = sparse.coo_matrix(
+            (v, (i, j)), shape=(self.nb_vertices, self.nb_faces)
+        )
+        id_faces = np.hstack(
+            (
+                np.arange(self.nb_faces),
+                np.arange(self.nb_faces),
+                np.arange(self.nb_faces),
+            )
+        )
         self.clockwise = clockwise
         edges = np.vstack(
             (self.faces[:, [0, 1]], self.faces[:, [1, 2]], self.faces[:, [2, 0]])
         )
 
-        idEtmp, edgeIncrease = self.idEdge(edges)
+        id_edge_tmp, edge_increase = self.id_edge(edges)
 
-        _, idE, unique_counts = np.unique(
-            idEtmp, return_inverse=True, return_counts=True
+        _, id_edge, unique_counts = np.unique(
+            id_edge_tmp, return_inverse=True, return_counts=True
         )
 
-        self.nbE = np.max(idE) + 1
+        self.nb_edges = np.max(id_edge) + 1
 
-        nbInc = np.zeros((self.nbE))
-        np.add.at(nbInc, idE, edgeIncrease)
-        nbDec = np.zeros((self.nbE))
-        np.add.at(nbDec, idE, ~edgeIncrease)
+        nb_inc = np.zeros((self.nb_edges))
+        np.add.at(nb_inc, id_edge, edge_increase)
+        nb_dec = np.zeros((self.nb_edges))
+        np.add.at(nb_dec, id_edge, ~edge_increase)
         self.isManifold = (
-            np.all(unique_counts <= 2) and np.all(nbInc <= 1) and np.all(nbDec <= 1)
+            np.all(unique_counts <= 2) and np.all(nb_inc <= 1) and np.all(nb_dec <= 1)
         )
-        self.isClosed = self.isManifold and np.all(unique_counts == 2)
+        self.is_closed = self.isManifold and np.all(unique_counts == 2)
 
-        self.Edges_Faces_Ones = sparse.coo_matrix(
-            (np.ones((len(idE))), (idE, idF)), shape=(self.nbE, self.nbF)
+        self.edges_faces_Ones = sparse.coo_matrix(
+            (np.ones((len(id_edge))), (id_edge, id_faces)),
+            shape=(self.nb_edges, self.nb_faces),
         )
         v = np.hstack(
-            (np.full((self.nbF), 0), np.full((self.nbF), 1), np.full((self.nbF), 2))
+            (
+                np.full((self.nb_faces), 0),
+                np.full((self.nb_faces), 1),
+                np.full((self.nb_faces), 2),
+            )
         )
         self.Faces_Edges = sparse.coo_matrix(
-            (idE, (idF, v)), shape=(self.nbF, 3)
+            (id_edge, (id_faces, v)), shape=(self.nb_faces, 3)
         ).todense()
-        self.Adjacency_Vertices = (
-            (self.Vertices_Faces * self.Vertices_Faces.T) > 0
-        ) - sparse.eye(self.nbV)
-        self.DegreeVE = self.Adjacency_Vertices.dot(
-            np.ones((self.nbV))
-        )  # DegreeVE(i)=j means that the vertex i appears in j edges
+        self.adjacency_vertices = (
+            (self._vertices_Faces * self._vertices_Faces.T) > 0
+        ) - sparse.eye(self.nb_vertices)
+        self.degree_v_e = self.adjacency_vertices.dot(
+            np.ones((self.nb_vertices))
+        )  # degree_v_e(i)=j means that the vertex i appears in j edges
         self.Laplacian = (
-            sparse.diags([self.DegreeVE], [0], (self.nbV, self.nbV))
-            - self.Adjacency_Vertices
+            sparse.diags([self.degree_v_e], [0], (self.nb_vertices, self.nb_vertices))
+            - self.adjacency_vertices
         )
-        self.hasBoundaries = np.any(np.sum(self.Edges_Faces_Ones, axis=1) == 1)
-        assert np.all(self.Laplacian * np.ones((self.nbV)) == 0)
+        self.hasBoundaries = np.any(np.sum(self.edges_faces_Ones, axis=1) == 1)
+        assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
-    def idEdge(self, idv):
+    def id_edge(self, idv):
 
         return (
             np.maximum(idv[:, 0], idv[:, 1])
-            + np.minimum(idv[:, 0], idv[:, 1]) * self.nbV,
+            + np.minimum(idv[:, 0], idv[:, 1]) * self.nb_vertices,
             idv[:, 0] < idv[:, 1],
         )
 
-    def computeFaceNormals(self, vertices):
+    def compute_face_normals(self, vertices):
         tris = vertices[self.faces, :]
         u = tris[:, 1, :] - tris[:, 0, :]
         v = tris[:, 2, :] - tris[:, 0, :]
@@ -78,44 +91,44 @@ class TriMeshAdjacencies:
         else:
             n = np.cross(u, v)
         normals = normalize(n, axis=1)
-        self.store_backward["computeFaceNormals"] = (u, v, n)
+        self.store_backward["compute_face_normals"] = (u, v, n)
         return normals
 
-    def computeFaceNormals_backward(self, normals_b):
-        u, v, n = self.store_backward["computeFaceNormals"]
+    def compute_face_normals_backward(self, normals_b):
+        u, v, n = self.store_backward["compute_face_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
         if self.clockwise:
             u_b, v_b = cross_backward(u, v, -n_b)
         else:
             u_b, v_b = cross_backward(u, v, n_b)
         tris_b = np.stack((-u_b - v_b, u_b, v_b), axis=1)
-        vertices_b = np.zeros((self.nbV, 3))
+        vertices_b = np.zeros((self.nb_vertices, 3))
         np.add.at(vertices_b, self.faces, tris_b)
         return vertices_b
 
-    def computeVertexNormals(self, faceNormals):
-        n = self.Vertices_Faces * faceNormals
+    def compute_vertex_normals(self, face_normals):
+        n = self._vertices_Faces * face_normals
         normals = normalize(n, axis=1)
-        self.store_backward["computeVertexNormals"] = n
+        self.store_backward["compute_vertex_normals"] = n
         return normals
 
-    def computeVertexNormals_backward(self, normals_b):
-        n = self.store_backward["computeVertexNormals"]
+    def compute_vertex_normals_backward(self, normals_b):
+        n = self.store_backward["compute_vertex_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
-        faceNormals_b = self.Vertices_Faces.T * n_b
-        return faceNormals_b
+        face_normals_b = self._vertices_Faces.T * n_b
+        return face_normals_b
 
-    def edgeOnSilhouette(self, vertices2D):
+    def edge_on_silhouette(self, vertices_2d):
         """this computes the a boolean for each of edges of each face that is true if
         and only if the edge is one the silhouette of the mesh given a view point"""
-        tris = vertices2D[self.faces, :]
+        tris = vertices_2d[self.faces, :]
         u = tris[:, 1, :] - tris[:, 0, :]
         v = tris[:, 2, :] - tris[:, 0, :]
         if self.clockwise:
             face_visible = np.cross(u, v) > 0
         else:
             face_visible = np.cross(u, v) < 0
-        edge_bool = (self.Edges_Faces_Ones * face_visible) == 1
+        edge_bool = (self.edges_faces_Ones * face_visible) == 1
         return edge_bool[self.Faces_Edges]
 
 
@@ -123,29 +136,29 @@ class TriMesh:
     def __init__(self, faces, vertices=None, clockwise=False):
 
         self.faces = faces
-        self.nbV = np.max(faces) + 1
-        self.nbF = faces.shape[0]
+        self.nb_vertices = np.max(faces) + 1
+        self.nb_faces = faces.shape[0]
 
         self.vertices = None
         self.faceNormals = None
-        self.vertexNormals = None
+        self.vertex_normals = None
         self.clockwise = clockwise
-        self.computeAdjacencies()
+        self.compute_adjacencies()
         assert self.adjacencies.isManifold
 
         if vertices is not None:
-            self.setVertices(vertices)
-            self.checkOrientation()
+            self.set_vertices(vertices)
+            self.check_orientation()
 
-    def computeAdjacencies(self):
+    def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
 
-    def setVertices(self, vertices):
+    def set_vertices(self, vertices):
         self.vertices = vertices
         self.faceNormals = None
-        self.vertexNormals = None
+        self.vertex_normals = None
 
-    def computeVolume(self):
+    def compute_volume(self):
         """Compute the volume enclosed by the triangulated surface. It assumes the
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle"""
@@ -165,10 +178,10 @@ class TriMesh:
             / 6
         )
 
-    def checkOrientation(self):
+    def check_orientation(self):
         """check the mesh faces are properly oriented for the normals to point
          outward"""
-        if self.computeVolume() > 0:
+        if self.compute_volume() > 0:
             raise (
                 BaseException(
                     "The volume within the surface is negative. It seems that you faces"
@@ -176,27 +189,27 @@ class TriMesh:
                 )
             )
 
-    def computeFaceNormals(self):
-        self.faceNormals = self.adjacencies.computeFaceNormals(self.vertices)
+    def compute_face_normals(self):
+        self.faceNormals = self.adjacencies.compute_face_normals(self.vertices)
 
-    def computeVertexNormals(self):
+    def compute_vertex_normals(self):
         if self.faceNormals is None:
-            self.computeFaceNormals()
-        self.vertexNormals = self.adjacencies.computeVertexNormals(self.faceNormals)
+            self.compute_face_normals()
+        self.vertex_normals = self.adjacencies.compute_vertex_normals(self.faceNormals)
 
-    def computeVertexNormals_backward(self, vertexNormals_b):
-        self.faceNormals_b = self.adjacencies.computeVertexNormals_backward(
-            vertexNormals_b
+    def compute_vertex_normals_backward(self, vertex_normals_b):
+        self.faceNormals_b = self.adjacencies.compute_vertex_normals_backward(
+            vertex_normals_b
         )
-        self.vertices_b += self.adjacencies.computeFaceNormals_backward(
+        self.vertices_b += self.adjacencies.compute_face_normals_backward(
             self.faceNormals_b
         )
 
-    def edgeOnSilhouette(self, points2D):
+    def edge_on_silhouette(self, points_2d):
         """this computes the a boolean for each of edges that is true if and only if
         the edge is one the silhouette of the mesh"""
 
-        return self.adjacencies.edgeOnSilhouette(points2D)
+        return self.adjacencies.edge_on_silhouette(points_2d)
 
 
 class ColoredTriMesh(TriMesh):
@@ -209,7 +222,7 @@ class ColoredTriMesh(TriMesh):
         uv=None,
         texture=None,
         colors=None,
-        nbColors=None,
+        nb_colors=None,
     ):
         super(ColoredTriMesh, self).__init__(
             faces, vertices=vertices, clockwise=clockwise
@@ -220,15 +233,15 @@ class ColoredTriMesh(TriMesh):
         self.texture = texture
         self.colors = colors
         self.textured = not (self.texture is None)
-        self.nbColors = nbColors
-        if nbColors is None:
+        self.nb_colors = nb_colors
+        if nb_colors is None:
             if texture is None:
-                self.nbColors = colors.shape[1]
+                self.nb_colors = colors.shape[1]
             else:
-                self.nbColors = texture.shape[2]
+                self.nb_colors = texture.shape[2]
 
-    def setVerticesColors(self, colors):
-        self.verticesColors = colors
+    def set_vertices_colors(self, colors):
+        self.vertices_colors = colors
 
     def plot_uv_map(self, ax):
         ax.imshow(self.texture)
@@ -236,7 +249,7 @@ class ColoredTriMesh(TriMesh):
 
     def plot(self, ax, plot_normals=False):
         x, y, z = self.vertices.T
-        u, v, w = self.vertexNormals.T
+        u, v, w = self.vertex_normals.T
         ax.plot_trisurf(
             self.vertices[:, 0],
             self.vertices[:, 1],

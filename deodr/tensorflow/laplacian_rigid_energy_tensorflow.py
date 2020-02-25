@@ -8,17 +8,17 @@ class LaplacianRigidEnergyTensorflow(LaplacianRigidEnergy):
         super().__init__(mesh, vertices, cregu)
         self.cT_tf = scipy_sparse_matrix_to_tensorflow(self.cT)
 
-    def eval(self, V, return_grad=True, return_hessian=True):
-        assert isinstance(V, tf.Tensor)
-        diff = tf.reshape(V - tf.constant(self.Vref), [-1])
-        gradV = tf.reshape(
+    def eval(self, vertices, return_grad=True, return_hessian=True):
+        assert isinstance(vertices, tf.Tensor)
+        diff = tf.reshape(vertices - tf.constant(self.Vref), [-1])
+        grad_vertices = tf.reshape(
             self.cregu * tf.sparse.sparse_dense_matmul(self.cT_tf, diff[:, None]),
-            V.shape,
+            vertices.shape,
         )  # 5 times slower than scipy
-        E = 0.5 * tf.reduce_sum(diff * tf.reshape(gradV, [-1]))
+        energy = 0.5 * tf.reduce_sum(diff * tf.reshape(grad_vertices, [-1]))
         if not (return_grad):
             assert not (return_hessian)
-            return E
+            return energy
         if not (return_hessian):
-            return E, gradV
-        return E, gradV, self.approx_hessian
+            return energy, grad_vertices
+        return energy, grad_vertices, self.approx_hessian

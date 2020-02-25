@@ -45,60 +45,60 @@ class MeshDepthFitter:
         self.mesh = TriMesh(
             faces, vertices
         )  # we do a copy to avoid negative stride not support by Tensorflow
-        objectCenter = vertices.mean(axis=0)
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([-0.5, 0, 5]) * objectRadius
+        object_center = vertices.mean(axis=0)
+        object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([-0.5, 0, 5]) * object_radius
 
         self.scene = Scene3DTensorflow()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
+        self.scene.set_mesh(self.mesh)
+        self.rigid_energy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = tf.constant(copy.copy(vertices))
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def setMeshTransformInit(self, euler, translation):
-        self.transformQuaternionInit = scipy.spatial.transform.Rotation.from_euler(
+    def set_mesh_transform_init(self, euler, translation):
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
-        self.transformTranslationInit = translation
+        self.transform_translation_init = translation
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices_init.shape)
-        self.transformQuaternion = copy.copy(self.transformQuaternionInit)
-        self.transformTranslation = copy.copy(self.transformTranslationInit)
+        self.transform_quaternion = copy.copy(self.transform_quaternion_init)
+        self.transform_translation = copy.copy(self.transform_translation_init)
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-    def setMaxDepth(self, maxDepth):
-        self.scene.maxDepth = maxDepth
-        self.scene.setBackground(
-            np.full((self.SizeH, self.SizeW, 1), maxDepth, dtype=np.float)
+    def set_max_depth(self, max_depth):
+        self.scene.max_depth = max_depth
+        self.scene.set_background(
+            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
         )
 
-    def setDepthScale(self, depthScale):
-        self.depthScale = depthScale
+    def set_depth_scale(self, depth_scale):
+        self.depthScale = depth_scale
 
-    def setImage(self, handImage, focal=None, dist=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 2
-        self.handImage = handImage
+    def set_image(self, hand_image, focal=None, dist=None):
+        self.width = hand_image.shape[1]
+        self.height = hand_image.shape[0]
+        assert hand_image.ndim == 2
+        self.hand_image = hand_image
         if focal is None:
-            focal = 2 * self.SizeW
+            focal = 2 * self.width
 
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
             dist=dist,
         )
         self.iter = 0
@@ -111,8 +111,8 @@ class MeshDepthFitter:
         with tf.GradientTape() as tape:
 
             vertices_with_grad = tf.constant(self.vertices)
-            quaternion_with_grad = tf.constant(self.transformQuaternion)
-            translation_with_grad = tf.constant(self.transformTranslation)
+            quaternion_with_grad = tf.constant(self.transform_quaternion)
+            translation_with_grad = tf.constant(self.transform_translation)
 
             tape.watch(vertices_with_grad)
             tape.watch(quaternion_with_grad)
@@ -129,20 +129,20 @@ class MeshDepthFitter:
                 qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
             )
 
-            self.mesh.setVertices(vertices_with_grad_transformed)
+            self.mesh.set_vertices(vertices_with_grad_transformed)
 
             depth_scale = 1 * self.depthScale
-            Depth = self.scene.renderDepth(
+            depth = self.scene.render_depth(
                 self.camera,
-                resolution=(self.SizeW, self.SizeH),
+                resolution=(self.width, self.height),
                 depth_scale=depth_scale,
             )
-            Depth = tf.clip_by_value(Depth, 0, self.scene.maxDepth)
+            depth = tf.clip_by_value(depth, 0, self.scene.max_depth)
 
-            diffImage = tf.reduce_sum(
-                (Depth - tf.constant(self.handImage[:, :, None])) ** 2, axis=2
+            diff_image = tf.reduce_sum(
+                (depth - tf.constant(self.hand_image[:, :, None])) ** 2, axis=2
             )
-            loss = tf.reduce_sum(diffImage)
+            loss = tf.reduce_sum(diff_image)
 
             trainable_variables = [
                 vertices_with_grad,
@@ -153,25 +153,25 @@ class MeshDepthFitter:
                 loss, trainable_variables
             )
 
-        EData = loss.numpy()
+        energy_data = loss.numpy()
 
-        GradData = vertices_grad
+        grad_data = vertices_grad
 
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
             self.vertices.numpy()
         )
-        Energy = EData + E_rigid
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
+        energy = energy_data + energy_rigid
+        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         # update v
-        G = GradData + grad_rigidity
+        grad = grad_data + grad_rigidity
 
         def mult_and_clamp(x, a, t):
             return np.minimum(np.maximum(x * a, -t), t)
 
         # update vertices
         step_vertices = mult_and_clamp(
-            -G.numpy(), self.step_factor_vertices, self.step_max_vertices
+            -grad.numpy(), self.step_factor_vertices, self.step_max_vertices
         )
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * self.inertia + (1 - self.inertia) * step_vertices
@@ -186,10 +186,10 @@ class MeshDepthFitter:
         self.speed_quaternion = (1 - self.damping) * (
             self.speed_quaternion * self.inertia + (1 - self.inertia) * step_quaternion
         )
-        self.transformQuaternion = self.transformQuaternion + self.speed_quaternion
+        self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
         # update translation
-        self.transformQuaternion = self.transformQuaternion / np.linalg.norm(
-            self.transformQuaternion
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
+            self.transform_quaternion
         )
         step_translation = mult_and_clamp(
             -translation_grad.numpy(),
@@ -200,10 +200,10 @@ class MeshDepthFitter:
             self.speed_translation * self.inertia
             + (1 - self.inertia) * step_translation
         )
-        self.transformTranslation = self.transformTranslation + self.speed_translation
+        self.transform_translation = self.transform_translation + self.speed_translation
 
         self.iter += 1
-        return Energy, Depth[:, :, 0].numpy(), diffImage.numpy()
+        return energy, depth[:, :, 0].numpy(), diff_image.numpy()
 
 
 class MeshRGBFitterWithPose:
@@ -213,13 +213,13 @@ class MeshRGBFitterWithPose:
         faces,
         euler_init,
         translation_init,
-        defaultColor,
-        defaultLight,
+        default_color,
+        default_light,
         cregu=2000,
         inertia=0.96,
         damping=0.05,
-        updateLights=True,
-        updateColor=True,
+        update_lights=True,
+        update_color=True,
     ):
         self.cregu = cregu
 
@@ -232,72 +232,72 @@ class MeshRGBFitterWithPose:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.defaultColor = defaultColor
-        self.defaultLight = defaultLight
-        self.updateLights = updateLights
-        self.updateColor = updateColor
+        self.default_color = default_color
+        self.default_light = default_light
+        self.update_lights = update_lights
+        self.update_color = update_color
         self.mesh = ColoredTriMesh(
             faces.copy()
         )  # we do a copy to avoid negative stride not support by Tensorflow
-        objectCenter = vertices.mean(axis=0) + translation_init
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
+        object_center = vertices.mean(axis=0) + translation_init
+        object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([0, 0, 9]) * object_radius
 
         self.scene = Scene3DTensorflow()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
+        self.scene.set_mesh(self.mesh)
+        self.rigid_energy = LaplacianRigidEnergyTensorflow(self.mesh, vertices, cregu)
         self.vertices_init = tf.constant(copy.copy(vertices))
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def setBackgroundColor(self, backgroundColor):
-        self.scene.setBackground(
-            np.tile(backgroundColor[None, None, :], (self.SizeH, self.SizeW, 1))
+    def set_background_color(self, background_color):
+        self.scene.set_background(
+            np.tile(background_color[None, None, :], (self.height, self.width, 1))
         )
 
-    def setMeshTransformInit(self, euler, translation):
-        self.transformQuaternionInit = scipy.spatial.transform.Rotation.from_euler(
+    def set_mesh_transform_init(self, euler, translation):
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
-        self.transformTranslationInit = translation
+        self.transform_translation_init = translation
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
-        self.transformQuaternion = copy.copy(self.transformQuaternionInit)
-        self.transformTranslation = copy.copy(self.transformTranslationInit)
+        self.transform_quaternion = copy.copy(self.transform_quaternion_init)
+        self.transform_translation = copy.copy(self.transform_translation_init)
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.handColor = copy.copy(self.defaultColor)
-        self.ligthDirectional = copy.copy(self.defaultLight["directional"])
-        self.ambiantLight = copy.copy(self.defaultLight["ambiant"])
+        self.hand_color = copy.copy(self.default_color)
+        self.ligth_directional = copy.copy(self.default_light["directional"])
+        self.ambiant_light = copy.copy(self.default_light["ambiant"])
 
-        self.speed_ligthDirectional = np.zeros(self.ligthDirectional.shape)
-        self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
-        self.speed_handColor = np.zeros(self.handColor.shape)
+        self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
+        self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
+        self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def setImage(self, handImage, focal=None, dist=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 3
-        self.handImage = handImage
+    def set_image(self, hand_image, focal=None, dist=None):
+        self.width = hand_image.shape[1]
+        self.height = hand_image.shape[0]
+        assert hand_image.ndim == 3
+        self.hand_image = hand_image
         if focal is None:
-            focal = 2 * self.SizeW
+            focal = 2 * self.width
 
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             dist=dist,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
         )
         self.iter = 0
 
@@ -306,20 +306,20 @@ class MeshRGBFitterWithPose:
         with tf.GradientTape() as tape:
 
             vertices_with_grad = tf.constant(self.vertices)
-            quaternion_with_grad = tf.constant(self.transformQuaternion)
-            translation_with_grad = tf.constant(self.transformTranslation)
+            quaternion_with_grad = tf.constant(self.transform_quaternion)
+            translation_with_grad = tf.constant(self.transform_translation)
 
-            ligthDirectional_with_grad = tf.constant(self.ligthDirectional)
-            ambiantLight_with_grad = tf.constant(self.ambiantLight)
-            handColor_with_grad = tf.constant(self.handColor)
+            ligth_directional_with_grad = tf.constant(self.ligth_directional)
+            ambiant_light_with_grad = tf.constant(self.ambiant_light)
+            hand_color_with_grad = tf.constant(self.hand_color)
 
             tape.watch(vertices_with_grad)
             tape.watch(quaternion_with_grad)
             tape.watch(translation_with_grad)
 
-            tape.watch(ligthDirectional_with_grad)
-            tape.watch(ambiantLight_with_grad)
-            tape.watch(handColor_with_grad)
+            tape.watch(ligth_directional_with_grad)
+            tape.watch(ambiant_light_with_grad)
+            tape.watch(hand_color_with_grad)
 
             vertices_with_grad_centered = (
                 vertices_with_grad - tf.reduce_mean(vertices_with_grad, axis=0)[None, :]
@@ -331,52 +331,52 @@ class MeshRGBFitterWithPose:
             vertices_with_grad_transformed = (
                 qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
             )
-            self.mesh.setVertices(vertices_with_grad_transformed)
+            self.mesh.set_vertices(vertices_with_grad_transformed)
 
-            self.scene.setLight(
-                ligthDirectional=ligthDirectional_with_grad,
-                ambiantLight=ambiantLight_with_grad,
+            self.scene.set_light(
+                ligth_directional=ligth_directional_with_grad,
+                ambiant_light=ambiant_light_with_grad,
             )
-            self.mesh.setVerticesColors(
-                tf.tile(handColor_with_grad[None, :], [self.mesh.nbV, 1])
+            self.mesh.set_vertices_colors(
+                tf.tile(hand_color_with_grad[None, :], [self.mesh.nb_vertices, 1])
             )
 
-            Abuffer = self.scene.render(self.camera)
+            image = self.scene.render(self.camera)
 
-            diffImage = tf.reduce_sum(
-                (Abuffer - tf.constant(self.handImage)) ** 2, axis=2
+            diff_image = tf.reduce_sum(
+                (image - tf.constant(self.hand_image)) ** 2, axis=2
             )
-            loss = tf.reduce_sum(diffImage)
+            loss = tf.reduce_sum(diff_image)
 
             trainable_variables = [
                 vertices_with_grad,
                 quaternion_with_grad,
                 translation_with_grad,
-                ligthDirectional_with_grad,
-                ambiantLight_with_grad,
-                handColor_with_grad,
+                ligth_directional_with_grad,
+                ambiant_light_with_grad,
+                hand_color_with_grad,
             ]
             (
                 vertices_grad,
                 quaternion_grad,
                 translation_grad,
-                ligthDirectional_grad,
-                ambiantLight_grad,
-                handColor_grad,
+                ligth_directional_grad,
+                ambiant_light_grad,
+                hand_color_grad,
             ) = tape.gradient(loss, trainable_variables)
 
-        EData = loss.numpy()
+        energy_data = loss.numpy()
 
-        GradData = vertices_grad
+        grad_data = vertices_grad
 
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
             self.vertices
         )
-        Energy = EData + E_rigid.numpy()
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
+        energy = energy_data + energy_rigid.numpy()
+        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         # update v
-        G = GradData + grad_rigidity
+        grad = grad_data + grad_rigidity
 
         def mult_and_clamp(x, a, t):
             return np.minimum(np.maximum(x * a, -t), t)
@@ -385,7 +385,7 @@ class MeshRGBFitterWithPose:
 
         # update vertices
         step_vertices = mult_and_clamp(
-            -G.numpy(), self.step_factor_vertices, self.step_max_vertices
+            -grad.numpy(), self.step_factor_vertices, self.step_max_vertices
         )
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * inertia + (1 - inertia) * step_vertices
@@ -398,10 +398,10 @@ class MeshRGBFitterWithPose:
         self.speed_quaternion = (1 - self.damping) * (
             self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
         )
-        self.transformQuaternion = self.transformQuaternion + self.speed_quaternion
+        self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
         # update translation
-        self.transformQuaternion = self.transformQuaternion / np.linalg.norm(
-            self.transformQuaternion
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
+            self.transform_quaternion
         )
         step_translation = mult_and_clamp(
             -translation_grad, self.step_factor_translation, self.step_max_translation
@@ -409,25 +409,25 @@ class MeshRGBFitterWithPose:
         self.speed_translation = (1 - self.damping) * (
             self.speed_translation * inertia + (1 - inertia) * step_translation
         )
-        self.transformTranslation = self.transformTranslation + self.speed_translation
+        self.transform_translation = self.transform_translation + self.speed_translation
         # update directional light
-        step = -ligthDirectional_grad * 0.0001
-        self.speed_ligthDirectional = (1 - self.damping) * (
-            self.speed_ligthDirectional * inertia + (1 - inertia) * step
+        step = -ligth_directional_grad * 0.0001
+        self.speed_ligth_directional = (1 - self.damping) * (
+            self.speed_ligth_directional * inertia + (1 - inertia) * step
         )
-        self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional
+        self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
         # update ambiant light
-        step = -ambiantLight_grad * 0.0001
-        self.speed_ambiantLight = (1 - self.damping) * (
-            self.speed_ambiantLight * inertia + (1 - inertia) * step
+        step = -ambiant_light_grad * 0.0001
+        self.speed_ambiant_light = (1 - self.damping) * (
+            self.speed_ambiant_light * inertia + (1 - inertia) * step
         )
-        self.ambiantLight = self.ambiantLight + self.speed_ambiantLight
+        self.ambiant_light = self.ambiant_light + self.speed_ambiant_light
         # update hand color
-        step = -handColor_grad * 0.00001
-        self.speed_handColor = (1 - self.damping) * (
-            self.speed_handColor * inertia + (1 - inertia) * step
+        step = -hand_color_grad * 0.00001
+        self.speed_hand_color = (1 - self.damping) * (
+            self.speed_hand_color * inertia + (1 - inertia) * step
         )
-        self.handColor = self.handColor + self.speed_handColor
+        self.hand_color = self.hand_color + self.speed_hand_color
 
         self.iter += 1
-        return Energy, Abuffer.numpy(), diffImage.numpy()
+        return energy, image.numpy(), diff_image.numpy()

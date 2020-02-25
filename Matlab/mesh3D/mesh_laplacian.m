@@ -1,3 +1,3 @@
 function L=mesh_laplacian(M)
 
-L=spdiags(M.DegreeVE',0,length(M.DegreeVE),length(M.DegreeVE))-M.Adjacency_Vertices;
+L=spdiags(M.degree_v_e',0,length(M.degree_v_e),length(M.degree_v_e))-M.adjacency_vertices;
