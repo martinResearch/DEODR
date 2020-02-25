@@ -4,28 +4,28 @@ scene=example_scene();
 sigma=1;% edge antialising width
 
 tic
-[Abufferc2,Zbuffer2]=render(scene,sigma);
+[imagec2,z_buffer2]=render(scene,sigma);
 toc
 figure(1);
 subplot(1,2,1)
-imshow(permute(Abufferc2,[2,3,1]),[0,1]);
+imshow(permute(imagec2,[2,3,1]),[0,1]);
 
 subplot(1,2,2)
-imshow(1-Zbuffer2,[0,1]);
+imshow(1-z_buffer2,[0,1]);
 
 function scene=example_scene()
 
 rng('default');
 rng(10);
 Ntri=50;
-SizeW=200;
-SizeH=200;
+width=200;
+height=200;
 
 material=double(permute(imread('../data/trefle.jpg'),[3,1,2]))/255;
 Hmaterial=size(material,2);
 Wmaterial=size(material,3);
 
-scale_matrix=[SizeH,0;0,SizeW];
+scale_matrix=[height,0;0,width];
 scale_material=[Hmaterial-1,0;0,Wmaterial-1];
 triangles=cell(Ntri,1);
 
@@ -61,9 +61,9 @@ for k=1:Ntri
 end
 triangles=cell2mat(triangles);
 
-nbV=Ntri*3;
-scene.faces= uint32(reshape([1:nbV]-1,3,Ntri));
-scene.faces_uv= uint32(reshape([1:nbV]-1,3,Ntri));
+nb_vertices=Ntri*3;
+scene.faces= uint32(reshape([1:nb_vertices]-1,3,Ntri));
+scene.faces_uv= uint32(reshape([1:nb_vertices]-1,3,Ntri));
 scene.uv=cat(2,triangles.uv);
 scene.ij=cat(2,triangles.ij);
 scene.depths=cat(2,triangles.depths);
@@ -72,8 +72,8 @@ scene.colors=cat(2,triangles.colors);
 scene.edgeflags=squeeze(cat(2,triangles.edgeflags));
 scene.textured=logical([triangles.textured]);
 scene.shaded=logical([triangles.shaded]);
-scene.SizeH=SizeH;
-scene.SizeW=SizeW;
+scene.height=height;
+scene.width=width;
 scene.texture=material;
-backgroundColor=[0.3,0.5,0.7];
-scene.background=repmat(backgroundColor(:),1,scene.SizeH,scene.SizeW);
+background_color=[0.3,0.5,0.7];
+scene.background=repmat(background_color(:),1,scene.height,scene.width);

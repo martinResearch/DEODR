@@ -39,21 +39,21 @@ points_deformed_gt = (
 points_deformed_gt[on_border] = points[on_border]
 plt.triplot(points_deformed_gt[:, 0], points_deformed_gt[:, 1], triangles)
 # plt.show()
-nbPoints = points.shape[0]
-nbTriangles = triangles.shape[0]
+nb_points = points.shape[0]
+nb_triangles = triangles.shape[0]
 ij = points_deformed_gt * 64 - 0.5
 uv = points * 64 + 0.5
-textured = np.ones((nbTriangles), dtype=np.bool)
-shaded = np.ones((nbTriangles), dtype=np.bool)
-depths = np.ones((nbPoints))
-shade = np.ones((nbPoints))
-colors = np.ones((nbPoints, 1))
-edgeflags = np.zeros((nbTriangles, 3), dtype=np.bool)
-image_H = 64
-image_W = 64
-nbColors = 1
+textured = np.ones((nb_triangles), dtype=np.bool)
+shaded = np.ones((nb_triangles), dtype=np.bool)
+depths = np.ones((nb_points))
+shade = np.ones((nb_points))
+colors = np.ones((nb_points, 1))
+edgeflags = np.zeros((nb_triangles, 3), dtype=np.bool)
+height = 64
+width = 64
+nb_colors = 1
 texture = faces.images[10][:, :, None]
-background = np.zeros((image_H, image_W, 1))
+background = np.zeros((height, width, 1))
 
 scene_gt = Scene2D(
     triangles,
@@ -66,23 +66,23 @@ scene_gt = Scene2D(
     colors,
     shaded,
     edgeflags,
-    image_H,
-    image_W,
-    nbColors,
+    height,
+    width,
+    nb_colors,
     texture,
     background,
 )
 
-A_gt, _ = scene_gt.render(sigma=1)
+image_gt, _ = scene_gt.render(sigma=1)
 plt.subplot(3, 1, 1)
 plt.imshow(np.squeeze(texture, axis=2))
 plt.subplot(3, 1, 2)
-plt.imshow(np.squeeze(A_gt, axis=2))
+plt.imshow(np.squeeze(image_gt, axis=2))
 plt.subplot(3, 1, 3)
-plt.imshow(np.squeeze(np.abs(A_gt - texture), axis=2))
+plt.imshow(np.squeeze(np.abs(image_gt - texture), axis=2))
 
 # plt.show()
-np.max(texture - A_gt)
+np.max(texture - image_gt)
 
 
 scene = Scene2D(
@@ -96,9 +96,9 @@ scene = Scene2D(
     colors,
     shaded,
     edgeflags,
-    image_H,
-    image_W,
-    nbColors,
+    height,
+    width,
+    nb_colors,
     texture,
     background,
 )
@@ -115,28 +115,28 @@ def fun(points_deformed, pca_coefs):
     scene.ij = ij
     scene.texture = face[:, :, None]
     print("render")
-    Abuffer, Zbuffer, diffImage, Err = scene.render_compare_and_backward(
-        Aobs=A_gt, sigma=1
+    image, z_buffer, diff_image, err = scene.render_compare_and_backward(
+        obs=image_gt, sigma=1
     )
     print("np.max(np.abs(scene.ij_b))=%f" % np.max(np.abs(scene.ij_b)))
-    print("E=%f" % Err)
+    print("E=%f" % err)
     print("done")
-    A_gt_zoomed = cv2.resize(
-        (A_gt.copy() * 255).astype(np.uint8),
+    image_gt_zoomed = cv2.resize(
+        (image_gt.copy() * 255).astype(np.uint8),
         None,
         fx=rescale_factor,
         fy=rescale_factor,
         interpolation=cv2.INTER_NEAREST,
     )
-    Abuffer_zoomed = cv2.resize(
-        (Abuffer.copy() * 255).astype(np.uint8),
+    image_zoomed = cv2.resize(
+        (image.copy() * 255).astype(np.uint8),
         None,
         fx=rescale_factor,
         fy=rescale_factor,
         interpolation=cv2.INTER_NEAREST,
     )
-    diffImage_zoomed = cv2.resize(
-        (np.abs(diffImage) * 255).astype(np.uint8),
+    diff_image_zoomed = cv2.resize(
+        (np.abs(diff_image) * 255).astype(np.uint8),
         None,
         fx=rescale_factor,
         fy=rescale_factor,
@@ -144,22 +144,22 @@ def fun(points_deformed, pca_coefs):
     )
 
     cv2.polylines(
-        A_gt_zoomed,
+        image_gt_zoomed,
         (points_deformed_gt[tri.simplices] * 64 * rescale_factor).astype(np.int32),
-        isClosed=True,
+        is_closed=True,
         color=(0, 0, 0),
         lineType=cv2.LINE_AA,
     )
 
     cv2.polylines(
-        Abuffer_zoomed,
+        image_zoomed,
         (points_deformed[tri.simplices] * 64 * rescale_factor).astype(np.int32),
-        isClosed=True,
+        is_closed=True,
         color=(0, 0, 0),
         lineType=cv2.LINE_AA,
     )
     cv2.imshow(
-        "animation", np.column_stack((A_gt_zoomed, Abuffer_zoomed, diffImage_zoomed))
+        "animation", np.column_stack((image_gt_zoomed, image_zoomed, diff_image_zoomed))
     )
     cv2.waitKey(1)
 
@@ -168,10 +168,10 @@ def fun(points_deformed, pca_coefs):
     points_deformed_grad = scene.ij_b * 64
     print(np.max(np.abs(points_deformed_grad)))
     grads = {"points_deformed": points_deformed_grad, "pca_coefs": coefs_grad}
-    return Err, grads
+    return err, grads
 
 
-nbIter = 100
+nb_iter = 100
 
 pca_coefs = np.zeros((faces_pca.n_components))
 points_deformed = points.copy()
@@ -181,7 +181,7 @@ variables = {"points_deformed": points_deformed, "pca_coefs": pca_coefs}
 lambdas = {"points_deformed": 0.0001, "pca_coefs": 0.5}
 
 
-for iter in range(nbIter):
+for iter in range(nb_iter):
 
     E, grads = fun(**variables)
     print(f"E={E}")

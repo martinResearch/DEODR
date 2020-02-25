@@ -14,7 +14,7 @@ class LaplacianRigidEnergy:
         self.cregu = cregu
         self.approx_hessian = self.cregu * self.cT
         n_components, labels = scipy.sparse.csgraph.connected_components(
-            csgraph=self.mesh.adjacencies.Adjacency_Vertices,
+            csgraph=self.mesh.adjacencies.adjacency_vertices,
             directed=False,
             return_labels=True,
         )
@@ -23,15 +23,17 @@ class LaplacianRigidEnergy:
                 BaseException("you have more than one connected component in your mesh")
             )
 
-    def eval(self, V, return_grad=True, return_hessian=True, refresh_rotations=True):
+    def eval(
+        self, vertices, return_grad=True, return_hessian=True, refresh_rotations=True
+    ):
 
-        diff = (V - self.Vref).flatten()
-        gradV = self.cregu * (self.cT * diff).reshape((V.shape[0], 3))
-        E = 0.5 * diff.dot(gradV.flatten())
+        diff = (vertices - self.Vref).flatten()
+        grad_vertices = self.cregu * (self.cT * diff).reshape((vertices.shape[0], 3))
+        energy = 0.5 * diff.dot(grad_vertices.flatten())
         if not (return_grad):
             assert not (return_hessian)
-            return E
+            return energy
         if not (return_hessian):
-            return E, gradV
+            return energy, grad_vertices
 
-        return E, gradV, self.approx_hessian
+        return energy, grad_vertices, self.approx_hessian

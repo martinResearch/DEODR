@@ -1,7 +1,7 @@
-function losses = mesh_fitting(image,mask,vertices,faces,vertices_colors,backgroundColor,lights, CameraMatrix, options)
+function losses = mesh_fitting(image,mask,vertices,faces,vertices_colors,background_color,lights, CameraMatrix, options)
 
-SizeW=size(image,2);
-SizeH=size(image,1);
+width=size(image,2);
+height=size(image,1);
 
 if options.save_images
     mkdir(options.iter_images_folder)
@@ -21,10 +21,10 @@ M.colors = vertices_colors;
 M = mesh_adjacencies(M);
 Mref = M;
 
-Aobs = double(permute(image,[3,1,2]));
+obs = double(permute(image,[3,1,2]));
 
-losses = zeros(1,options.nbMaxIter);
-durations = zeros(1,options.nbMaxIter);
+losses = zeros(1,options.nb_max_iter);
+durations = zeros(1,options.nb_max_iter);
 filteredGrad = zeros(1,numel(M.V));
 speed = zeros(1,numel(M.V))';
 
@@ -32,29 +32,29 @@ Miter = Mref;
 
 Laplacian=mesh_laplacian(M);
 cT= kron(Laplacian'*Laplacian,speye(3));
-edgeDiff = sparse([(1:M.nbE)';(1:M.nbE)'],[M.Edges_Vertices(:,1);M.Edges_Vertices(:,2)],[ones(M.nbE,1);-ones(M.nbE,1)]);
+edgeDiff = sparse([(1:M.nb_edges)';(1:M.nb_edges)'],[M.edges_vertices(:,1);M.edges_vertices(:,2)],[ones(M.nb_edges,1);-ones(M.nb_edges,1)]);
 edgeDiff3 = kron(edgeDiff,speye(3));
 edgeDiff3T = edgeDiff3';
-approxRigidHessian=  options.cregu * (edgeDiff3' * edgeDiff3) + options.gamma * speye(M.nbV*3);
+approxRigidHessian=  options.cregu * (edgeDiff3' * edgeDiff3) + options.gamma * speye(M.nb_vertices*3);
 
 start = tic;
-for iter = 1:options.nbMaxIter
+for iter = 1:options.nb_max_iter
     
     MiterAD = Miter;
     MiterAD.V = AutoDiff(Miter.V);
     
-    scene3 = mesh2scene(MiterAD,CameraMatrix,lights.ligthDirectional,lights.ambiantLight,SizeH,SizeW,false);
+    scene3 = mesh2scene(MiterAD,CameraMatrix,lights.ligth_directional,lights.ambiant_light,height,width,false);
     
     J_col = getderivs(scene3.colors);
     J_ij = getderivs(scene3.ij);
     
-    scene2 = mesh2scene(Miter,CameraMatrix,lights.ligthDirectional,lights.ambiantLight,SizeH,SizeW);
-    scene2.background = repmat(backgroundColor(:),1,scene2.SizeH,scene2.SizeW);
+    scene2 = mesh2scene(Miter,CameraMatrix,lights.ligth_directional,lights.ambiant_light,height,width);
+    scene2.background = repmat(background_color(:),1,scene2.height,scene2.width);
     
     if options.display
-        [scene2b,Edata,image]= render_and_compare(scene2, options.sigma, Aobs, options.antialiaseError, mask);
+        [scene2b,Edata,image]= render_and_compare(scene2, options.sigma, obs, options.antialiaseError, mask);
     else
-        [scene2b] = render_and_compare(scene2, options.sigma, Aobs, options.antialiaseError);
+        [scene2b] = render_and_compare(scene2, options.sigma, obs, options.antialiaseError);
     end
     
     if options.display || options.saveGif

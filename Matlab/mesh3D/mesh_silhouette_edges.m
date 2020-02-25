@@ -29,18 +29,18 @@ end
 
 % for each face compute signe of the volume
 % of the thetrahedron made of the 3 vertices and the viewpoint
-% sNR=zeros(1,M.nbF);
-% for k=1:M.nbF
+% sNR=zeros(1,M.nb_faces);
+% for k=1:M.nb_faces
 %     sNR(k)=det(M.V(:,M.F(:,k))-repmat(Viewpoint,[1,3]))<0;
 % end
 
-visible_bool=sum(M.NormalsF.*(repmat(Viewpoint,[1,M.nbF])-M.V(:,M.F(1,:))),1)>0;
+visible_bool=sum(M.NormalsF.*(repmat(Viewpoint,[1,M.nb_faces])-M.V(:,M.F(1,:))),1)>0;
 
 
 % find edges with a single neighboring face oriented toward the camera :
 
-edge_bool =((double(M.Edges_Faces>0)*visible_bool')==1)';
-adjacent_visible_faces=((M.Edges_Faces>0)*((1:M.nbF).*(visible_bool))')';
+edge_bool =((double(M.edges_faces>0)*visible_bool')==1)';
+adjacent_visible_faces=((M.edges_faces>0)*((1:M.nb_faces).*(visible_bool))')';
 edges_list=find(edge_bool);
 adjacent_visible_faces=adjacent_visible_faces(edges_list);
 
@@ -52,7 +52,7 @@ M.edges_list=edges_list;
 M.adjacent_visible_faces=adjacent_visible_faces;
 M.visible_bool=visible_bool;
 
-% convex_bool=false(1,M.nbE);
+% convex_bool=false(1,M.nb_edges);
 % will=M.willmoreLists;
 % V=M.V;
 % ide=edges_list;

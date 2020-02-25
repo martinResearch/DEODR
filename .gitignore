@@ -21,11 +21,11 @@ iterations/
 examples/images
 Matlab/matlabAutoDiff
 build/temp.win-amd64-3.6/Release/
-DEODR/differentiablerenderer_cython.cp36-win_amd64.exp
-DEODR/differentiablerenderer_cython.cp36-win_amd64.lib
-DEODR/differentiablerenderer_cython.obj
-DEODR/differentiablerenderer_cython.cpp
-DEODR/differentiablerenderer_cython.html
+DEODR/differentiable_renderer_cython.cp36-win_amd64.exp
+DEODR/differentiable_renderer_cython.cp36-win_amd64.lib
+DEODR/differentiable_renderer_cython.obj
+DEODR/differentiable_renderer_cython.cpp
+DEODR/differentiable_renderer_cython.html
 
 Matlab/render.mexw64
 Matlab/render_b.mexw64

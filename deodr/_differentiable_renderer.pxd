@@ -12,21 +12,21 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 		bool* edgeflags
 		bool* textured
 		bool* shaded
-		int     nbTriangles
-		int nbVertices;
+		int     nb_triangles
+		int nb_vertices;
 		bool clockwise;
-		int nbUV;
-		int     image_H
-		int     image_W
-		int     nbColors
+		int nb_uv;
+		int     height
+		int     width
+		int     nb_colors
 		double* texture
-		int  texture_H
-		int  texture_W
+		int  texture_height
+		int  texture_width
 		double* background
 		double* uv_b
 		double* ij_b
 		double* shade_b
 		double* colors_b
 		double* texture_b
-	void renderScene(Scene scene,double* Abuffer,double* Zbuffer,double sigma,bool antialiaseError ,double* Aobs,double*  ErrBuffer)
-	void renderScene_B(Scene scene,double* Abuffer,double* Zbuffer,double* Abuffer_b,double sigma,bool antialiaseError ,double* Aobs,double*  ErrBuffer, double* ErrBuffer_b)
+	void renderScene(Scene scene,double* image,double* z_buffer,double sigma,bool antialiase_error ,double* obs,double*  err_buffer)
+	void renderScene_B(Scene scene,double* image,double* z_buffer,double* image_b,double sigma,bool antialiase_error ,double* obs,double*  err_buffer, double* err_buffer_b)

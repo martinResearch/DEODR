@@ -1,4 +1,4 @@
-from deodr import readObj
+from deodr import read_obj
 from imageio import imread, imsave
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,21 +15,21 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 
     file_folder = os.path.dirname(__file__)
 
-    handImages = [
+    hand_images = [
         imread(file).astype(np.double) / 255
         for file in glob.glob(os.path.join(file_folder, "./sfm/*.jpg"))
     ]
-    nbFrames = len(handImages)
+    nb_frames = len(hand_images)
 
-    objFile = os.path.join(file_folder, "hand.obj")
-    faces, vertices = readObj(objFile)
+    obj_file = os.path.join(file_folder, "hand.obj")
+    faces, vertices = read_obj(obj_file)
 
-    defaultColor = np.array([0.4, 0.3, 0.25]) * 1.5
-    defaultLight = {
+    default_color = np.array([0.4, 0.3, 0.25]) * 1.5
+    default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
         "ambiant": np.array([0.6]),
     }
-    # defaultLight = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}
+    # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}
 
     euler_init = np.row_stack(
         [np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)]
@@ -37,41 +37,41 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
 
     vertices = vertices - np.mean(vertices, axis=0)
     t_init = np.array([0, -0.2, 0.2])
-    translation_init = np.tile(t_init[None, :], [nbFrames, 1])
+    translation_init = np.tile(t_init[None, :], [nb_frames, 1])
     # centering vertices
 
-    handFitter = MeshRGBFitterWithPoseMultiFrame(
+    hand_fitter = MeshRGBFitterWithPoseMultiFrame(
         vertices,
         faces,
-        defaultColor=defaultColor,
-        defaultLight=defaultLight,
-        updateLights=True,
-        updateColor=True,
+        default_color=default_color,
+        default_light=default_light,
+        update_lights=True,
+        update_color=True,
         euler_init=euler_init,
         translation_init=translation_init,
         cregu=2000,
     )
-    #  handFitter = MeshRGBFitter(vertices,faces,defaultColor,defaultLight,
-    # updateLights =  True, updateColor= True,cregu=1000)
+    #  handFitter = MeshRGBFitter(vertices,faces,default_color,default_light,
+    # update_lights =  True, update_color= True,cregu=1000)
 
-    handFitter.reset()
-    maxIter = 150
-    handImage = handImages[0]
-    backgroundColor = np.median(
+    hand_fitter.reset()
+    max_iter = 150
+    hand_image = hand_images[0]
+    background_color = np.median(
         np.row_stack(
             (
-                handImage[:10, :10, :].reshape(-1, 3),
-                handImage[-10:, :10, :].reshape(-1, 3),
-                handImage[-10:, -10:, :].reshape(-1, 3),
-                handImage[:10, -10:, :].reshape(-1, 3),
+                hand_image[:10, :10, :].reshape(-1, 3),
+                hand_image[-10:, :10, :].reshape(-1, 3),
+                hand_image[-10:, -10:, :].reshape(-1, 3),
+                hand_image[:10, -10:, :].reshape(-1, 3),
             )
         ),
         axis=0,
     )
-    backgroundColor = np.array([0, 0, 0])
-    handFitter.setImages(handImages)
-    handFitter.setBackgroundColor(backgroundColor)
-    Energies = []
+    background_color = np.array([0, 0, 0])
+    hand_fitter.set_images(hand_images)
+    hand_fitter.set_background_color(background_color)
+    energies = []
     durations = []
     start = time.time()
 
@@ -79,28 +79,29 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
-    for iter in range(maxIter):
-        Energy, Abuffer, diffImage = handFitter.step()
-        Energies.append(Energy)
+    for iter in range(max_iter):
+        energy, image, diff_image = hand_fitter.step()
+        energies.append(energy)
         durations.append(time.time() - start)
         if display or save_images:
-            combinedIMage = np.column_stack(
+            combined_image = np.column_stack(
                 (
-                    np.row_stack(handImages),
-                    np.row_stack(Abuffer),
+                    np.row_stack(hand_images),
+                    np.row_stack(image),
                     np.tile(
-                        np.row_stack(np.minimum(diffImage, 1))[:, :, None], (1, 1, 3)
+                        np.row_stack(np.minimum(diff_image, 1))[:, :, None], (1, 1, 3)
                     ),
                 )
             )
             if display:
                 cv2.imshow(
-                    "animation", cv2.resize(combinedIMage[:, :, ::-1], None, fx=1, fy=1)
+                    "animation",
+                    cv2.resize(combined_image[:, :, ::-1], None, fx=1, fy=1),
                 )
             if save_images:
                 imsave(
                     os.path.join(iterfolder, f"hand_iter_{iter}.png"),
-                    (combinedIMage * 255).astype(np.uint8),
+                    (combined_image * 255).astype(np.uint8),
                 )
         cv2.waitKey(1)
 
@@ -117,7 +118,7 @@ def example_sfm(dl_library="pytorch", plot_curves=True, save_images=True, displa
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",
                 "durations": durations,
-                "energies": Energies,
+                "energies": energies,
             },
             f,
             indent=4,

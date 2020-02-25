@@ -31,118 +31,118 @@ class MeshDepthFitter:
         self.mesh = TriMesh(
             faces, vertices=vertices
         )  # we do a copy to avoid negative stride not support by pytorch
-        objectCenter = vertices.mean(axis=0)
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([-0.5, 0, 5]) * objectRadius
+        object_center = vertices.mean(axis=0)
+        object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([-0.5, 0, 5]) * object_radius
 
         self.scene = Scene3D()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
+        self.scene.set_mesh(self.mesh)
+        self.rigid_energy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = copy.copy(vertices)
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
 
         self.reset()
 
-    def setMeshTransformInit(self, euler, translation):
-        self.transformQuaternionInit = scipy.spatial.transform.Rotation.from_euler(
+    def set_mesh_transform_init(self, euler, translation):
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
-        self.transformTranslationInit = translation
+        self.transform_translation_init = translation
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices_init.shape)
-        self.transformQuaternion = copy.copy(self.transformQuaternionInit)
-        self.transformTranslation = copy.copy(self.transformTranslationInit)
+        self.transform_quaternion = copy.copy(self.transform_quaternion_init)
+        self.transform_translation = copy.copy(self.transform_translation_init)
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-    def setMaxDepth(self, maxDepth):
-        self.scene.maxDepth = maxDepth
-        self.scene.setBackground(
-            np.full((self.SizeH, self.SizeW, 1), maxDepth, dtype=np.float)
+    def set_max_depth(self, max_depth):
+        self.scene.max_depth = max_depth
+        self.scene.set_background(
+            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
         )
 
-    def setDepthScale(self, depthScale):
-        self.depthScale = depthScale
+    def set_depth_scale(self, depth_scale):
+        self.depthScale = depth_scale
 
-    def setImage(self, handImage, focal=None, dist=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 2
-        self.handImage = handImage
+    def set_image(self, hand_image, focal=None, dist=None):
+        self.width = hand_image.shape[1]
+        self.height = hand_image.shape[0]
+        assert hand_image.ndim == 2
+        self.hand_image = hand_image
         if focal is None:
-            focal = 2 * self.SizeW
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+            focal = 2 * self.width
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             dist=dist,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
         )
         self.iter = 0
 
     def render(self):
         q_normalized = normalize(
-            self.transformQuaternion
+            self.transform_quaternion
         )  # that will lead to a gradient that is in the tangeant space
         vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transformTranslation
+            qrot(q_normalized, self.vertices) + self.transform_translation
         )
-        self.mesh.setVertices(vertices_transformed)
-        self.DepthNotCliped = self.scene.renderDepth(
+        self.mesh.set_vertices(vertices_transformed)
+        self.depth_not_cliped = self.scene.render_depth(
             self.camera,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
             depth_scale=self.depthScale,
         )
-        Depth = np.clip(self.DepthNotCliped, 0, self.scene.maxDepth)
-        return Depth
+        depth = np.clip(self.depth_not_cliped, 0, self.scene.max_depth)
+        return depth
 
-    def render_backward(self, Depth_b):
+    def render_backward(self, depth_b):
         self.scene.clear_gradients()
-        Depth_b[self.DepthNotCliped < 0] = 0
-        Depth_b[self.DepthNotCliped > self.scene.maxDepth] = 0
-        self.scene.renderDepth_backward(Depth_b)
+        depth_b[self.depth_not_cliped < 0] = 0
+        depth_b[self.depth_not_cliped > self.scene.max_depth] = 0
+        self.scene.render_depth_backward(depth_b)
         vertices_transformed_b = self.scene.mesh.vertices_b
-        self.transformTranslation_b = np.sum(vertices_transformed_b, axis=0)
-        q_normalized = normalize(self.transformQuaternion)
+        self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
+        q_normalized = normalize(self.transform_quaternion)
         q_normalized_b, self.vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
-        self.transformQuaternion_b = normalize_backward(
-            self.transformQuaternion, q_normalized_b
+        self.transform_quaternion_b = normalize_backward(
+            self.transform_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangeant space
         return
 
     def step(self):
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
-        Depth = self.render()
+        depth = self.render()
 
-        diffImage = np.sum((Depth - self.handImage[:, :, None]) ** 2, axis=2)
-        EData = np.sum(diffImage)
-        Depth_b = 2 * (Depth - self.handImage[:, :, None])
-        self.render_backward(Depth_b)
+        diff_image = np.sum((depth - self.hand_image[:, :, None]) ** 2, axis=2)
+        energy_data = np.sum(diff_image)
+        depth_b = 2 * (depth - self.hand_image[:, :, None])
+        self.render_backward(depth_b)
 
         self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
-        GradData = self.vertices_b
+        grad_data = self.vertices_b
         # update v
 
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
             self.vertices
         )
-        Energy = EData + E_rigid
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
+        energy = energy_data + energy_rigid
+        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         # update v
-        G = GradData + grad_rigidity
+        grad = grad_data + grad_rigidity
 
         def mult_and_clamp(x, a, t):
             return np.minimum(np.maximum(x * a, -t), t)
@@ -150,7 +150,7 @@ class MeshDepthFitter:
         inertia = self.inertia
         # update vertices
         step_vertices = mult_and_clamp(
-            -G, self.step_factor_vertices, self.step_max_vertices
+            -grad, self.step_factor_vertices, self.step_max_vertices
         )
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * self.inertia + (1 - self.inertia) * step_vertices
@@ -158,30 +158,30 @@ class MeshDepthFitter:
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
         step_quaternion = mult_and_clamp(
-            -self.transformQuaternion_b,
+            -self.transform_quaternion_b,
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
         self.speed_quaternion = (1 - self.damping) * (
             self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
         )
-        self.transformQuaternion = self.transformQuaternion + self.speed_quaternion
-        self.transformQuaternion = self.transformQuaternion / np.linalg.norm(
-            self.transformQuaternion
+        self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
+            self.transform_quaternion
         )
         # update translation
         step_translation = mult_and_clamp(
-            -self.transformTranslation_b,
+            -self.transform_translation_b,
             self.step_factor_translation,
             self.step_max_translation,
         )
         self.speed_translation = (1 - self.damping) * (
             self.speed_translation * inertia + (1 - inertia) * step_translation
         )
-        self.transformTranslation = self.transformTranslation + self.speed_translation
+        self.transform_translation = self.transform_translation + self.speed_translation
 
         self.iter += 1
-        return Energy, Depth[:, :, 0], diffImage
+        return energy, depth[:, :, 0], diff_image
 
 
 class MeshRGBFitterWithPose:
@@ -191,13 +191,13 @@ class MeshRGBFitterWithPose:
         faces,
         euler_init,
         translation_init,
-        defaultColor,
-        defaultLight,
+        default_color,
+        default_light,
         cregu=2000,
         inertia=0.96,
         damping=0.05,
-        updateLights=True,
-        updateColor=True,
+        update_lights=True,
+        update_color=True,
     ):
         self.cregu = cregu
 
@@ -210,125 +210,125 @@ class MeshRGBFitterWithPose:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.defaultColor = defaultColor
-        self.defaultLight = defaultLight
-        self.updateLights = updateLights
-        self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nbColors=3)
-        objectCenter = vertices.mean(axis=0) + translation_init
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([0, 0, 9]) * objectRadius
+        self.default_color = default_color
+        self.default_light = default_light
+        self.update_lights = update_lights
+        self.update_color = update_color
+        self.mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3)
+        object_center = vertices.mean(axis=0) + translation_init
+        object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([0, 0, 9]) * object_radius
 
         self.scene = Scene3D()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
+        self.scene.set_mesh(self.mesh)
+        self.rigid_energy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = copy.copy(vertices)
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def setBackgroundColor(self, backgroundColor):
-        self.scene.setBackground(
-            np.tile(backgroundColor[None, None, :], (self.SizeH, self.SizeW, 1))
+    def set_background_color(self, background_color):
+        self.scene.set_background(
+            np.tile(background_color[None, None, :], (self.height, self.width, 1))
         )
 
-    def setMeshTransformInit(self, euler, translation):
-        self.transformQuaternionInit = scipy.spatial.transform.Rotation.from_euler(
+    def set_mesh_transform_init(self, euler, translation):
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
-        self.transformTranslationInit = translation
+        self.transform_translation_init = translation
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
-        self.transformQuaternion = copy.copy(self.transformQuaternionInit)
-        self.transformTranslation = copy.copy(self.transformTranslationInit)
+        self.transform_quaternion = copy.copy(self.transform_quaternion_init)
+        self.transform_translation = copy.copy(self.transform_translation_init)
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.handColor = copy.copy(self.defaultColor)
-        self.ligthDirectional = copy.copy(self.defaultLight["directional"])
-        self.ambiantLight = copy.copy(self.defaultLight["ambiant"])
+        self.hand_color = copy.copy(self.default_color)
+        self.ligth_directional = copy.copy(self.default_light["directional"])
+        self.ambiant_light = copy.copy(self.default_light["ambiant"])
 
-        self.speed_ligthDirectional = np.zeros(self.ligthDirectional.shape)
-        self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
-        self.speed_handColor = np.zeros(self.handColor.shape)
+        self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
+        self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
+        self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def setImage(self, handImage, focal=None, dist=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 3
-        self.handImage = handImage
+    def set_image(self, hand_image, focal=None, dist=None):
+        self.width = hand_image.shape[1]
+        self.height = hand_image.shape[0]
+        assert hand_image.ndim == 3
+        self.hand_image = hand_image
         if focal is None:
-            focal = 2 * self.SizeW
+            focal = 2 * self.width
 
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             dist=dist,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
         )
         self.iter = 0
 
     def render(self):
         q_normalized = normalize(
-            self.transformQuaternion
+            self.transform_quaternion
         )  # that will lead to a gradient that is in the tangeant space
         vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transformTranslation
+            qrot(q_normalized, self.vertices) + self.transform_translation
         )
-        self.mesh.setVertices(vertices_transformed)
-        self.scene.setLight(
-            ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
+        self.mesh.set_vertices(vertices_transformed)
+        self.scene.set_light(
+            ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
         )
-        self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(self.camera)
-        return Abuffer
+        self.mesh.set_vertices_colors(np.tile(self.hand_color, (self.mesh.nb_vertices, 1)))
+        image = self.scene.render(self.camera)
+        return image
 
-    def render_backward(self, Abuffer_b):
+    def render_backward(self, image_b):
         self.scene.clear_gradients()
-        self.scene.render_backward(Abuffer_b)
-        self.handColor_b = np.sum(self.mesh.verticesColors_b, axis=0)
-        self.ligthDirectional_b = self.scene.lightDirectional_b
-        self.ambiantLight_b = self.scene.ambiantLight_b
+        self.scene.render_backward(image_b)
+        self.hand_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
+        self.ligth_directional_b = self.scene.light_directional_b
+        self.ambiant_light_b = self.scene.ambiant_light_b
         vertices_transformed_b = self.scene.mesh.vertices_b
-        self.transformTranslation_b = np.sum(vertices_transformed_b, axis=0)
-        q_normalized = normalize(self.transformQuaternion)
+        self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
+        q_normalized = normalize(self.transform_quaternion)
         q_normalized_b, self.vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
-        self.transformQuaternion_b = normalize_backward(
-            self.transformQuaternion, q_normalized_b
+        self.transform_quaternion_b = normalize_backward(
+            self.transform_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangeant space
         return
 
     def step(self):
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
-        Abuffer = self.render()
+        image = self.render()
 
-        diffImage = np.sum((Abuffer - self.handImage) ** 2, axis=2)
-        Abuffer_b = 2 * (Abuffer - self.handImage)
-        EData = np.sum(diffImage)
+        diff_image = np.sum((image - self.hand_image) ** 2, axis=2)
+        image_b = 2 * (image - self.hand_image)
+        energy_data = np.sum(diff_image)
 
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
             self.vertices
         )
-        Energy = EData + E_rigid
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
+        energy = energy_data + energy_rigid
+        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
-        self.render_backward(Abuffer_b)
+        self.render_backward(image_b)
 
         self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
         # update v
-        G = self.vertices_b + grad_rigidity
+        grad = self.vertices_b + grad_rigidity
 
         def mult_and_clamp(x, a, t):
             return np.minimum(np.maximum(x * a, -t), t)
@@ -337,7 +337,7 @@ class MeshRGBFitterWithPose:
 
         # update vertices
         step_vertices = mult_and_clamp(
-            -G, self.step_factor_vertices, self.step_max_vertices
+            -grad, self.step_factor_vertices, self.step_max_vertices
         )
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * inertia + (1 - inertia) * step_vertices
@@ -345,48 +345,48 @@ class MeshRGBFitterWithPose:
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
         step_quaternion = mult_and_clamp(
-            -self.transformQuaternion_b,
+            -self.transform_quaternion_b,
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
         self.speed_quaternion = (1 - self.damping) * (
             self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
         )
-        self.transformQuaternion = self.transformQuaternion + self.speed_quaternion
-        self.transformQuaternion = self.transformQuaternion / np.linalg.norm(
-            self.transformQuaternion
+        self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
+            self.transform_quaternion
         )
         # update translation
         step_translation = mult_and_clamp(
-            -self.transformTranslation_b,
+            -self.transform_translation_b,
             self.step_factor_translation,
             self.step_max_translation,
         )
         self.speed_translation = (1 - self.damping) * (
             self.speed_translation * inertia + (1 - inertia) * step_translation
         )
-        self.transformTranslation = self.transformTranslation + self.speed_translation
+        self.transform_translation = self.transform_translation + self.speed_translation
         # update directional light
-        step = -self.ligthDirectional_b * 0.0001
-        self.speed_ligthDirectional = (1 - self.damping) * (
-            self.speed_ligthDirectional * inertia + (1 - inertia) * step
+        step = -self.ligth_directional_b * 0.0001
+        self.speed_ligth_directional = (1 - self.damping) * (
+            self.speed_ligth_directional * inertia + (1 - inertia) * step
         )
-        self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional
+        self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
         # update ambiant light
-        step = -self.ambiantLight_b * 0.0001
-        self.speed_ambiantLight = (1 - self.damping) * (
-            self.speed_ambiantLight * inertia + (1 - inertia) * step
+        step = -self.ambiant_light_b * 0.0001
+        self.speed_ambiant_light = (1 - self.damping) * (
+            self.speed_ambiant_light * inertia + (1 - inertia) * step
         )
-        self.ambiantLight = self.ambiantLight + self.speed_ambiantLight
+        self.ambiant_light = self.ambiant_light + self.speed_ambiant_light
         # update hand color
-        step = -self.handColor_b * 0.00001
-        self.speed_handColor = (1 - self.damping) * (
-            self.speed_handColor * inertia + (1 - inertia) * step
+        step = -self.hand_color_b * 0.00001
+        self.speed_hand_color = (1 - self.damping) * (
+            self.speed_hand_color * inertia + (1 - inertia) * step
         )
-        self.handColor = self.handColor + self.speed_handColor
+        self.hand_color = self.hand_color + self.speed_hand_color
 
         self.iter += 1
-        return Energy, Abuffer, diffImage
+        return energy, image, diff_image
 
 
 class MeshRGBFitterWithPoseMultiFrame:
@@ -396,13 +396,13 @@ class MeshRGBFitterWithPoseMultiFrame:
         faces,
         euler_init,
         translation_init,
-        defaultColor,
-        defaultLight,
+        default_color,
+        default_light,
         cregu=2000,
         inertia=0.96,
         damping=0.05,
-        updateLights=True,
-        updateColor=True,
+        update_lights=True,
+        update_color=True,
     ):
         self.cregu = cregu
 
@@ -415,133 +415,133 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.defaultColor = defaultColor
-        self.defaultLight = defaultLight
-        self.updateLights = updateLights
-        self.updateColor = updateColor
-        self.mesh = ColoredTriMesh(faces, vertices, nbColors=3)
-        objectCenter = vertices.mean(axis=0)
-        objectRadius = np.max(np.std(vertices, axis=0))
-        self.cameraCenter = objectCenter + np.array([0, 0, 6]) * objectRadius
+        self.default_color = default_color
+        self.default_light = default_light
+        self.update_lights = update_lights
+        self.update_color = update_color
+        self.mesh = ColoredTriMesh(faces, vertices, nb_colors=3)
+        object_center = vertices.mean(axis=0)
+        object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([0, 0, 6]) * object_radius
 
         self.scene = Scene3D()
-        self.scene.setMesh(self.mesh)
-        self.rigidEnergy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
+        self.scene.set_mesh(self.mesh)
+        self.rigid_energy = LaplacianRigidEnergy(self.mesh, vertices, cregu)
         self.vertices_init = copy.copy(vertices)
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.setMeshTransformInit(euler=euler_init, translation=translation_init)
+        self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def setBackgroundColor(self, backgroundColor):
-        self.scene.setBackground(
-            np.tile(backgroundColor[None, None, :], (self.SizeH, self.SizeW, 1))
+    def set_background_color(self, background_color):
+        self.scene.set_background(
+            np.tile(background_color[None, None, :].astype(np.float), (self.height, self.width, 1))
         )
 
-    def setMeshTransformInit(self, euler, translation):
-        self.transformQuaternionInit = scipy.spatial.transform.Rotation.from_euler(
+    def set_mesh_transform_init(self, euler, translation):
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
-        self.transformTranslationInit = translation
+        self.transform_translation_init = translation
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
-        self.transformQuaternion = copy.copy(self.transformQuaternionInit)
-        self.transformTranslation = copy.copy(self.transformTranslationInit)
+        self.transform_quaternion = copy.copy(self.transform_quaternion_init)
+        self.transform_translation = copy.copy(self.transform_translation_init)
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.handColor = copy.copy(self.defaultColor)
-        self.ligthDirectional = copy.copy(self.defaultLight["directional"])
-        self.ambiantLight = copy.copy(self.defaultLight["ambiant"])
+        self.hand_color = copy.copy(self.default_color)
+        self.ligth_directional = copy.copy(self.default_light["directional"])
+        self.ambiant_light = copy.copy(self.default_light["ambiant"])
 
-        self.speed_ligthDirectional = np.zeros(self.ligthDirectional.shape)
-        self.speed_ambiantLight = np.zeros(self.ambiantLight.shape)
-        self.speed_handColor = np.zeros(self.handColor.shape)
+        self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
+        self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
+        self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def setImages(self, handImages, focal=None):
-        self.SizeW = handImages[0].shape[1]
-        self.SizeH = handImages[0].shape[0]
-        assert handImages[0].ndim == 3
-        self.handImages = handImages
+    def set_images(self, hand_images, focal=None):
+        self.width = hand_images[0].shape[1]
+        self.height = hand_images[0].shape[0]
+        assert hand_images[0].ndim == 3
+        self.hand_images = hand_images
         if focal is None:
-            focal = 2 * self.SizeW
+            focal = 2 * self.width
 
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
         )
         self.iter = 0
 
-    def setImage(self, handImage, focal=None):
-        self.SizeW = handImage.shape[1]
-        self.SizeH = handImage.shape[0]
-        assert handImage.ndim == 3
-        self.handImage = handImage
+    def set_image(self, hand_image, focal=None):
+        self.width = hand_image.shape[1]
+        self.height = hand_image.shape[0]
+        assert hand_image.ndim == 3
+        self.hand_image = hand_image
         if focal is None:
-            focal = 2 * self.SizeW
+            focal = 2 * self.width
 
-        R = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        T = -R.T.dot(self.cameraCenter)
+        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        trans = -rot.T.dot(self.camera_center)
         intrinsic = np.array(
-            [[focal, 0, self.SizeW / 2], [0, focal, self.SizeH / 2], [0, 0, 1]]
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
-        extrinsic = np.column_stack((R, T))
+        extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.SizeW, self.SizeH),
+            resolution=(self.width, self.height),
         )
         self.iter = 0
 
     def render(self, idframe=None):
-        unormalized_quaternion = self.transformQuaternion[idframe]
+        unormalized_quaternion = self.transform_quaternion[idframe]
         q_normalized = normalize(
             unormalized_quaternion
         )  # that will lead to a gradient that is in the tangeant space
         vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transformTranslation[idframe]
+            qrot(q_normalized, self.vertices) + self.transform_translation[idframe]
         )
-        self.mesh.setVertices(vertices_transformed)
-        self.scene.setLight(
-            ligthDirectional=self.ligthDirectional, ambiantLight=self.ambiantLight
+        self.mesh.set_vertices(vertices_transformed)
+        self.scene.set_light(
+            ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
         )
-        self.mesh.setVerticesColors(np.tile(self.handColor, (self.mesh.nbV, 1)))
-        Abuffer = self.scene.render(self.camera)
+        self.mesh.set_vertices_colors(np.tile(self.hand_color, (self.mesh.nb_vertices, 1)))
+        image = self.scene.render(self.camera)
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
-        return Abuffer
+        return image
 
     def clear_gradients(self):
-        self.ligthDirectional_b = np.zeros(self.ligthDirectional.shape)
-        self.ambiantLight_b = np.zeros(self.ambiantLight.shape)
+        self.ligth_directional_b = np.zeros(self.ligth_directional.shape)
+        self.ambiant_light_b = np.zeros(self.ambiant_light.shape)
         self.vertices_b = np.zeros(self.vertices.shape)
-        self.transformQuaternion_b = np.zeros(self.transformQuaternion.shape)
-        self.transformTranslation_b = np.zeros(self.transformTranslation.shape)
-        self.handColor_b = np.zeros(self.handColor.shape)
+        self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
+        self.transform_translation_b = np.zeros(self.transform_translation.shape)
+        self.hand_color_b = np.zeros(self.hand_color.shape)
         self.store_backward = {}
 
-    def render_backward(self, Abuffer_b):
+    def render_backward(self, image_b):
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
-        self.scene.render_backward(Abuffer_b)
-        self.handColor_b += np.sum(self.mesh.verticesColors_b, axis=0)
-        self.ligthDirectional_b += self.scene.lightDirectional_b
-        self.ambiantLight_b += self.scene.ambiantLight_b
+        self.scene.render_backward(image_b)
+        self.hand_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
+        self.ligth_directional_b += self.scene.light_directional_b
+        self.ambiant_light_b += self.scene.ambiant_light_b
         vertices_transformed_b = self.scene.mesh.vertices_b
-        self.transformTranslation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
+        self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
         q_normalized_b, vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
         self.vertices_b += vertices_b
-        self.transformQuaternion_b[idframe] += normalize_backward(
+        self.transform_quaternion_b[idframe] += normalize_backward(
             unormalized_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangeant space
         return
@@ -549,32 +549,32 @@ class MeshRGBFitterWithPoseMultiFrame:
     def step(self):
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
-        self.nbFrames = len(self.handImages)
+        self.nb_facesrames = len(self.hand_images)
 
-        Abuffer = [None] * self.nbFrames
-        diffImage = [None] * self.nbFrames
-        Abuffer_b = [None] * self.nbFrames
-        EDatas = [None] * self.nbFrames
+        image = [None] * self.nb_facesrames
+        diff_image = [None] * self.nb_facesrames
+        image_b = [None] * self.nb_facesrames
+        energy_datas = [None] * self.nb_facesrames
         self.clear_gradients()
-        coefData = 1 / self.nbFrames
-        for idframe in range(self.nbFrames):
-            Abuffer[idframe] = self.render(idframe=idframe)
-            diffImage[idframe] = np.sum(
-                (Abuffer[idframe] - self.handImages[idframe]) ** 2, axis=2
+        coef_data = 1 / self.nb_facesrames
+        for idframe in range(self.nb_facesrames):
+            image[idframe] = self.render(idframe=idframe)
+            diff_image[idframe] = np.sum(
+                (image[idframe] - self.hand_images[idframe]) ** 2, axis=2
             )
-            Abuffer_b = coefData * 2 * (Abuffer[idframe] - self.handImages[idframe])
-            EDatas[idframe] = coefData * np.sum(diffImage[idframe])
-            self.render_backward(Abuffer_b)
-        EData = np.sum(EDatas)
-        E_rigid, grad_rigidity, approx_hessian_rigidity = self.rigidEnergy.eval(
+            image_b = coef_data * 2 * (image[idframe] - self.hand_images[idframe])
+            energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
+            self.render_backward(image_b)
+        energy_data = np.sum(energy_datas)
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
             self.vertices
         )
-        Energy = EData + E_rigid
-        print("Energy=%f : EData=%f E_rigid=%f" % (Energy, EData, E_rigid))
+        energy = energy_data + energy_rigid
+        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
         # update v
-        G = self.vertices_b + grad_rigidity
+        grad = self.vertices_b + grad_rigidity
 
         def mult_and_clamp(x, a, t):
             return np.minimum(np.maximum(x * a, -t), t)
@@ -583,7 +583,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         # update vertices
         step_vertices = mult_and_clamp(
-            -G, self.step_factor_vertices, self.step_max_vertices
+            -grad, self.step_factor_vertices, self.step_max_vertices
         )
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * inertia + (1 - inertia) * step_vertices
@@ -591,45 +591,45 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
         step_quaternion = mult_and_clamp(
-            -self.transformQuaternion_b,
+            -self.transform_quaternion_b,
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
         self.speed_quaternion = (1 - self.damping) * (
             self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
         )
-        self.transformQuaternion = self.transformQuaternion + self.speed_quaternion
-        self.transformQuaternion = self.transformQuaternion / np.linalg.norm(
-            self.transformQuaternion
+        self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
+            self.transform_quaternion
         )
         # update translation
         step_translation = mult_and_clamp(
-            -self.transformTranslation_b,
+            -self.transform_translation_b,
             self.step_factor_translation,
             self.step_max_translation,
         )
         self.speed_translation = (1 - self.damping) * (
             self.speed_translation * inertia + (1 - inertia) * step_translation
         )
-        self.transformTranslation = self.transformTranslation + self.speed_translation
+        self.transform_translation = self.transform_translation + self.speed_translation
         # update directional light
-        step = -self.ligthDirectional_b * 0.0001
-        self.speed_ligthDirectional = (1 - self.damping) * (
-            self.speed_ligthDirectional * inertia + (1 - inertia) * step
+        step = -self.ligth_directional_b * 0.0001
+        self.speed_ligth_directional = (1 - self.damping) * (
+            self.speed_ligth_directional * inertia + (1 - inertia) * step
         )
-        self.ligthDirectional = self.ligthDirectional + self.speed_ligthDirectional
+        self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
         # update ambiant light
-        step = -self.ambiantLight_b * 0.0001
-        self.speed_ambiantLight = (1 - self.damping) * (
-            self.speed_ambiantLight * inertia + (1 - inertia) * step
+        step = -self.ambiant_light_b * 0.0001
+        self.speed_ambiant_light = (1 - self.damping) * (
+            self.speed_ambiant_light * inertia + (1 - inertia) * step
         )
-        self.ambiantLight = self.ambiantLight + self.speed_ambiantLight
+        self.ambiant_light = self.ambiant_light + self.speed_ambiant_light
         # update hand color
-        step = -self.handColor_b * 0.00001
-        self.speed_handColor = (1 - self.damping) * (
-            self.speed_handColor * inertia + (1 - inertia) * step
+        step = -self.hand_color_b * 0.00001
+        self.speed_hand_color = (1 - self.damping) * (
+            self.speed_hand_color * inertia + (1 - inertia) * step
         )
-        self.handColor = self.handColor + self.speed_handColor
+        self.hand_color = self.hand_color + self.speed_hand_color
 
         self.iter += 1
-        return Energy, Abuffer, diffImage
+        return energy, image, diff_image

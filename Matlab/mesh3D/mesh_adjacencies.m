@@ -2,57 +2,57 @@ function M=mesh_adjacencies(M)
 % compute some arrays and sparse matrices that facilitate the mesh manipulation
 % and that are independant on the vertices positions 
 %
-% Edges_Vertices(k,:) : 
+% edges_vertices(k,:) : 
 %   two indices corresponding to the two vertices
 %   linked by the edge k
 %
-% Vertices_Edges : sparse matrix 
-%   Vertices_Edges(i,j)==1 means that vertex i is one of the two vertices of
+% vertices_edges : sparse matrix 
+%   vertices_edges(i,j)==1 means that vertex i is one of the two vertices of
 %   edge j
 %
-% Edges_Faces : sparse matrix 
-%   Edges_Faces(i,j)==k means that the edge i is one  the k'th  edges of the
+% edges_faces : sparse matrix 
+%   edges_faces(i,j)==k means that the edge i is one  the k'th  edges of the
 %   face j  (0 if it is not an edge of the face) 
 %   the edges are listed as follow (a,b),(b,c),(c,a)
 %
-% AdjacencyFaces : sparse adjacency matrix of the dual graph
-%   AdjacencyFaces(i,j)==1 means that the faces i and j have on edge in common
-%   AdjacencyFaces(i,i)==3 for all faces (3 edges in common with itself) 
-%   AdjacencyFaces =(Edges_Faces~=0)'*(Edges_Faces~=0);
+% adjacency_faces : sparse adjacency matrix of the dual graph
+%   adjacency_faces(i,j)==1 means that the faces i and j have on edge in common
+%   adjacency_faces(i,i)==3 for all faces (3 edges in common with itself) 
+%   adjacency_faces =(edges_faces~=0)'*(edges_faces~=0);
 %
-% AdjacencyVertices : sparse  adjacency matrix of the graph
-% AdjacencyVertices(i,j)==1 means that the vertex i and j are linked by an
+% adjacency_vertices : sparse  adjacency matrix of the graph
+% adjacency_vertices(i,j)==1 means that the vertex i and j are linked by an
 % edge
-% AdjacencyVertices(i,i)==0 for all vertices
+% adjacency_vertices(i,i)==0 for all vertices
 %
-% OrientedEdge : sparse matrix
-% OrientedEdge(i,j)==k means that Vertex i and j are directly 
+% oriented_edge : sparse matrix
+% oriented_edge(i,j)==k means that Vertex i and j are directly 
 % consecutives in the list of vertice of face k 
 %
-% DegreeVE : 
-% DegreeVE(i)=j means that the vertex i appears in j edges
+% degree_v_e : 
+% degree_v_e(i)=j means that the vertex i appears in j edges
 %
-% DegreeVF :
-% DegreeVF(i)=j means that the vertex i appears in j Faces
+% degree_v_f :
+% degree_v_f(i)=j means that the vertex i appears in j Faces
 %
 
-M.nbV=size(M.V,2);
-M.nbF=size(M.F,2);
-M.Vertices_Faces=sparse(M.nbV,M.nbF);
-M.DegreeVF=zeros(M.nbV,1);
+M.nb_vertices=size(M.V,2);
+M.nb_faces=size(M.F,2);
+M.vertices_faces=sparse(M.nb_vertices,M.nb_faces);
+M.degree_v_f=zeros(M.nb_vertices,1);
 
-for k=1:M.nbF
-    M.Vertices_Faces(M.F(:,k),k)=1;
+for k=1:M.nb_faces
+    M.vertices_faces(M.F(:,k),k)=1;
 end
 
-for i=1:M.nbF
-    M.DegreeVF(M.F(:,i))=M.DegreeVF(M.F(:,i))+1;
+for i=1:M.nb_faces
+    M.degree_v_f(M.F(:,i))=M.degree_v_f(M.F(:,i))+1;
 end
 
 
 
-Mtemp=sparse(M.nbV^2,M.nbF);
-for f=1:M.nbF
+Mtemp=sparse(M.nb_vertices^2,M.nb_faces);
+for f=1:M.nb_faces
  Mtemp (idedge(M.F(1,f),M.F(2,f)),f)=1;
  Mtemp (idedge(M.F(2,f),M.F(3,f)),f)=2;
  Mtemp (idedge(M.F(3,f),M.F(1,f)),f)=3;
@@ -60,37 +60,37 @@ end
 
 listEdgeId=find(any(Mtemp,2));
 
-M.nbE=numel(listEdgeId);
-M.Edges_Vertices=inv_idedge(listEdgeId);
+M.nb_edges=numel(listEdgeId);
+M.edges_vertices=inv_idedge(listEdgeId);
 
 MtempT=Mtemp';
-M.Edges_Faces=MtempT(:,listEdgeId)';
-[i,j,v]=find(M.Edges_Faces);
+M.edges_faces=MtempT(:,listEdgeId)';
+[i,j,v]=find(M.edges_faces);
 M.Faces_edges=full(sparse(j,v,i));
 
-M.DegreeE=full(sum(M.Edges_Faces>0,2));
-M.Closed=all(M.DegreeE==2);
-M.Vertices_Edges=sparse(M.Edges_Vertices(:),[1:M.nbE,1:M.nbE],1);
-M.Adjacency_Faces=double(M.Edges_Faces~=0)'*double(M.Edges_Faces~=0);
-M.Adjacency_Vertices=sparse([M.Edges_Vertices(:,1);M.Edges_Vertices(:,2)],[M.Edges_Vertices(:,2);M.Edges_Vertices(:,1)],ones(2*size(M.Edges_Vertices,1),1));
-M.DegreeVE=full(sum(M.Adjacency_Vertices));
+M.degree_e=full(sum(M.edges_faces>0,2));
+M.closed=all(M.degree_e==2);
+M.vertices_edges=sparse(M.edges_vertices(:),[1:M.nb_edges,1:M.nb_edges],1);
+M.ajacency_faces=double(M.edges_faces~=0)'*double(M.edges_faces~=0);
+M.adjacency_vertices=sparse([M.edges_vertices(:,1);M.edges_vertices(:,2)],[M.edges_vertices(:,2);M.edges_vertices(:,1)],ones(2*size(M.edges_vertices,1),1));
+M.degree_v_e=full(sum(M.adjacency_vertices));
 
 % compute list of vertice for fast computation of the willmore energy
 % use to compute concavity of edges , but could be avoid
-tmp=M.Edges_Faces';
-willmore.i=zeros(1,M.nbE);
-willmore.j=zeros(1,M.nbE);
-willmore.k=zeros(1,M.nbE);
-willmore.l=zeros(1,M.nbE);
+tmp=M.edges_faces';
+willmore.i=zeros(1,M.nb_edges);
+willmore.j=zeros(1,M.nb_edges);
+willmore.k=zeros(1,M.nb_edges);
+willmore.l=zeros(1,M.nb_edges);
 
-for ide=1:M.nbE
+for ide=1:M.nb_edges
   
-    willmore.i(ide)=M.Edges_Vertices(ide,1);
-    willmore.j(ide)=M.Edges_Vertices(ide,2);
+    willmore.i(ide)=M.edges_vertices(ide,1);
+    willmore.j(ide)=M.edges_vertices(ide,2);
     
     % for each adjacent face, get the oposite edge
     [adjFaces,~,idEdgeInFace]=find(tmp(:,ide));
-    if M.F(mod(idEdgeInFace(1)+2,3)+1,adjFaces(1))==M.Edges_Vertices(ide,1)
+    if M.F(mod(idEdgeInFace(1)+2,3)+1,adjFaces(1))==M.edges_vertices(ide,1)
        leftface=1;
        rightface=2;
     else
@@ -109,15 +109,13 @@ for ide=1:M.nbE
 end
 M.willmoreLists=willmore;
 
-
-
   function id=idedge(a,b)
-        id= max(a,b)+(min(a,b)-1)*M.nbV;
+        id= max(a,b)+(min(a,b)-1)*M.nb_vertices;
     end
 % inverse of the function idege
     function [a,b]=inv_idedge(id)
-        a=mod(id-1,M.nbV)+1;
-        b=(id-a)/M.nbV+1;
+        a=mod(id-1,M.nb_vertices)+1;
+        b=(id-a)/M.nb_vertices+1;
         if nargout<2
         a=[a,b];
         end    

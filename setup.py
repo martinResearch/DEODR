@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 from Cython.Build import cythonize
-from distutils.extension import Extension
 import numpy as np
 
 # compilation mode for debuging
 # extensions = [
-# Extension("differentiable_renderer_cython", ["DEODR/differentiable_renderer_cython.pyx"]
+# Extension("differentiable_renderer_cython",
+# ["DEODR/differentiable_renderer_cython.pyx"]
 # ,extra_compile_args=["-Zi", "/Od"]
 # ,extra_link_args=["-debug"],
 # undef_macros = [ "NDEBUG" ]

@@ -27,16 +27,20 @@
 # This script will parse you readme.md file and create images for each equation found as
 # [latex:your_equation](your_image_file)
 #
-# we recommand using svg image files as they give nice vectorial images without pixel aliasing
-# and they are in a text format which is good for versioning with git or mercurial
-# has the svg text remains unchanged for unchanged euation and thus it avoids pushing again and again the same
-# images on the server of the aleready compile equations each time a new equation is created
-# Martin de La Gorce April 2016
-# up to date version of that script can found on https://github.com/martinResearch/markdownLatex
+# we recommand using svg image files as they give nice vectorial images without pixel
+# aliasing and they are in a text format which is good for versioning with git or
+# mercurial # has the svg text remains unchanged for unchanged euation and thus it
+# avoids pushing again and again the same # images on the server of the aleready
+# compile equations each time a new equation is created Martin de La Gorce April 2016
+# up to date version of that script can found on
+# https://github.com/martinResearch/markdownLatex
 
 import tempfile
 import shutil
 import sys
+import re
+import os
+
 
 for arg in sys.argv:
     print(arg)
@@ -50,9 +54,6 @@ elif len(sys.argv) == 2:
     texfile = sys.argv[1]
 else:
     raise Exception("wrong number of arguments")
-import re
-
-import os, requests
 
 
 def formula_as_file(formula, file, negate=False, header=""):
