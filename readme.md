@@ -50,11 +50,11 @@ Keeping the rendering differentiable everywhere when using texture is challengin
 # Installation
 ## Python
 
-Fr windows and linux for python 3.6 and 3.7 and you can use 
+For python 3.6,3.7 and python 3.8 under Windows and Linux you can use 
 
 	pip install deodr
 
-otherwise or if that does not work you can try
+Otherwise or if that does not work you can try
 
 	pip install git+https://github.com/martinResearch/DEODR.git
 	
