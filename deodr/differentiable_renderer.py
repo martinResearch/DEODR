@@ -620,7 +620,7 @@ class Scene3D:
             return {
                 "depth": buffers[:, :, 0],
                 "faceid": buffers[:, :, 1],
-                "normal": buffers[:, :, 2:4],
+                "normal": buffers[:, :, 2:5],
                 "luminosity": buffers[:, :, 5],
                 "uv": buffers[:, :, 6:8],
                 "xyz": buffers[:, :, 8:],
