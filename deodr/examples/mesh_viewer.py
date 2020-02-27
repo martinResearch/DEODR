@@ -167,7 +167,10 @@ def mesh_viewer(
 
     dist = [0, 0, 0, 0, 0]
     camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, resolution=(width, height), dist=dist
+        extrinsic=extrinsic,
+        intrinsic=intrinsic,
+        resolution=(width, height),
+        distortion=dist,
     )
 
     hand_color = np.array([200, 100, 100]) / 255

@@ -5,8 +5,10 @@ from ..differentiable_renderer import Scene3D, Camera
 
 
 class CameraPytorch(Camera):
-    def __init__(self, extrinsic, intrinsic, resolution, dist=None):
-        super().__init__(extrinsic, intrinsic, resolution, dist=dist, checks=False)
+    def __init__(self, extrinsic, intrinsic, resolution, distortion=None):
+        super().__init__(
+            extrinsic, intrinsic, resolution, distortion=dist, checks=False
+        )
 
     def world_to_camera(self, points_3d):
         assert isinstance(points_3d, torch.Tensor)

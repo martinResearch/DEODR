@@ -64,7 +64,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, dist=None):
+    def set_image(self, hand_image, focal=None, distortion=None):
         self.width = hand_image.shape[1]
         self.height = hand_image.shape[0]
         assert hand_image.ndim == 2
@@ -78,7 +78,9 @@ class MeshDepthFitterEnergy(torch.nn.Module):
             [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
         extrinsic = np.column_stack((rot, t))
-        self.camera = CameraPytorch(extrinsic=extrinsic, intrinsic=intrinsic, dist=dist)
+        self.camera = CameraPytorch(
+            extrinsic=extrinsic, intrinsic=intrinsic, distortion=dist
+        )
         self.iter = 0
 
     def forward(self):
@@ -211,7 +213,7 @@ class MeshDepthFitter:
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, dist=None):
+    def set_image(self, hand_image, focal=None, distortion=None):
         self.width = hand_image.shape[1]
         self.height = hand_image.shape[0]
         assert hand_image.ndim == 2
@@ -229,7 +231,7 @@ class MeshDepthFitter:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            dist=dist,
+            distortion=dist,
         )
         self.iter = 0
 
@@ -395,7 +397,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def set_image(self, hand_image, focal=None, dist=None):
+    def set_image(self, hand_image, focal=None, distortion=None):
         self.width = hand_image.shape[1]
         self.height = hand_image.shape[0]
         assert hand_image.ndim == 3
@@ -413,7 +415,7 @@ class MeshRGBFitterWithPose:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            dist=dist,
+            distortion=dist,
         )
         self.iter = 0
 

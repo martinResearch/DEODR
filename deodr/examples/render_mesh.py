@@ -9,42 +9,33 @@ import trimesh
 import deodr
 
 
-def loadmesh(file):
-
-    mesh_trimesh = trimesh.load(file)
-    return ColoredTriMesh.from_trimesh(mesh_trimesh)
-
-
 def run(obj_file, width=640, height=480, display=True):
     render_mesh(obj_file, width=width, height=height, display=display)
 
 
-def render_mesh(obj_file, width=640, height=480, display=True):
+def render_mesh(obj_file, width=640, height=480, display=True, display_pyrender=True):
 
-    mesh = loadmesh(obj_file)
+    mesh_trimesh = trimesh.load(obj_file)
+
+    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
 
     ax = plt.subplot(111)
     if mesh.textured:
         mesh.plot_uv_map(ax)
 
-    object_center = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
-    object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
-    camera_center = object_center + np.array([0, 0, 3]) * object_radius
-    focal = 2 * width
-
     rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    trans = -rot.T.dot(camera_center)
-    extrinsic = np.column_stack((rot, trans))
-    intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
-    dist = [-2, 0, 0, 0, 0]
-    camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(width, height)
-    )
 
+    camera = differentiable_renderer.default_camera(
+        width, height, 80, mesh.vertices, rot
+    )
+    bg_color=np.array((0,0.2,0))
     scene = differentiable_renderer.Scene3D()
-    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
+    ambiant_light = 1
+    directional_intensity=0
+    ligth_directional = np.array([-0, 0, -1])*directional_intensity
+    scene.set_light(ligth_directional=ligth_directional, ambiant_light=ambiant_light)
     scene.set_mesh(mesh)
-    background_image = np.ones((height, width, 3))
+    background_image = np.ones((height, width, 3))*bg_color
     scene.set_background(background_image)
 
     image = scene.render(camera)
@@ -82,7 +73,50 @@ def render_mesh(obj_file, width=640, height=480, display=True):
             else:
                 ax.imshow((v - v.min()) / (v.max() - v.min()))
 
-        plt.show()
+       
+
+    if display_pyrender:
+        import pyrender
+
+        keep = (channels["faceid"] > 0).flatten()
+        pts = channels["xyz"].reshape(-1, 3)[keep, :]
+        colors = image.reshape(-1, 3)[keep, :]
+        pyrender_scene = pyrender.Scene(
+            ambient_light=ambiant_light*np.ones((3)), bg_color=bg_color
+        )
+
+        # cam = pyrender.PerspectiveCamera(yfov=np.pi / 3.0, aspectRatio=1.414)
+        cam = pyrender.IntrinsicsCamera(
+            fx=camera.intrinsic[0, 0],
+            fy=camera.intrinsic[1, 1],
+            cx=camera.intrinsic[0, 2],
+            cy=camera.intrinsic[1, 2],
+        )
+        pyrender_mesh = pyrender.Mesh.from_trimesh(mesh_trimesh)
+        point_cloud = pyrender.Mesh.from_points(pts, colors=colors)
+        directional_light = pyrender.light.DirectionalLight(intensity=np.linalg.norm(ligth_directional))
+        
+        pyrender_scene.add(pyrender_mesh, pose=np.eye(4))
+        pyrender_scene.add(point_cloud, pose=np.eye(4))
+        m = camera.camera_to_world_mtx_4x4()
+        pose_camera = np.column_stack((np.diag([1, -1, -1, 1]).dot(m[:, :3]), m[:, 3]))#not sure why this is so comlex
+        pyrender_scene.add(directional_light, pose=np.diag([1,1,1,1]))
+        pyrender_scene.add(cam, pose=pose_camera)
+
+        r=pyrender.offscreen.OffscreenRenderer(width, height, point_size=0.0)
+        image_pyrender, depth = r.render(pyrender_scene)
+        plt.figure()
+        plt.subplot(1,3,1)
+        plt.imshow(image)
+        plt.subplot(1,3,2)
+        plt.imshow(image_pyrender)
+        plt.subplot(1,3,3)        
+        plt.imshow(np.abs(image-image_pyrender.astype(np.float)/255))
+        #pyrender.Viewer(
+        #   pyrender_scene, use_raymond_lighting=True, viewport_size=(width, height)
+        #)
+    if display or display_pyrender:
+         plt.show()
     return image, channels
 
 
@@ -96,4 +130,4 @@ def example(save_image=False):
 
 
 if __name__ == "__main__":
-    run(save_image=False)
+    example(save_image=False)

@@ -5,7 +5,7 @@ import copy
 
 class Camera:
     def __init__(
-        self, extrinsic, intrinsic, resolution, dist=None, checks=True, tol=1e-6
+        self, extrinsic, intrinsic, resolution, distortion=None, checks=True, tol=1e-6
     ):
         """camera with same distortion paramterization as opencv"""
         if checks:
@@ -16,16 +16,24 @@ class Camera:
                 np.linalg.norm(extrinsic[:3, :3].T.dot(extrinsic[:3, :3]) - np.eye(3))
                 < tol
             )
-            if dist is not None:
-                assert len(dist) == 5
+            if distortion is not None:
+                assert len(distortion) == 5
 
         self.extrinsic = extrinsic
         self.intrinsic = intrinsic
-        self.dist = dist
+        self.distortion = distortion
         self.resolution = resolution
 
     def world_to_camera(self, points_3d):
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
+
+    def camera_to_world_mtx_4x4(self):
+        return np.row_stack(
+            (
+                np.column_stack((self.extrinsic[:, :3].T, self.get_center())),
+                np.array((0, 0, 0, 1)),
+            )
+        )
 
     def left_mul_intrinsic(self, projected):
         return projected.dot(self.intrinsic[:2, :2].T) + self.intrinsic[:2, 2]
@@ -40,12 +48,12 @@ class Camera:
         depths = pcam[:, 2]
         projected = pcam[:, :2] / depths[:, None]
 
-        if self.dist is None:
+        if self.distortion is None:
             projected_image_coordinates = self.left_mul_intrinsic(projected)
             if store_backward is not None:
                 store_backward["project_points"] = (pcam, depths, projected)
         else:
-            k1, k2, p1, p2, k3, = self.dist
+            k1, k2, p1, p2, k3, = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             r2 = x ** 2 + y ** 2
@@ -74,7 +82,7 @@ class Camera:
         self, projected_image_coordinates_b, store_backward, depths_b=None
     ):
 
-        if self.dist is None:
+        if self.distortion is None:
             pcam, depths, projected = store_backward["project_points"]
             projected_b = projected_image_coordinates_b.dot(
                 self.intrinsic[:2, :2].T
@@ -84,7 +92,7 @@ class Camera:
             pcam, depths, projected, r2, radial_distortion = store_backward[
                 "project_points"
             ]
-            k1, k2, p1, p2, k3, = self.dist
+            k1, k2, p1, p2, k3, = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             distorted_b = projected_image_coordinates_b.dot(
@@ -121,6 +129,52 @@ class Camera:
 
     def get_center(self):
         return -self.extrinsic[:3, :3].T.dot(self.extrinsic[:, 3])
+
+
+class PerspectiveCamera(Camera):
+    def __init__(
+        self, width, height, fov, camera_center, rot=np.eye(3), distortion=None
+    ):
+        """"
+        - width: width of the camera in pixels
+        - height: eight of the camera in pixels
+        - fov: horizontal field of view in degrees
+        - camera_center: center of the camera in world coordinate system
+        - rot: 3x3 rotation matrix word to camera (x_cam = rot.dot(x_world))\
+            default to identity
+        - distortion: distortion parameters
+        """
+
+        focal = 0.5 * width / np.tan(0.5 * fov * np.pi / 180)
+        trans = -rot.T.dot(camera_center)
+        intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
+        extrinsic = np.column_stack((rot, trans))
+        super().__init__(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            distortion=distortion,
+            resolution=(width, height),
+        )
+
+
+def default_camera(width, height, fov, vertices, rot=None, distortion=None):
+    """computes the position of the camera center so that the entire mesh is visible
+     and covers most or the image"""
+    cam_vertices = vertices.dot(rot.T)
+    box_min = cam_vertices.min(axis=0)
+    box_max = cam_vertices.max(axis=0)
+    box_center = 0.5 * (box_max + box_min)
+    box_size = box_max - box_min
+    camera_distance_x = (
+        0.5 * box_size[0] / np.tan(0.5 * fov * np.pi / 180) + 0.5 * box_size[2]
+    )
+    camera_distance_y = (
+        0.5 * box_size[1] * (width / height) / np.tan(0.5 * fov * np.pi / 180)
+        + 0.5 * box_size[2]
+    )
+    camera_distance = max(camera_distance_x, camera_distance_y)
+    camera_center = rot.T.dot(box_center + np.array([0, 0, -camera_distance]))
+    return PerspectiveCamera(width, height, fov, camera_center, rot, distortion)
 
 
 class Scene2DBase:
