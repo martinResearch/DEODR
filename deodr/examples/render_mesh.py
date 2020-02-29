@@ -8,10 +8,13 @@ import imageio
 import trimesh
 import deodr
 import pyrender
+from scipy.spatial.transform import Rotation
 
 
 def run(obj_file, width=640, height=480, display=True):
-    render_mesh(obj_file, width=width, height=height, display=display)
+    render_mesh(
+        obj_file, width=width, height=height, display=display, display_moderngl=True
+    )
 
 
 def render_mesh(
@@ -21,6 +24,7 @@ def render_mesh(
     display=True,
     display_pyrender=True,
     render_deffered=True,
+    display_moderngl=True,
 ):
 
     mesh_trimesh = trimesh.load(obj_file)
@@ -32,7 +36,8 @@ def render_mesh(
     if mesh.textured:
         mesh.plot_uv_map(ax)
 
-    rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
+    rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
 
     camera = differentiable_renderer.default_camera(
         width, height, 80, mesh.vertices, rot
@@ -48,6 +53,9 @@ def render_mesh(
     scene.set_background(background_image)
 
     image = scene.render(camera)
+    
+    scene.sigma=0
+    image_no_antialiasing = scene.render(camera)
     if display:
         plt.figure()
         plt.imshow(image)
@@ -83,11 +91,11 @@ def render_mesh(
                     ax.imshow((v - v.min()) / (v.max() - v.min()))
     else:
         channels = None
+
     if display_pyrender:
         import deodr.opengl.pyrender
 
         image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
-
         plt.figure()
         plt.subplot(1, 3, 1)
         plt.imshow(image)
@@ -96,7 +104,19 @@ def render_mesh(
         plt.subplot(1, 3, 3)
         plt.imshow(np.abs(image - image_pyrender.astype(np.float) / 255))
 
-    if display or display_pyrender:
+    if display_moderngl:
+        import deodr.opengl.moderngl
+
+        image_pyrender = deodr.opengl.moderngl.render(scene, camera)
+        plt.figure()
+        plt.subplot(1, 3, 1)
+        plt.imshow(image_no_antialiasing)
+        plt.subplot(1, 3, 2)
+        plt.imshow(image_pyrender)
+        plt.subplot(1, 3, 3)
+        plt.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
+
+    if display or display_pyrender or display_moderngl:
         plt.show()
     return image, channels
 
@@ -104,7 +124,13 @@ def render_mesh(
 def example(save_image=False):
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     image, channels = render_mesh(
-        obj_file, width=320, height=240, display=False, render_deffered=False
+        obj_file,
+        width=320,
+        height=240,
+        display=False,
+        render_deffered=False,
+        display_pyrender=False,
+        display_moderngl=True,
     )
     image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
     os.makedirs(os.path.dirname(image_file), exist_ok=True)

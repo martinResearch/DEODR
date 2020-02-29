@@ -141,9 +141,8 @@ def render(deodr_scene, camera):
 
     # convert the camera
     m = camera.camera_to_world_mtx_4x4()
-    pose_camera = np.column_stack(
-        (np.diag([1, -1, -1, 1]).dot(m[:, :3]), m[:, 3])
-    )  # not sure why this is so complex
+    pose_camera = m.dot(np.diag([1, -1, -1, 1]))
+
     pyrender_scene.add(cam, pose=pose_camera)
 
     # rendner
