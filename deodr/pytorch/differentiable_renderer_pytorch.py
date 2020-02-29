@@ -7,7 +7,7 @@ from ..differentiable_renderer import Scene3D, Camera
 class CameraPytorch(Camera):
     def __init__(self, extrinsic, intrinsic, resolution, distortion=None):
         super().__init__(
-            extrinsic, intrinsic, resolution, distortion=dist, checks=False
+            extrinsic, intrinsic, resolution, distortion=distortion, checks=False
         )
 
     def world_to_camera(self, points_3d):

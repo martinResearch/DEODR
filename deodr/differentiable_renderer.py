@@ -24,6 +24,14 @@ class Camera:
         self.distortion = distortion
         self.resolution = resolution
 
+    @property
+    def width(self):
+        return self.resolution[0]
+
+    @property
+    def height(self):
+        return self.resolution[1]
+
     def world_to_camera(self, points_3d):
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
 
@@ -579,7 +587,18 @@ class Scene3D:
             ij_b, depths_b=depths_b, store_backward=self.store_backward_current
         )
 
-    def render_deffered(self, camera, depth_scale=1):
+    def render_deffered(
+        self,
+        camera,
+        depth_scale=1,
+        color=True,
+        depth=True,
+        faceid=True,
+        normal=True,
+        luminosity=True,
+        uv=True,
+        xyz=True,
+    ):
 
         points_2d, depths = camera.project_points(self.mesh.vertices)
 
@@ -609,31 +628,27 @@ class Scene3D:
         soup_luminosity = vertices_luminosity[self.mesh.faces].reshape(
             soup_nb_vertices, 1
         )
+        channels = {}
+        if depth:
+            channels["depth"] = soup_depths * depth_scale
+        if faceid:
+            channels["faceid"] = soup_faceids
+        if normal:
+            channels["normal"] = soup_normals
+        if luminosity:
+            channels["luminosity"] = soup_luminosity
+        if xyz:
+            channels["xyz"] = soup_xyz
 
         if self.mesh.uv is None:
-            soup_vcolors = self.mesh.vertices_color[self.mesh.faces]
-            colors = np.column_stack(
-                (
-                    soup_depths[:, None] * depth_scale,
-                    soup_faceids[:, :, None],
-                    soup_normals,
-                    soup_luminosity[:, :, None],
-                    soup_vcolors,
-                    soup_xyz,
-                )
-            )
+            if color:
+                soup_vcolors = self.mesh.vertices_color[self.mesh.faces]
+                channels["color"] = soup_vcolors
         else:
             soup_uv = self.mesh.uv[self.mesh.faces_uv].reshape(soup_nb_vertices, 2)
-            colors = np.column_stack(
-                (
-                    soup_depths * depth_scale,
-                    soup_faceids,
-                    soup_normals,
-                    soup_luminosity,
-                    soup_uv,
-                    soup_xyz,
-                )
-            )
+            channels["uv"] = soup_uv
+
+        colors = np.column_stack(channels.values())
 
         nb_colors = colors.shape[1]
         uv = np.zeros((soup_nb_vertices, 2))
@@ -670,15 +685,14 @@ class Scene3D:
         z_buffer = np.empty((self.height, self.width))
         differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
 
-        if self.mesh.uv is not None:
-            return {
-                "depth": buffers[:, :, 0],
-                "faceid": buffers[:, :, 1],
-                "normal": buffers[:, :, 2:5],
-                "luminosity": buffers[:, :, 5],
-                "uv": buffers[:, :, 6:8],
-                "xyz": buffers[:, :, 8:],
-            }
+        offset = 0
+        output = {}
+        for k, v in channels.items():
+            size = v.shape[1]
+            if size == 1:
+                output[k] = buffers[:, :, offset]
+            else:
+                output[k] = buffers[:, :, offset : offset + size]
+            offset += size
 
-        else:
-            pass
+        return output

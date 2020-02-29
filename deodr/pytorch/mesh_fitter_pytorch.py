@@ -231,7 +231,7 @@ class MeshDepthFitter:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            distortion=dist,
+            distortion=distortion,
         )
         self.iter = 0
 
@@ -415,7 +415,7 @@ class MeshRGBFitterWithPose:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            distortion=dist,
+            distortion=distortion,
         )
         self.iter = 0
 

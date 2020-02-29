@@ -170,7 +170,7 @@ def mesh_viewer(
         extrinsic=extrinsic,
         intrinsic=intrinsic,
         resolution=(width, height),
-        distortion=dist,
+        distortion=distortion,
     )
 
     hand_color = np.array([200, 100, 100]) / 255

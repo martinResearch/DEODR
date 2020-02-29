@@ -99,7 +99,7 @@ class MeshDepthFitter:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            distortion=dist,
+            distortion=distortion,
         )
         self.iter = 0
 
@@ -296,7 +296,7 @@ class MeshRGBFitterWithPose:
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            distortion=dist,
+            distortion=distortion,
             resolution=(self.width, self.height),
         )
         self.iter = 0
