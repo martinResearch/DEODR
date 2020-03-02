@@ -1,6 +1,5 @@
 import pyrender
 import numpy as np
-from scipy.spatial.transform import Rotation
 import trimesh
 
 
@@ -15,7 +14,8 @@ def min_rotation(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector
-    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    :return mat: A transform matrix (3x3) which when applied to vec1,
+                 aligns it with vec2.
     """
     a, b = (
         (vec1 / np.linalg.norm(vec1)).reshape(3),
@@ -42,8 +42,6 @@ def deodr_directional_light_to_pyrender(deodr_directional_ligth):
         directional_light_rotation = min_rotation(
             np.array([0, 0, -1]), directional_light_direction
         )
-
-        # directional_light_rotation =Rotation.from_euler('xyz',(90,0,0),degrees=True).as_dcm()
         pose = np.zeros((4, 4))
         pose[:3, :3] = directional_light_rotation
         pose[3, 3] = 1
@@ -59,7 +57,8 @@ def deodr_directional_light_to_pyrender(deodr_directional_ligth):
 
 def deodr_mesh_to_pyrender(deodr_mesh):
 
-    # trimesh and pyrender do to handle faces indices for texture that are different from face indices for the 3d vertices
+    # trimesh and pyrender do to handle faces indices for texture
+    # that are different from face indices for the 3d vertices
     # we need to duplicate vertices
     faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
         deodr_mesh.faces, deodr_mesh.faces_uv
@@ -111,7 +110,8 @@ def render(deodr_scene, camera):
     if not (np.all(deodr_scene.background == bg_color[None, None, :])):
         raise (
             BaseException(
-                "pyrender does not support background image, please provide a backround image that correspond to a uniform color"
+                "pyrender does not support background image, please provide a"
+                " backroundimage that correspond to a uniform color"
             )
         )
     pyrender_scene = pyrender.Scene(

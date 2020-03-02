@@ -35,7 +35,7 @@ void main() {
 }
 """
 
-fragment_shader_RGB_source = """
+fragment_shader_rgb_source = """
 #version 130
 uniform sampler2D Texture;
 uniform vec4 Color;

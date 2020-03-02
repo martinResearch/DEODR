@@ -141,7 +141,7 @@ def example_moderngl(display=True, width=640, height=480):
         np.abs(image_no_antialiasing * 255 - image_moderngl.astype(np.float))
     )
     print(f"max_diff between deodr and moderngl rendering = {max_diff}")
-    assert (max_diff < 18)
+    assert max_diff < 18
 
 
 if __name__ == "__main__":

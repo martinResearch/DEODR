@@ -79,7 +79,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         )
         extrinsic = np.column_stack((rot, t))
         self.camera = CameraPytorch(
-            extrinsic=extrinsic, intrinsic=intrinsic, distortion=dist
+            extrinsic=extrinsic, intrinsic=intrinsic, distortion=distortion
         )
         self.iter = 0
 

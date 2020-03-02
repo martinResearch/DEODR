@@ -1,9 +1,7 @@
 import moderngl
-from PIL import Image
 from pyrr import Matrix44
 import numpy as np
-from . import shaders as OpenGLShaders
-from hashlib import sha1
+from . import shaders as opengl_shaders
 
 
 def opencv_to_opengl_perspective(camera, znear, zfar):
@@ -34,48 +32,6 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
     )
     return m
 
-    # viewport = np.array((0, 0, camera.width, camera.height))
-    # M = np.array(
-    #     [
-    #         [0.5 * viewport[2], 0, 0, 0.5 * viewport[2] + viewport[0]],
-    #         [0, 0.5 * viewport[3], 0, 0.5 * viewport[3] + viewport[1]],
-    #         [0, 0, 0, 1],
-    #     ]
-    # )
-    # we want to find gl_projection such that camera.intrinsic == M * gl_projection
-    # gl_projection*[0,0,0,znear,1]=[0,0,0,0]
-    # gl_projection*[0,0,0,zfar,1]=[0,0,0,1]
-
-    # M is not square , so we need some addition information on
-    #  % GL_PROJECTION to guess it from CV_INTERN
-    #  % we choose the depth used for depth cropping is not rescaled i.e
-    #  % third and forth line in GL_PROJECTION are identical
-    #  % this lead to the system :
-    #  %  camera.CV_INTERN=M* camera.GL_PROJECTION
-    #  %  [0,0,0,0]=[0,0,1,1]*camera.GL_PROJECTION
-
-    #  camera.GL_PROJECTION = (([[1,0,0;0,-1,viewport(4);0,0,1]*M;[0,0,1,1]]^-1)*[camera.CV_INTERN;[0,0,0,0]])* diag([1,-1,-1,1]) ;
-    # % warning('we should add a field to the class camera that contain the missing information on depth cropping')
-    #  camera.GL_MODELVIEW  = diag([1,-1,-1,1])*camera.CV_EXTERN;
-
-
-#   function camera=camera_get_CV_from_OPENGL(camera)
-#  % get camera matrices in Computeur vision standart from opengl standart
-#  % depth obtained in CV is not rescaled as with Opengl
-
-#      viewport=camera.viewport;
-#      M=[0.5*viewport(3),        0           ,     0      ,   0.5*viewport(3)+viewport(1);...
-#            0          ,    0.5*viewport(4) ,     0     ,     0.5*viewport(4)+viewport(2);...
-#            0          ,         0          ,     0    ,               1             ];
-#      camera.CV_INTERN  = [1,0,0;0,-1,viewport(4);0,0,1]*M*camera.GL_PROJECTION* diag([1,-1,-1,1]);
-#      camera.CV_EXTERN  = diag([1,-1,-1,1])*camera.GL_MODELVIEW;
-#      camera.CV_TOTAL   = camera.CV_INTERN*camera.CV_EXTERN;
-
-
-#       camera.CV_TOTAL_B=zeros(size( camera.CV_TOTAL ));
-#       camera.CV_EXTERN_B=zeros(size(camera.CV_EXTERN ));
-#       camera.CV_INTERN_B=zeros(size( camera.CV_INTERN ));
-
 
 class OffscreenRenderer:
     def __init__(self):
@@ -83,8 +39,8 @@ class OffscreenRenderer:
 
         # Shaders
         self.shader_program = self.ctx.program(
-            vertex_shader=OpenGLShaders.vertex_shader_source,
-            fragment_shader=OpenGLShaders.fragment_shader_RGB_source,
+            vertex_shader=opengl_shaders.vertex_shader_source,
+            fragment_shader=opengl_shaders.fragment_shader_rgb_source,
         )
         self.fbo = None
         self.texture = None
@@ -96,7 +52,8 @@ class OffscreenRenderer:
         if False and not (np.all(deodr_scene.background == bg_color[None, None, :])):
             raise (
                 BaseException(
-                    "does not support background image yet, please provide a backround image that correspond to a uniform color"
+                    "does not support background image yet, please provide a backround\
+                     image that correspond to a uniform color"
                 )
             )
         # Context creation
@@ -130,7 +87,7 @@ class OffscreenRenderer:
         shader_program["p2"].value = p2
 
         # Texture
-        assert deodr_scene.mesh.texture.flags["WRITEABLE"] == False
+        assert not deodr_scene.mesh.texture.flags["WRITEABLE"]
         texture_id = id(deodr_scene.mesh.texture)
         if self.texture is None or self.texture_id != texture_id:
             self.texture_id = id(deodr_scene.mesh.texture)
@@ -141,7 +98,8 @@ class OffscreenRenderer:
             )
         # texture.build_mipmaps()
 
-        # compputing the box around the displaced mesh to get maximum accuracy of the xyz point cloud using unit8 opengl type
+        # compputing the box around the displaced mesh to get maximum accuracy
+        # of the xyz point cloud using unit8 opengl type
 
         # creat triangles soup
         mesh = deodr_scene.mesh
