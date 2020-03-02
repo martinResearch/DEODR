@@ -428,7 +428,8 @@ class Scene3D:
         directional = np.maximum(
             0, -np.sum(self.mesh.vertex_normals * self.ligth_directional, axis=1)
         )
-        self.store_backward_current["compute_vertices_luminosity"] = directional
+        if self.store_backward_current is not None:
+            self.store_backward_current["compute_vertices_luminosity"] = directional
         return directional + self.ambiant_light
 
     def _compute_vertices_colors_with_illumination(self):
@@ -603,9 +604,9 @@ class Scene3D:
         points_2d, depths = camera.project_points(self.mesh.vertices)
 
         # compute silhouette edges
-        self.mesh.compute_face_normals()
+        self.store_backward_current = None
         edgeflags = self.mesh.edge_on_silhouette(points_2d)
-
+        self.mesh.compute_vertex_normals()
         vertices_luminosity = self.compute_vertices_luminosity()
 
         # construct triangle soup (loosing connectivity), needed to render
@@ -681,8 +682,8 @@ class Scene3D:
             texture=texture,
             background=background,
         )
-        buffers = np.empty((self.height, self.width, nb_colors))
-        z_buffer = np.empty((self.height, self.width))
+        buffers = np.empty((camera.height, camera.width, nb_colors))
+        z_buffer = np.empty((camera.height, camera.width))
         differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
 
         offset = 0

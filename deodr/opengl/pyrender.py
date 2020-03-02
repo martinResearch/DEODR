@@ -65,6 +65,7 @@ def deodr_mesh_to_pyrender(deodr_mesh):
         deodr_mesh.faces, deodr_mesh.faces_uv
     )
     vertices = deodr_mesh.vertices[mask_v]
+    deodr_mesh.compute_vertex_normals()
     vertex_normals = deodr_mesh.vertex_normals[mask_v]
     uv = deodr_mesh.uv[mask_vt]
     pyrender_uv = np.column_stack(
