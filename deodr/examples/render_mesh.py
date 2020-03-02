@@ -2,25 +2,23 @@ from deodr.triangulated_mesh import ColoredTriMesh
 from deodr import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import os
 import imageio
 import trimesh
 import deodr
-import pyrender
+
 from scipy.spatial.transform import Rotation
 
 
 def run(obj_file, width=640, height=480, display=True):
-    render_mesh(
+    example_rgb(
         obj_file, width=width, height=height, display=display, display_moderngl=True
     )
 
 
-def default_scene(obj_file, width=320, height=240, use_distortion=True):
+def default_scene(obj_file, width=640, height=480, use_distortion=True):
 
     mesh_trimesh = trimesh.load(obj_file)
-    pyrender.Mesh.from_trimesh(mesh_trimesh)
 
     mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
 
@@ -44,9 +42,9 @@ def default_scene(obj_file, width=320, height=240, use_distortion=True):
     return scene, camera
 
 
-def example_rgb(display=True, save_image=False):
+def example_rgb(display=True, save_image=False, width=640, height=480):
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(obj_file, width=640, height=480)
+    scene, camera = default_scene(obj_file, width=width, height=height)
     image = scene.render(camera)
     if save_image:
         image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
@@ -57,11 +55,12 @@ def example_rgb(display=True, save_image=False):
         plt.figure()
         plt.title("deodr rendering")
         plt.imshow(image)
+    return image
 
 
-def example_channels(display=True, save_image=False):
+def example_channels(display=True, save_image=False, width=640, height=480):
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(obj_file, width=640, height=480)
+    scene, camera = default_scene(obj_file, width=width, height=height)
 
     def normalize(v):
         if v.ndim == 3 and v.shape[2] < 3:
@@ -89,11 +88,13 @@ def example_channels(display=True, save_image=False):
             imageio.imwrite(image_file, image_uint8)
 
 
-def example_pyrender(display=True, save_image=False):
+def example_pyrender(display=True, save_image=False, width=640, height=480):
     import deodr.opengl.pyrender
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(obj_file, use_distortion=False)
+    scene, camera = default_scene(
+        obj_file, use_distortion=False, width=width, height=height
+    )
     scene.sigma = 0  # removing edge overdraw antialiasing
     image_no_antialiasing = scene.render(camera)
     image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
@@ -112,15 +113,15 @@ def example_pyrender(display=True, save_image=False):
         ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
 
 
-def example_moderngl(display=True):
+def example_moderngl(display=True, width=640, height=480):
     import deodr.opengl.moderngl
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(obj_file)
+    scene, camera = default_scene(obj_file, width=width, height=height)
     scene.sigma = 0  # removing edge overdraw antialiasing
     image_no_antialiasing = scene.render(camera)
-    renderer = deodr.opengl.moderngl.OffscreenRenderer()
-    image_moderngl = renderer.render(scene, camera)
+    moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+    image_moderngl = moderngl_renderer.render(scene, camera)
     if display:
         plt.figure()
         ax = plt.subplot(1, 3, 1)
@@ -136,15 +137,16 @@ def example_moderngl(display=True):
         ax.imshow(
             10 * np.abs(image_no_antialiasing - image_moderngl.astype(np.float) / 255)
         )
-    assert (
-        np.max(np.abs(image_no_antialiasing - image_moderngl.astype(np.float) / 255))
-        < 1
+    max_diff = np.max(
+        np.abs(image_no_antialiasing * 255 - image_moderngl.astype(np.float))
     )
+    print(f"max_diff between deodr and moderngl rendering = {max_diff}")
+    assert (max_diff < 18)
 
 
 if __name__ == "__main__":
-    example_rgb(save_image=True)
-    example_channels(save_image=True)
-    example_moderngl()
+    example_rgb(save_image=False)
+    example_channels(save_image=False)
+    example_moderngl(display=True)
     example_pyrender()
     plt.show()

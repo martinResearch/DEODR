@@ -235,7 +235,7 @@ def mesh_viewer(
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    mesh_viewer(obj_file, use_moderngl=True)
+    mesh_viewer(obj_file, use_moderngl=False)
 
 
 if __name__ == "__main__":

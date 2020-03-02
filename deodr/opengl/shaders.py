@@ -1,4 +1,5 @@
 vertex_shader_source = """
+#version 130
 uniform mat4 intrinsic;
 uniform mat4 extrinsic;
 uniform float k1;
@@ -11,9 +12,9 @@ in vec3 in_vert;
 in vec3 in_norm;
 in vec3 in_text;
 
-out vec3 v_vert;
-out vec3 v_norm;
-out vec3 v_text;
+varying out vec3 v_vert;
+varying out vec3 v_norm;
+varying out vec3 v_text;
 
 void main() {
         v_vert = in_vert;
@@ -24,9 +25,9 @@ void main() {
         float x = projected.x;
         float y = projected.y;
         float r2 = x * x + y * y;
-        float radial_distortion = 1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 *r2;
-        float tangential_distortionx = 2 * p1 * x * y + p2 * (r2 + 2 * x * x);
-        float tangential_distortiony = p1 * (r2 + 2 * y * y) + 2 * p2 * x * y;
+        float radial_distortion = 1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 *r2;
+        float tangential_distortionx = 2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x);
+        float tangential_distortiony = p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y;
         float distortedx = x * radial_distortion + tangential_distortionx;
         float distortedy = y * radial_distortion + tangential_distortiony;
         pcam.xy = vec2(distortedx, distortedy)*pcam.z;
@@ -35,6 +36,7 @@ void main() {
 """
 
 fragment_shader_RGB_source = """
+#version 130
 uniform sampler2D Texture;
 uniform vec4 Color;
 uniform vec3 ligth_directional;
@@ -43,10 +45,10 @@ in vec3 v_vert;
 in vec3 v_norm;
 in vec3 v_text;
 
-out vec4 f_color;
+varying out vec4 f_color;
 
 void main() {
-        float lum = ligth_ambiant + max(dot(normalize(v_norm),- ligth_directional),0);
+        float lum = ligth_ambiant + max(dot(normalize(v_norm),- ligth_directional),0.0);
         vec3 color = texture(Texture, v_text.xy).rgb;
         color = color * (1.0 - Color.a) + Color.rgb * Color.a;
         f_color = vec4(color * lum, 1.0);
