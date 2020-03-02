@@ -9,3 +9,4 @@ torch
 tensorflow
 moderngl
 pyrr
+pytest-xvfb
