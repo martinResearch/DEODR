@@ -283,6 +283,8 @@ class ColoredTriMesh(TriMesh):
             if mesh.visual.uv is not None:
 
                 texture = np.array(mesh.visual.material.image) / 255
+                texture.setflags(write=0)
+
                 if texture.shape[2] == 4:
                     texture = texture[:, :, :3]  # removing alpha channel
 

@@ -81,7 +81,7 @@ class MeshDepthFitter:
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, dist=None):
+    def set_image(self, hand_image, focal=None, distortion=None):
         self.width = hand_image.shape[1]
         self.height = hand_image.shape[0]
         assert hand_image.ndim == 2
@@ -99,7 +99,7 @@ class MeshDepthFitter:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             resolution=(self.width, self.height),
-            dist=dist,
+            distortion=distortion,
         )
         self.iter = 0
 
@@ -279,7 +279,7 @@ class MeshRGBFitterWithPose:
         self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def set_image(self, hand_image, focal=None, dist=None):
+    def set_image(self, hand_image, focal=None, distortion=None):
         self.width = hand_image.shape[1]
         self.height = hand_image.shape[0]
         assert hand_image.ndim == 3
@@ -296,7 +296,7 @@ class MeshRGBFitterWithPose:
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            dist=dist,
+            distortion=distortion,
             resolution=(self.width, self.height),
         )
         self.iter = 0

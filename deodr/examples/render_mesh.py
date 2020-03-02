@@ -2,72 +2,73 @@ from deodr.triangulated_mesh import ColoredTriMesh
 from deodr import differentiable_renderer
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import os
 import imageio
 import trimesh
 import deodr
 
-
-def loadmesh(file):
-
-    mesh_trimesh = trimesh.load(file)
-    return ColoredTriMesh.from_trimesh(mesh_trimesh)
+from scipy.spatial.transform import Rotation
 
 
 def run(obj_file, width=640, height=480, display=True):
-    render_mesh(obj_file, width=width, height=height, display=display)
-
-
-def render_mesh(obj_file, width=640, height=480, display=True):
-
-    mesh = loadmesh(obj_file)
-
-    ax = plt.subplot(111)
-    if mesh.textured:
-        mesh.plot_uv_map(ax)
-
-    object_center = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
-    object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
-    camera_center = object_center + np.array([0, 0, 3]) * object_radius
-    focal = 2 * width
-
-    rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    trans = -rot.T.dot(camera_center)
-    extrinsic = np.column_stack((rot, trans))
-    intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
-    dist = [-2, 0, 0, 0, 0]
-    camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, dist=dist, resolution=(width, height)
+    example_rgb(
+        obj_file, width=width, height=height, display=display, display_moderngl=True
     )
 
-    scene = differentiable_renderer.Scene3D()
-    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
-    scene.set_mesh(mesh)
-    background_image = np.ones((height, width, 3))
-    scene.set_background(background_image)
 
+def default_scene(obj_file, width=640, height=480, use_distortion=True):
+
+    mesh_trimesh = trimesh.load(obj_file)
+
+    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+
+    # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
+    rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
+
+    camera = differentiable_renderer.default_camera(
+        width, height, 80, mesh.vertices, rot
+    )
+    if use_distortion:
+        camera.distortion = np.array([-0.5, 0.5, 0, 0, 0])
+
+    bg_color = np.array((0.8, 0.8, 0.8))
+    scene = differentiable_renderer.Scene3D()
+    ambiant_light = 0
+    ligth_directional = 0.3 * np.array([1, -1, 0])
+    scene.set_light(ligth_directional=ligth_directional, ambiant_light=ambiant_light)
+    scene.set_mesh(mesh)
+    background_image = np.ones((height, width, 3)) * bg_color
+    scene.set_background(background_image)
+    return scene, camera
+
+
+def example_rgb(display=True, save_image=False, width=640, height=480):
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
+    scene, camera = default_scene(obj_file, width=width, height=height)
     image = scene.render(camera)
+    if save_image:
+        image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
+        os.makedirs(os.path.dirname(image_file), exist_ok=True)
+        image_uint8 = (image * 255).astype(np.uint8)
+        imageio.imwrite(image_file, image_uint8)
     if display:
         plt.figure()
+        plt.title("deodr rendering")
         plt.imshow(image)
+    return image
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection=Axes3D.name)
-        mesh.plot(ax, plot_normals=True)
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_zlabel("z")
-        u, v, w = scene.ligth_directional
-        ax.quiver(
-            np.array([0.0]),
-            np.array([0.0]),
-            np.array([0.0]),
-            np.array([u]),
-            np.array([v]),
-            np.array([w]),
-            color=[1, 1, 0.5],
-        )
+
+def example_channels(display=True, save_image=False, width=640, height=480):
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
+    scene, camera = default_scene(obj_file, width=width, height=height)
+
+    def normalize(v):
+        if v.ndim == 3 and v.shape[2] < 3:
+            nv = np.zeros((v.shape[0], v.shape[1], 3))
+            nv[:, :, : v.shape[2]] = v
+        else:
+            nv = v
+        return (nv - nv.min()) / (nv.max() - nv.min())
 
     channels = scene.render_deffered(camera)
     if display:
@@ -75,25 +76,77 @@ def render_mesh(obj_file, width=640, height=480, display=True):
         for i, (name, v) in enumerate(channels.items()):
             ax = plt.subplot(2, 3, i + 1)
             ax.set_title(name)
-            if v.ndim == 3 and v.shape[2] < 3:
-                nv = np.zeros((v.shape[0], v.shape[1], 3))
-                nv[:, :, : v.shape[2]] = v
-                ax.imshow((nv - nv.min()) / (nv.max() - nv.min()))
-            else:
-                ax.imshow((v - v.min()) / (v.max() - v.min()))
+            ax.imshow(normalize(v))
 
-        plt.show()
-    return image, channels
+    if save_image:
+        for i, (name, v) in enumerate(channels.items()):
+            image_file = os.path.abspath(
+                os.path.join(deodr.data_path, f"test/duck_{name}.png")
+            )
+            os.makedirs(os.path.dirname(image_file), exist_ok=True)
+            image_uint8 = (normalize(v) * 255).astype(np.uint8)
+            imageio.imwrite(image_file, image_uint8)
 
 
-def example(save_image=False):
+def example_pyrender(display=True, save_image=False, width=640, height=480):
+    import deodr.opengl.pyrender
+
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    image, channels = render_mesh(obj_file, width=320, height=240)
-    image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
-    os.makedirs(os.path.dirname(image_file), exist_ok=True)
-    image_uint8 = (image * 255).astype(np.uint8)
-    imageio.imwrite(image_file, image_uint8)
+    scene, camera = default_scene(
+        obj_file, use_distortion=False, width=width, height=height
+    )
+    scene.sigma = 0  # removing edge overdraw antialiasing
+    image_no_antialiasing = scene.render(camera)
+    image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
+    if display:
+        plt.figure()
+        ax = plt.subplot(1, 3, 1)
+        ax.set_title("deodr no antialiasing")
+        ax.imshow(image_no_antialiasing)
+
+        ax = plt.subplot(1, 3, 2)
+        ax.set_title("pyrender")
+        ax.imshow(image_pyrender)
+
+        ax = plt.subplot(1, 3, 3)
+        ax.set_title("difference")
+        ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
+
+
+def example_moderngl(display=True, width=640, height=480):
+    import deodr.opengl.moderngl
+
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
+    scene, camera = default_scene(obj_file, width=width, height=height)
+    scene.sigma = 0  # removing edge overdraw antialiasing
+    image_no_antialiasing = scene.render(camera)
+    moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+    image_moderngl = moderngl_renderer.render(scene, camera)
+    if display:
+        plt.figure()
+        ax = plt.subplot(1, 3, 1)
+        ax.set_title("deodr no antialiasing")
+        ax.imshow(image_no_antialiasing)
+
+        ax = plt.subplot(1, 3, 2)
+        ax.set_title("moderngl")
+        ax.imshow(image_moderngl)
+
+        ax = plt.subplot(1, 3, 3)
+        ax.set_title("difference")
+        ax.imshow(
+            10 * np.abs(image_no_antialiasing - image_moderngl.astype(np.float) / 255)
+        )
+    max_diff = np.max(
+        np.abs(image_no_antialiasing * 255 - image_moderngl.astype(np.float))
+    )
+    print(f"max_diff between deodr and moderngl rendering = {max_diff}")
+    assert max_diff < 18
 
 
 if __name__ == "__main__":
-    run(save_image=False)
+    example_rgb(save_image=False)
+    example_channels(save_image=False)
+    example_moderngl(display=True)
+    example_pyrender()
+    plt.show()

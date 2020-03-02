@@ -131,6 +131,7 @@ def mesh_viewer(
     height=480,
     display_fps=True,
     title=None,
+    use_moderngl=False,
 ):
     if type(obj_file_or_trimesh) == str:
         if title is None:
@@ -165,13 +166,13 @@ def mesh_viewer(
     extrinsic = np.column_stack((rotation, translation))
     intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
 
-    dist = [0, 0, 0, 0, 0]
+    distortion = [0, 0, 0, 0, 0]
     camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic, intrinsic=intrinsic, resolution=(width, height), dist=dist
+        extrinsic=extrinsic,
+        intrinsic=intrinsic,
+        resolution=(width, height),
+        distortion=distortion,
     )
-
-    hand_color = np.array([200, 100, 100]) / 255
-    mesh.set_vertices_colors(np.tile(hand_color, [mesh.nb_vertices, 1]))
 
     scene = differentiable_renderer.Scene3D()
     scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
@@ -197,10 +198,18 @@ def mesh_viewer(
     cv2.namedWindow(windowname)
     cv2.setMouseCallback(windowname, interactor.mouse_callback)
 
+    if use_moderngl:
+        import deodr.opengl.moderngl
+
+        offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        scene.mesh.compute_vertex_normals()
     while cv2.getWindowProperty(windowname, 0) >= 0:
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
         start = time.clock()
-        image = scene.render(interactor.camera)
+        if use_moderngl:
+            image = offscreen_renderer.render(scene, camera)
+        else:
+            image = scene.render(interactor.camera)
 
         if display_fps:
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -226,7 +235,7 @@ def mesh_viewer(
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    mesh_viewer(obj_file)
+    mesh_viewer(obj_file, use_moderngl=False)
 
 
 if __name__ == "__main__":

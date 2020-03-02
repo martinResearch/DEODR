@@ -46,7 +46,7 @@ def run(
         vertices, faces, euler_init, translation_init, cregu=1000
     )
 
-    hand_fitter.set_image(depth_image, focal=241, dist=[1, 0, 0, 0, 0])
+    hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])
     hand_fitter.set_max_depth(1)
     hand_fitter.set_depth_scale(110 / max_depth)
     energies = []

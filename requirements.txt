@@ -7,3 +7,6 @@ trimesh
 opencv-python
 torch
 tensorflow
+moderngl
+pyrr
+pytest-xvfb
