@@ -1,5 +1,5 @@
 vertex_shader_source = """
-#version 130
+#version 140
 uniform mat4 intrinsic;
 uniform mat4 extrinsic;
 uniform float k1;
@@ -12,9 +12,9 @@ in vec3 in_vert;
 in vec3 in_norm;
 in vec3 in_text;
 
-varying out vec3 v_vert;
-varying out vec3 v_norm;
-varying out vec3 v_text;
+out vec3 v_vert;
+out vec3 v_norm;
+out vec3 v_text;
 
 void main() {
         v_vert = in_vert;
@@ -45,7 +45,7 @@ in vec3 v_vert;
 in vec3 v_norm;
 in vec3 v_text;
 
-varying out vec4 f_color;
+out vec4 f_color;
 
 void main() {
         float lum = ligth_ambiant + max(dot(normalize(v_norm),- ligth_directional),0.0);
