@@ -7,3 +7,4 @@ trimesh
 opencv-python
 torch
 tensorflow
+moderngl
