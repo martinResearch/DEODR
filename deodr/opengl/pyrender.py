@@ -115,7 +115,7 @@ def render(deodr_scene, camera):
             )
         )
     pyrender_scene = pyrender.Scene(
-        ambient_light=deodr_scene.ambiant_light * np.ones((3)), bg_color=bg_color
+        ambient_light=deodr_scene.ambient_light * np.ones((3)), bg_color=bg_color
     )
 
     if camera.distortion is not None:

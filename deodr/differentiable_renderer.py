@@ -396,13 +396,13 @@ class Scene2D(Scene2DBase):
 
 class Scene3D:
     """this class represents a 3D scene containing a single mesh, a directional light
-    and an ambiant light. The parameter sigma control the width of
+    and an ambient light. The parameter sigma control the width of
     antialiasing edge overdraw"""
 
     def __init__(self, sigma=1):
         self.mesh = None
         self.ligth_directional = None
-        self.ambiant_light = None
+        self.ambient_light = None
         self.sigma = sigma
 
     def clear_gradients(self):
@@ -413,9 +413,9 @@ class Scene3D:
         self.colors_b = np.zeros(self.colors.shape)
         self.texture_b = np.zeros((0, 0))
 
-    def set_light(self, ligth_directional, ambiant_light):
+    def set_light(self, ligth_directional, ambient_light):
         self.ligth_directional = np.array(ligth_directional)
-        self.ambiant_light = ambiant_light
+        self.ambient_light = ambient_light
 
     def set_mesh(self, mesh):
         self.mesh = mesh
@@ -430,7 +430,7 @@ class Scene3D:
         )
         if self.store_backward_current is not None:
             self.store_backward_current["compute_vertices_luminosity"] = directional
-        return directional + self.ambiant_light
+        return directional + self.ambient_light
 
     def _compute_vertices_colors_with_illumination(self):
 
@@ -448,7 +448,7 @@ class Scene3D:
         ]
         vertices_luminosity_b = np.sum(self.mesh.vertices_colors * colors_b, axis=1)
         self.mesh.vertices_colors_b = colors_b * vertices_luminosity[:, None]
-        self.ambiant_light_b = np.sum(vertices_luminosity_b)
+        self.ambient_light_b = np.sum(vertices_luminosity_b)
         directional_b = vertices_luminosity_b
         self.compute_vertices_luminosity_backward(directional_b)
 

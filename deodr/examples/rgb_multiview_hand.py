@@ -26,9 +26,9 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     default_color = np.array([0.4, 0.3, 0.25]) * 1.5
     default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambiant": np.array([0.6]),
+        "ambient": np.array([0.6]),
     }
-    # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambiant':np.array([0.6])}
+    # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
     euler_init = np.row_stack(
         [np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)]

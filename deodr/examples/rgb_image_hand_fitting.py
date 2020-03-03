@@ -32,7 +32,7 @@ def run(
     default_color = np.array([0.4, 0.3, 0.25])
     default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambiant": np.array([0.6]),
+        "ambient": np.array([0.6]),
     }
 
     euler_init = np.array([0, 0, 0])

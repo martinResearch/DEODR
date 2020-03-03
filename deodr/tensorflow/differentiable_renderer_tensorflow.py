@@ -73,11 +73,11 @@ class Scene3DTensorflow(Scene3D):
     def __init__(self):
         super().__init__()
 
-    def set_light(self, ligth_directional, ambiant_light):
+    def set_light(self, ligth_directional, ambient_light):
         if not (isinstance(ligth_directional, tf.Tensor)):
             ligth_directional = tf.constant(ligth_directional)
         self.ligth_directional = ligth_directional
-        self.ambiant_light = ambiant_light
+        self.ambient_light = ambient_light
 
     def _compute_vertices_colors_with_illumination(self):
         vertices_luminosity = (
@@ -86,7 +86,7 @@ class Scene3DTensorflow(Scene3D):
                     self.mesh.vertex_normals * self.ligth_directional, axis=1
                 )
             )
-            + self.ambiant_light
+            + self.ambient_light
         )
         return self.mesh.vertices_colors * vertices_luminosity[:, None]
 

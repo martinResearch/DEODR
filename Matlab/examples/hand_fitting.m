@@ -32,7 +32,7 @@ T=-R'*camera_center;
 CameraMatrix=[focal,0,width/2;0,focal,height/2;0,0,1]*[R,T];
 
 lights.ligth_directional=1*[0.1,0.5,0.4];
-lights.ambiant_light=0.6;
+lights.ambient_light=0.6;
 
 options.sigma = 1;% edge antialising width
 options.save_images = true;

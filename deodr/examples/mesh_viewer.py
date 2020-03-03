@@ -175,7 +175,7 @@ def mesh_viewer(
     )
 
     scene = differentiable_renderer.Scene3D()
-    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambiant_light=0.3)
+    scene.set_light(ligth_directional=np.array([-0.5, 0, -0.5]), ambient_light=0.3)
     scene.set_mesh(mesh)
     background_image = np.ones((height, width, 3))
     scene.set_background(background_image)

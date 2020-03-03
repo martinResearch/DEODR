@@ -250,10 +250,10 @@ class MeshRGBFitterWithPose:
 
         self.hand_color = copy.copy(self.default_color)
         self.ligth_directional = copy.copy(self.default_light["directional"])
-        self.ambiant_light = copy.copy(self.default_light["ambiant"])
+        self.ambient_light = copy.copy(self.default_light["ambient"])
 
         self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
-        self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
+        self.speed_ambient_light = np.zeros(self.ambient_light.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
     def set_image(self, hand_image, focal=None, distortion=None):
@@ -287,7 +287,7 @@ class MeshRGBFitterWithPose:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.scene.set_light(
-            ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
+            ligth_directional=self.ligth_directional, ambient_light=self.ambient_light
         )
         self.mesh.set_vertices_colors(
             np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
@@ -300,7 +300,7 @@ class MeshRGBFitterWithPose:
         self.scene.render_backward(image_b)
         self.hand_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
         self.ligth_directional_b = self.scene.light_directional_b
-        self.ambiant_light_b = self.scene.ambiant_light_b
+        self.ambient_light_b = self.scene.ambient_light_b
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
@@ -375,12 +375,12 @@ class MeshRGBFitterWithPose:
             self.speed_ligth_directional * inertia + (1 - inertia) * step
         )
         self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
-        # update ambiant light
-        step = -self.ambiant_light_b * 0.0001
-        self.speed_ambiant_light = (1 - self.damping) * (
-            self.speed_ambiant_light * inertia + (1 - inertia) * step
+        # update ambient light
+        step = -self.ambient_light_b * 0.0001
+        self.speed_ambient_light = (1 - self.damping) * (
+            self.speed_ambient_light * inertia + (1 - inertia) * step
         )
-        self.ambiant_light = self.ambiant_light + self.speed_ambiant_light
+        self.ambient_light = self.ambient_light + self.speed_ambient_light
         # update hand color
         step = -self.hand_color_b * 0.00001
         self.speed_hand_color = (1 - self.damping) * (
@@ -460,10 +460,10 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         self.hand_color = copy.copy(self.default_color)
         self.ligth_directional = copy.copy(self.default_light["directional"])
-        self.ambiant_light = copy.copy(self.default_light["ambiant"])
+        self.ambient_light = copy.copy(self.default_light["ambient"])
 
         self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
-        self.speed_ambiant_light = np.zeros(self.ambiant_light.shape)
+        self.speed_ambient_light = np.zeros(self.ambient_light.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
     def set_images(self, hand_images, focal=None):
@@ -518,7 +518,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.scene.set_light(
-            ligth_directional=self.ligth_directional, ambiant_light=self.ambiant_light
+            ligth_directional=self.ligth_directional, ambient_light=self.ambient_light
         )
         self.mesh.set_vertices_colors(
             np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
@@ -529,7 +529,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def clear_gradients(self):
         self.ligth_directional_b = np.zeros(self.ligth_directional.shape)
-        self.ambiant_light_b = np.zeros(self.ambiant_light.shape)
+        self.ambient_light_b = np.zeros(self.ambient_light.shape)
         self.vertices_b = np.zeros(self.vertices.shape)
         self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
         self.transform_translation_b = np.zeros(self.transform_translation.shape)
@@ -542,7 +542,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.scene.render_backward(image_b)
         self.hand_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
         self.ligth_directional_b += self.scene.light_directional_b
-        self.ambiant_light_b += self.scene.ambiant_light_b
+        self.ambient_light_b += self.scene.ambient_light_b
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
         q_normalized_b, vertices_b = qrot_backward(
@@ -626,12 +626,12 @@ class MeshRGBFitterWithPoseMultiFrame:
             self.speed_ligth_directional * inertia + (1 - inertia) * step
         )
         self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
-        # update ambiant light
-        step = -self.ambiant_light_b * 0.0001
-        self.speed_ambiant_light = (1 - self.damping) * (
-            self.speed_ambiant_light * inertia + (1 - inertia) * step
+        # update ambient light
+        step = -self.ambient_light_b * 0.0001
+        self.speed_ambient_light = (1 - self.damping) * (
+            self.speed_ambient_light * inertia + (1 - inertia) * step
         )
-        self.ambiant_light = self.ambiant_light + self.speed_ambiant_light
+        self.ambient_light = self.ambient_light + self.speed_ambient_light
         # update hand color
         step = -self.hand_color_b * 0.00001
         self.speed_hand_color = (1 - self.damping) * (

@@ -33,9 +33,9 @@ def default_scene(obj_file, width=640, height=480, use_distortion=True):
 
     bg_color = np.array((0.8, 0.8, 0.8))
     scene = differentiable_renderer.Scene3D()
-    ambiant_light = 0
+    ambient_light = 0
     ligth_directional = 0.3 * np.array([1, -1, 0])
-    scene.set_light(ligth_directional=ligth_directional, ambiant_light=ambiant_light)
+    scene.set_light(ligth_directional=ligth_directional, ambient_light=ambient_light)
     scene.set_mesh(mesh)
     background_image = np.ones((height, width, 3)) * bg_color
     scene.set_background(background_image)

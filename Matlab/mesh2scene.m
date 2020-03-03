@@ -1,4 +1,4 @@
-function scene=mesh2scene(M,CameraMatrix,ligth_directional,ambiant_light,height,width,getSilhouette)
+function scene=mesh2scene(M,CameraMatrix,ligth_directional,ambient_light,height,width,getSilhouette)
 
 if nargin<7
     getSilhouette=true;
@@ -9,7 +9,7 @@ camera_center=-(CameraMatrix(1:3,1:3))\CameraMatrix(:,4);
 if  getSilhouette
     M=mesh_silhouette_edges(M,camera_center);
 end
-luminosity=max(0,(-ligth_directional*M.NormalsV))+ambiant_light;
+luminosity=max(0,(-ligth_directional*M.NormalsV))+ambient_light;
 colorsV=M.colors.*([1;1;1]*luminosity);
 Ntri=M.nb_faces;
 

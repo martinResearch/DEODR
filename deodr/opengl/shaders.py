@@ -40,7 +40,7 @@ fragment_shader_rgb_source = """
 uniform sampler2D Texture;
 uniform vec4 Color;
 uniform vec3 ligth_directional;
-uniform float ligth_ambiant;
+uniform float ligth_ambient;
 in vec3 v_vert;
 in vec3 v_norm;
 in vec3 v_text;
@@ -48,7 +48,7 @@ in vec3 v_text;
 out vec4 f_color;
 
 void main() {
-        float lum = ligth_ambiant + max(dot(normalize(v_norm),- ligth_directional),0.0);
+        float lum = ligth_ambient + max(dot(normalize(v_norm),- ligth_directional),0.0);
         vec3 color = texture(Texture, v_text.xy).rgb;
         color = color * (1.0 - Color.a) + Color.rgb * Color.a;
         f_color = vec4(color * lum, 1.0);
