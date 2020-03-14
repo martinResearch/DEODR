@@ -21,7 +21,7 @@ jobs:
         sudo apt-get install libglu1-mesa-dev             
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        python setup.py build_ext --inplace
+        python setup.py install
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -33,4 +33,5 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest
+        cd tests
         pytest
