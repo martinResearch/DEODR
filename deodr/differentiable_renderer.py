@@ -649,6 +649,13 @@ class Scene3D:
             soup_uv = self.mesh.uv[self.mesh.faces_uv].reshape(soup_nb_vertices, 2)
             channels["uv"] = soup_uv
 
+        offset = 0
+        ranges = {}
+        for k, v in channels.items():
+            size = v.shape[1]
+            ranges[k] = (offset , offset + size)
+            offset += size
+
         colors = np.column_stack(channels.values())
 
         nb_colors = colors.shape[1]
@@ -664,7 +671,9 @@ class Scene3D:
         texture = np.zeros((0, 0))
 
         background = np.zeros((height, width, nb_colors))
-        background[:, :, 0] = depths.max()
+        if 'depth' in channels:
+            background[:, :, ranges['depth'][0]:ranges['depth'][1]] = depths.max()
+
         scene_2d = Scene2DBase(
             faces=soup_faces,
             faces_uv=soup_faces_uv,
@@ -686,14 +695,8 @@ class Scene3D:
         z_buffer = np.empty((camera.height, camera.width))
         differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
 
-        offset = 0
         output = {}
         for k, v in channels.items():
-            size = v.shape[1]
-            if size == 1:
-                output[k] = buffers[:, :, offset]
-            else:
-                output[k] = buffers[:, :, offset : offset + size]
-            offset += size
+            output[k]=buffers[:, :, ranges[k][0]:ranges[k][1]]           
 
         return output
