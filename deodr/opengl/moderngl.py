@@ -11,7 +11,7 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
     cx = camera.intrinsic[0, 2]
     cy = camera.intrinsic[1, 2]
     cx2 = cx + 0.5  # half a pixel offset to be consistent with deodr convention
-    cy2 = cy - 0.5  # half a pixel offset to be consistent with deodr convention
+    cy2 = cy + 0.5  # half a pixel offset to be consistent with deodr convention
     width = camera.width
     height = camera.height
     np.testing.assert_array_equal(
@@ -23,7 +23,7 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
             [0, -2.0 * fy / height, 0, 0],
             [
                 1.0 - 2.0 * cx2 / width,
-                2.0 * cy2 / height - 1.0,
+                1.0 - 2.0 * cy2 / height,
                 (zfar + znear) / (znear - zfar),
                 -1,
             ],
