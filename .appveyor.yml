@@ -58,6 +58,7 @@ build_script:
   - sh: sudo pip install twine==1.15.0
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing  -p $encrypted_pypi_api_token
   # on windows
+  - cmd: echo %TWINE_REPOSITORY_URL%
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
   - cmd: pip install twine==1.15.0
