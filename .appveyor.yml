@@ -2,7 +2,8 @@
 # to replicate on you own repository you need to 
 # 1) create account on pypi.org, test.pypi.org and ci.appveryor.com 
 # 2) on pypi.org create an API token y(ou can call it "<ProjetName> Appveyor") and  an copy the string or let the browser window open
-# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy the encrypted string in the secure subflied  of "encrypted_pypi_api_token"  in the branches/only/master part
+# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy the encrypted string in the secure subflied  
+#    of "encrypted_pypi_api_token"  in the branches/only/master part
 # 4) do step 3 and 4 but this time on test.pypi.org , fill in of "encrypted_pypi_api_token"  in the branches/only/pypi_test part
 
 image: 
@@ -54,12 +55,12 @@ build_script:
   # on linux
   - sh: sudo pip install cibuildwheel==1.0.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
-  - sh: sudo pip install twine
+  - sh: sudo pip install twine==1.15.0
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing  -p $encrypted_pypi_api_token
   # on windows
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
-  - cmd: pip install twine  
+  - cmd: pip install twine==1.15.0
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing  -p %encrypted_pypi_api_token%  
 artifacts:
   - path: "wheelhouse\\*.whl"
