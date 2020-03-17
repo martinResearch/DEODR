@@ -17,6 +17,7 @@ extensions = "deodr/differentiable_renderer_cython.pyx"
 my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
+
 setup(
     name=libname,
     version="0.1.7",
