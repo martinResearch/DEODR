@@ -37,14 +37,14 @@ build_script:
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
-  - sh: python -m twine upload wheelhouse/*.whl --skip-existing
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
   # on windows  
   - cmd: echo %encrypted_text%
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
   - cmd: pip install twine==1.15.0
   - cmd: echo %TWINE_REPOSITORY_URL%
-  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   
 artifacts:
   - path: "wheelhouse\\*.whl"
