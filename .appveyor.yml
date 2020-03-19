@@ -2,7 +2,8 @@
 # to replicate on you own repository you need to 
 # 1) create account on pypi.org, test.pypi.org and ci.appveryor.com 
 # 2) on pypi.org create an API token y(ou can call it "<ProjetName> Appveyor") and  an copy the string or let the browser window open
-# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy the encrypted string in the secure subflied  of "encrypted_pypi_api_token"  in the branches/only/master part
+# 3) on appveyor go on https://ci.appveyor.com/tools/encrypt and encryp the string test.pypi.org, copy the encrypted string in the secure subflied  
+#    of "encrypted_pypi_api_token"  in the branches/only/master part
 # 4) do step 3 and 4 but this time on test.pypi.org , fill in of "encrypted_pypi_api_token"  in the branches/only/pypi_test part
 
 image: 
@@ -14,53 +15,37 @@ platform:
 branches:
   only:
     - master
-    - pypi_test
   
-for: 
--
-  branches:
-    only:
-      - master
-          
-  environment:
-    global:
-      encrypted_pypi_api_token:
-        secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
-      TWINE_REPOSITORY_URL :  https://upload.pypi.org/legacy/
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
-      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
-      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
-      TWINE_USERNAME: __token__
-
--
-  branches:
-    only:
-      - master
-  #on: # test wheel deployement to test.pypi only for branch with active PR onto master 
-  #    APPVEYOR_REPO_BRANCH: master
-          
-  environment:
-    global:
-      encrypted_pypi_api_token:
-          secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
-      TWINE_REPOSITORY_URL :   https://test.pypi.org/legacy/
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
-      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
-      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
-      TWINE_USERNAME: __token__ 
-        
+environment:
+   encrypted_text:
+      secure: DO1HPdoSaKp+2RIX2pNCpKvSiYmuLRqE39iNmzqHXRo=
+   encrypted_pypi_api_token:
+      secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
+   TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
+   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
+   CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+   CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+   TWINE_USERNAME: __token__
+   TWINE_PASSWORD:
+      secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
  
+         
 build_script:
   # on linux
+  - sh: echo $encrypted_text
   - sh: sudo pip install cibuildwheel==1.0.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
-  - sh: sudo pip install twine
-  - sh: python -m twine upload wheelhouse/*.whl --skip-existing  -p $encrypted_pypi_api_token
-  # on windows
+  - sh: sudo pip install twine==1.15.0
+  - sh: echo $TWINE_REPOSITORY_URL
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing
+  # on windows  
+  - cmd: echo %encrypted_text%
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
-  - cmd: pip install twine  
-  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing  -p %encrypted_pypi_api_token%  
+  - cmd: pip install twine==1.15.0
+  - cmd: echo %TWINE_REPOSITORY_URL%
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing
+  
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
