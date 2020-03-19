@@ -15,42 +15,16 @@ platform:
 branches:
   only:
     - master
-    - pypi_test
   
-for: 
--
-  branches:
-    only:
-      - master
-          
-  environment:
-    global:
-      encrypted_pypi_api_token:
-        secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
-      TWINE_REPOSITORY_URL :  https://upload.pypi.org/legacy/
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
-      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
-      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
-      TWINE_USERNAME: __token__
-
--
-  branches:
-    only:
-      - master
-  #on: # test wheel deployement to test.pypi only for branch with active PR onto master 
-  #    APPVEYOR_REPO_BRANCH: master
-          
-  environment:
-    global:
-      encrypted_pypi_api_token:
-          secure: ARdkNyeJ7/le3QQal2if2IKYU+z0qtmJ0nX/8M8PIIZWjl5dwsVUQKD2PAHeLQMAPekx7+kVRrLhikW2aHBxev5onyQoBVwrgCholH0XPTohbSiwT1aHZCC10VNyoEf35R1dFVXfpiB6WSX2G25MloftZ31MQUGX4Duhafnj0sCFzRtMMzcetcFra3Q+s9WqPLBhg5ZD+ly62MLuRiDlxeN+X6vPZK2Xo1c8lz9HZujpSLh5jX1AddMOCWW0MdX/v7RuB2IQ2B0EiQdhBHA9Fw==
-      TWINE_REPOSITORY_URL :   https://test.pypi.org/legacy/
-      CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
-      CIBW_BEFORE_BUILD: pip install cython && pip install numpy
-      CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
-      TWINE_USERNAME: __token__ 
-        
- 
+environment:
+   encrypted_pypi_api_token:
+      secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
+   TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
+   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* 
+   CIBW_BEFORE_BUILD: pip install cython && pip install numpy
+   CIBW_BEFORE_BUILD_LINUX: pip install cython && pip install numpy
+   TWINE_USERNAME: __token__
+         
 build_script:
   # on linux
   - sh: sudo pip install cibuildwheel==1.0.0 
@@ -64,6 +38,7 @@ build_script:
   - cmd: pip install twine==1.15.0
   - cmd: echo %TWINE_REPOSITORY_URL%
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing  -p %encrypted_pypi_api_token%  
+  
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
