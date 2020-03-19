@@ -17,6 +17,8 @@ branches:
     - master
   
 environment:
+   encrypted_text:
+      secure: DO1HPdoSaKp+2RIX2pNCpKvSiYmuLRqE39iNmzqHXRo=
    encrypted_pypi_api_token:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
    TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
@@ -27,12 +29,14 @@ environment:
          
 build_script:
   # on linux
+  - sh: echo $encrypted_text
   - sh: sudo pip install cibuildwheel==1.0.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing  -p $encrypted_pypi_api_token
   # on windows  
+  - cmd: echo %encrypted_text%
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
   - cmd: pip install twine==1.15.0
