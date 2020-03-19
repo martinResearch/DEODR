@@ -119,9 +119,14 @@ def example_moderngl(display=True, width=640, height=480):
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
     scene.sigma = 0  # removing edge overdraw antialiasing
+    #adding some perturbation to get better test
+    camera.extrinsic[1,2]=camera.extrinsic[1,2]+0.1
+    camera.extrinsic[1,1]=camera.extrinsic[1,1]*0.9
+    
     image_no_antialiasing = scene.render(camera)
     moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
     image_moderngl = moderngl_renderer.render(scene, camera)
+    diff =  np.abs(image_no_antialiasing.astype(np.float) * 255 - image_moderngl.astype(np.float))
     if display:
         plt.figure()
         ax = plt.subplot(1, 3, 1)
@@ -135,18 +140,20 @@ def example_moderngl(display=True, width=640, height=480):
         ax = plt.subplot(1, 3, 3)
         ax.set_title("difference")
         ax.imshow(
-            10 * np.abs(image_no_antialiasing - image_moderngl.astype(np.float) / 255)
-        )
-    max_diff = np.max(
-        np.abs(image_no_antialiasing * 255 - image_moderngl.astype(np.float))
-    )
+            10*diff/255)
+        plt.show()
+        
+    
+                   
+    max_diff = np.max(diff       )
+   
     print(f"max_diff between deodr and moderngl rendering = {max_diff}")
     assert max_diff < 18
 
 
 if __name__ == "__main__":
+    example_moderngl(display=False)
     example_rgb(save_image=False)
-    example_channels(save_image=False)
-    example_moderngl(display=True)
+    example_channels(save_image=False)    
     example_pyrender()
     plt.show()

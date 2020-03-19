@@ -154,8 +154,13 @@ class PerspectiveCamera(Camera):
         """
 
         focal = 0.5 * width / np.tan(0.5 * fov * np.pi / 180)
+        focal_x = focal
+        pixel_aspect_ratio = 1
+        focal_y = focal * pixel_aspect_ratio
         trans = -rot.T.dot(camera_center)
-        intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
+        cx = width / 2
+        cy = height / 2
+        intrinsic = np.array([[focal_x, 0,cx], [0, focal_y, cy], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         super().__init__(
             extrinsic=extrinsic,
