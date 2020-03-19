@@ -17,17 +17,17 @@ extensions = "deodr/differentiable_renderer_cython.pyx"
 my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
+
 setup(
     name=libname,
     version="0.1.7",
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
-    description="A differentiable renderer with Pytorch,\
-    Tensorflow and Matlab interfaces",
+    description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",
     url="https://github.com/martinResearch/DEODR",
     license="BSD",
     packages=find_packages(),
-    package_data={"deodr": ["data/*.*", "data/**/*.*"]},
+    package_data={"deodr": ["*.pyx","data/*.*", "data/**/*.*"]},
     ext_modules=my_modules,  # additional source file(s)),
     include_dirs=[np.get_include()],
     setup_requires=["numpy", "scipy"],
