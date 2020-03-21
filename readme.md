@@ -139,14 +139,13 @@ The choice of the method is done through the Boolean parameter *antialiaseError*
 
 * add support for multiple meshes in the scene
 * add support for multiple lights in the scene
-* write unit tests
-* add package on PyPI.org
-* add an OpenGL backend for faster preview, potentially with offscreen rendering option
+* write more unit tests
 * add possibility to provide the camera parameters using OpenGL parameterization
 * write pure C++ only rendering example
 * write pure C++ only mesh fitting example
 * accelerate C++ code using SIMD instruction and multithreading
 * add automatic texture reparameterization and resampling to avoid texture discontinuities (see section on texture) 
+* add phong shading
 
 # License
 
