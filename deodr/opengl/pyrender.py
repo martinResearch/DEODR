@@ -115,7 +115,7 @@ def render(deodr_scene, camera):
             )
         )
     pyrender_scene = pyrender.Scene(
-        ambient_light=deodr_scene.ambient_light * np.ones((3)), bg_color=bg_color
+        light_ambient=deodr_scene.light_ambient * np.ones((3)), bg_color=bg_color
     )
 
     if camera.distortion is not None:
@@ -131,7 +131,7 @@ def render(deodr_scene, camera):
 
     # convert to pyrender directional light paramterization
     directional_light, directional_light_pose = deodr_directional_light_to_pyrender(
-        deodr_scene.ligth_directional
+        deodr_scene.light_directional
     )
     if directional_light is not None:
         pyrender_scene.add(directional_light, pose=directional_light_pose)

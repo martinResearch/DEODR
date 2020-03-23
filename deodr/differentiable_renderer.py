@@ -406,8 +406,8 @@ class Scene3D:
 
     def __init__(self, sigma=1):
         self.mesh = None
-        self.ligth_directional = None
-        self.ambient_light = None
+        self.light_directional = None
+        self.light_ambient = None
         self.sigma = sigma
 
     def clear_gradients(self):
@@ -418,9 +418,9 @@ class Scene3D:
         self.colors_b = np.zeros(self.colors.shape)
         self.texture_b = np.zeros((0, 0))
 
-    def set_light(self, ligth_directional, ambient_light):
-        self.ligth_directional = np.array(ligth_directional)
-        self.ambient_light = ambient_light
+    def set_light(self, light_directional, light_ambient):
+        self.light_directional = np.array(light_directional)
+        self.light_ambient = light_ambient
 
     def set_mesh(self, mesh):
         self.mesh = mesh
@@ -431,11 +431,11 @@ class Scene3D:
 
     def compute_vertices_luminosity(self):
         directional = np.maximum(
-            0, -np.sum(self.mesh.vertex_normals * self.ligth_directional, axis=1)
+            0, -np.sum(self.mesh.vertex_normals * self.light_directional, axis=1)
         )
         if self.store_backward_current is not None:
             self.store_backward_current["compute_vertices_luminosity"] = directional
-        return directional + self.ambient_light
+        return directional + self.light_ambient
 
     def _compute_vertices_colors_with_illumination(self):
 
@@ -453,7 +453,7 @@ class Scene3D:
         ]
         vertices_luminosity_b = np.sum(self.mesh.vertices_colors * colors_b, axis=1)
         self.mesh.vertices_colors_b = colors_b * vertices_luminosity[:, None]
-        self.ambient_light_b = np.sum(vertices_luminosity_b)
+        self.light_ambient_b = np.sum(vertices_luminosity_b)
         directional_b = vertices_luminosity_b
         self.compute_vertices_luminosity_backward(directional_b)
 
@@ -464,7 +464,7 @@ class Scene3D:
             axis=0,
         )
         self.vertex_normals_b = (
-            -((directional_b * (directional > 0))[:, None]) * self.ligth_directional
+            -((directional_b * (directional > 0))[:, None]) * self.light_directional
         )
 
     def _render_2d(self, ij, colors):

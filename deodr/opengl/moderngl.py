@@ -72,8 +72,8 @@ class OffscreenRenderer:
         intrinsic
 
         #
-        shader_program["ligth_directional"].value = tuple(deodr_scene.ligth_directional)
-        shader_program["ligth_ambient"].value = deodr_scene.ambient_light
+        shader_program["light_directional"].value = tuple(deodr_scene.light_directional)
+        shader_program["ligth_ambient"].value = deodr_scene.light_ambient
         shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:

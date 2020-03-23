@@ -272,11 +272,11 @@ class MeshRGBFitterWithPose:
         self.speed_quaternion = np.zeros(4)
 
         self.hand_color = copy.copy(self.default_color)
-        self.ligth_directional = copy.copy(self.default_light["directional"])
-        self.ambient_light = copy.copy(self.default_light["ambient"])
+        self.light_directional = copy.copy(self.default_light["directional"])
+        self.light_ambient = copy.copy(self.default_light["ambient"])
 
-        self.speed_ligth_directional = np.zeros(self.ligth_directional.shape)
-        self.speed_ambient_light = np.zeros(self.ambient_light.shape)
+        self.speed_light_directional = np.zeros(self.light_directional.shape)
+        self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
     def set_image(self, hand_image, focal=None, distortion=None):
@@ -309,16 +309,16 @@ class MeshRGBFitterWithPose:
             quaternion_with_grad = tf.constant(self.transform_quaternion)
             translation_with_grad = tf.constant(self.transform_translation)
 
-            ligth_directional_with_grad = tf.constant(self.ligth_directional)
-            ambient_light_with_grad = tf.constant(self.ambient_light)
+            light_directional_with_grad = tf.constant(self.light_directional)
+            light_ambient_with_grad = tf.constant(self.light_ambient)
             hand_color_with_grad = tf.constant(self.hand_color)
 
             tape.watch(vertices_with_grad)
             tape.watch(quaternion_with_grad)
             tape.watch(translation_with_grad)
 
-            tape.watch(ligth_directional_with_grad)
-            tape.watch(ambient_light_with_grad)
+            tape.watch(light_directional_with_grad)
+            tape.watch(light_ambient_with_grad)
             tape.watch(hand_color_with_grad)
 
             vertices_with_grad_centered = (
@@ -334,8 +334,8 @@ class MeshRGBFitterWithPose:
             self.mesh.set_vertices(vertices_with_grad_transformed)
 
             self.scene.set_light(
-                ligth_directional=ligth_directional_with_grad,
-                ambient_light=ambient_light_with_grad,
+                light_directional=light_directional_with_grad,
+                light_ambient=light_ambient_with_grad,
             )
             self.mesh.set_vertices_colors(
                 tf.tile(hand_color_with_grad[None, :], [self.mesh.nb_vertices, 1])
@@ -352,16 +352,16 @@ class MeshRGBFitterWithPose:
                 vertices_with_grad,
                 quaternion_with_grad,
                 translation_with_grad,
-                ligth_directional_with_grad,
-                ambient_light_with_grad,
+                light_directional_with_grad,
+                light_ambient_with_grad,
                 hand_color_with_grad,
             ]
             (
                 vertices_grad,
                 quaternion_grad,
                 translation_grad,
-                ligth_directional_grad,
-                ambient_light_grad,
+                light_directional_grad,
+                light_ambient_grad,
                 hand_color_grad,
             ) = tape.gradient(loss, trainable_variables)
 
@@ -411,17 +411,17 @@ class MeshRGBFitterWithPose:
         )
         self.transform_translation = self.transform_translation + self.speed_translation
         # update directional light
-        step = -ligth_directional_grad * 0.0001
-        self.speed_ligth_directional = (1 - self.damping) * (
-            self.speed_ligth_directional * inertia + (1 - inertia) * step
+        step = -light_directional_grad * 0.0001
+        self.speed_light_directional = (1 - self.damping) * (
+            self.speed_light_directional * inertia + (1 - inertia) * step
         )
-        self.ligth_directional = self.ligth_directional + self.speed_ligth_directional
+        self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
-        step = -ambient_light_grad * 0.0001
-        self.speed_ambient_light = (1 - self.damping) * (
-            self.speed_ambient_light * inertia + (1 - inertia) * step
+        step = -light_ambient_grad * 0.0001
+        self.speed_light_ambient = (1 - self.damping) * (
+            self.speed_light_ambient * inertia + (1 - inertia) * step
         )
-        self.ambient_light = self.ambient_light + self.speed_ambient_light
+        self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update hand color
         step = -hand_color_grad * 0.00001
         self.speed_hand_color = (1 - self.damping) * (
