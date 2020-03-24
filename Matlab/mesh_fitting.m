@@ -43,12 +43,12 @@ for iter = 1:options.nb_max_iter
     MiterAD = Miter;
     MiterAD.V = AutoDiff(Miter.V);
     
-    scene3 = mesh2scene(MiterAD,CameraMatrix,lights.ligth_directional,lights.ambient_light,height,width,false);
+    scene3 = mesh2scene(MiterAD,CameraMatrix,lights.light_directional,lights.light_ambient,height,width,false);
     
     J_col = getderivs(scene3.colors);
     J_ij = getderivs(scene3.ij);
     
-    scene2 = mesh2scene(Miter,CameraMatrix,lights.ligth_directional,lights.ambient_light,height,width);
+    scene2 = mesh2scene(Miter,CameraMatrix,lights.light_directional,lights.light_ambient,height,width);
     scene2.background = repmat(background_color(:),1,scene2.height,scene2.width);
     
     if options.display

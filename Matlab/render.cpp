@@ -62,6 +62,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
     
     
     scene.clockwise=true;
+	scene.backface_culling=true;
     
     source=mxGetField(matlab_scene,0,"faces_uv");
     if (!source)
