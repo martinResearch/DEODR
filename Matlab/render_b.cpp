@@ -318,6 +318,7 @@ void mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
 	  antialiaseError=false;
 	  
 	scene.clockwise=true;
+	scene.backface_culling=true;
     
 	
 	if (antialiaseError)

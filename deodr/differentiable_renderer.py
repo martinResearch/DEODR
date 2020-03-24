@@ -212,6 +212,7 @@ class Scene2DBase:
         texture,
         background,
         clockwise=False,
+        backface_culling = True
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -229,6 +230,7 @@ class Scene2DBase:
         self.texture = texture
         self.background = background
         self.clockwise = clockwise
+        self.backface_culling = backface_culling
 
 
 class Scene2D(Scene2DBase):
@@ -253,6 +255,7 @@ class Scene2D(Scene2DBase):
         texture,
         background,
         clockwise=False,
+        backface_culling=False
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -270,6 +273,7 @@ class Scene2D(Scene2DBase):
         self.texture = texture
         self.background = background
         self.clockwise = clockwise
+        self.backface_culling = backface_culling
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -489,7 +493,7 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, camera, return_zbuffer=False):
+    def render(self, camera, return_zbuffer=False,backface_culling=True):
         self.store_backward_current = {}
         self.mesh.compute_vertex_normals()
 
@@ -530,6 +534,7 @@ class Scene3D:
         self.width = camera.resolution[0]
 
         self.clockwise = self.mesh.clockwise
+        self.backface_culling=backface_culling
         image, z_buffer = self._render_2d(ij, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render"] = (
@@ -552,7 +557,7 @@ class Scene3D:
         )
         self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, resolution, depth_scale=1):
+    def render_depth(self, camera, resolution, depth_scale=1,backface_culling=True):
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -580,6 +585,7 @@ class Scene3D:
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
+        self.backface_culling=backface_culling
         image, _ = self._render_2d(ij, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render_depth"] = (camera, depth_scale)

@@ -11,6 +11,7 @@ class TriMeshAdjacencies:
         self.faces = faces
         self.nb_faces = faces.shape[0]
         self.nb_vertices = np.max(faces.flat) + 1
+	
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
@@ -77,8 +78,8 @@ class TriMeshAdjacencies:
     def id_edge(self, idv):
 
         return (
-            np.maximum(idv[:, 0], idv[:, 1])
-            + np.minimum(idv[:, 0], idv[:, 1]) * self.nb_vertices,
+            np.maximum(idv[:, 0], idv[:, 1]).astype(np.uint64)
+            + np.minimum(idv[:, 0], idv[:, 1]).astype(np.uint64) * self.nb_vertices,
             idv[:, 0] < idv[:, 1],
         )
 
@@ -231,7 +232,7 @@ class ColoredTriMesh(TriMesh):
         self.uv = uv
 
         self.texture = texture
-        self.colors = colors
+        self.vertices_colors = colors
         self.textured = not (self.texture is None)
         self.nb_colors = nb_colors
         if nb_colors is None:

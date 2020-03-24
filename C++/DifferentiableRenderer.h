@@ -63,6 +63,7 @@ struct Scene {
 	int nb_triangles;
 	int nb_vertices;
 	bool clockwise;	
+	bool backface_culling;	
 	int nb_uv;
 	int height;
 	int width;
@@ -2229,7 +2230,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
 
 	for (int k = 0; k < scene.nb_triangles; k++)
-		if (signedAreaV[k] > 0)
+		if ((signedAreaV[k] > 0)||(!scene.backface_culling))
 		{
 			unsigned int * face = &scene.faces[k * 3];
 			double ij[3][2];

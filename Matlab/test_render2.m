@@ -22,11 +22,11 @@ T=-R'*camera_center;
 CameraMatrix=[focal,0,width/2;0,focal,height/2;0,0,1]*[R,T];
 
 %setup light parameters
-ligth_directional=[-0.1,0.5,0.5];
-ambient_light=0.3;
+light_directional=[-0.1,0.5,0.5];
+light_ambient=0.3;
 
 % conversion from 3D mesh to triangle 2.5D soup
-scene=mesh2scene(M,CameraMatrix,ligth_directional,ambient_light,height,width);
+scene=mesh2scene(M,CameraMatrix,light_directional,light_ambient,height,width);
 
 % adding a background image
 scene.background=repmat(background_color(:),1,scene.height,scene.width);
