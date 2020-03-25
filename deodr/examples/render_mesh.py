@@ -29,8 +29,8 @@ def default_scene(obj_file, width=640, height=480, use_distortion=True):
 
     mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
 
-    # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
-    rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_dcm()
+    # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()
+    rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()
 
     camera = differentiable_renderer.default_camera(
         width, height, 80, mesh.vertices, rot

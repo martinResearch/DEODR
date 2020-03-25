@@ -3,14 +3,14 @@
 
 import copy
 
-from deodr import LaplacianRigidEnergy
-from deodr.tensorflow import (
+from .. import LaplacianRigidEnergy
+from . import (
     CameraTensorflow,
     LaplacianRigidEnergyTensorflow,
     Scene3DTensorflow,
 )
-from deodr.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
-from deodr.tensorflow import TriMeshTensorflow as TriMesh
+from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
+from .triangulated_mesh_tensorflow import TriMeshTensorflow as TriMesh
 
 import numpy as np
 

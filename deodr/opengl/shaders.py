@@ -19,7 +19,7 @@ out vec3 v_norm;
 out vec3 v_text;
 
 void main() {
- +       v_vert = in_vert;
+        v_vert = in_vert;
         v_norm = in_norm;
         v_text = in_text;
         vec4 p_camera = extrinsic* vec4(v_vert, 1.0);
@@ -32,7 +32,7 @@ void main() {
         float tangential_distortion_y = p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y;
         float distorted_x = x * radial_distortion + tangential_distortion_x;
         float distorted_y = y * radial_distortion + tangential_distortion_y;
-        p_camera.xy = vec2(distorted_-9+-**/x, distorted_y)*p_camera.z;
+        p_camera.xy = vec2(distorted_x, distorted_y)*p_camera.z;
         gl_Position=intrinsic*p_camera;
 }
 """

@@ -34,9 +34,9 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         )
 
     def compute_face_normals(self, vertices):
-        tris = vertices[self.faces_torch, :]
-        u = tris[::, 1] - tris[::, 0]
-        v = tris[::, 2] - tris[::, 0]
+        triangles = vertices[self.faces_torch, :]
+        u = triangles[::, 1] - triangles[::, 0]
+        v = triangles[::, 2] - triangles[::, 0]
         if self.clockwise:
             n = -torch.cross(u, v)
         else:

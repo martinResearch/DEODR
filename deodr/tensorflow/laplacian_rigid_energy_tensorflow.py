@@ -15,7 +15,7 @@ class LaplacianRigidEnergyTensorflow(LaplacianRigidEnergy):
 
     def eval(self, vertices, return_grad=True, return_hessian=True):
         assert isinstance(vertices, tf.Tensor)
-        diff = tf.reshape(vertices - tf.constant(self.Vref), [-1])
+        diff = tf.reshape(vertices - tf.constant(self.vertices_ref), [-1])
         grad_vertices = tf.reshape(
             self.cregu * tf.sparse.sparse_dense_matmul(self.cT_tf, diff[:, None]),
             vertices.shape,

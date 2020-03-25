@@ -29,14 +29,14 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
     ):
         assert isinstance(vertices, torch.Tensor)
         if vertices.requires_grad:
-            diff = (vertices - self.Vref).flatten()
+            diff = (vertices - self.vertices_ref).flatten()
             grad_vertices = self.cregu * (
                 self.cT_torch.matmul(diff[:, None])
             ).reshape_as(vertices)
             energy = 0.5 * diff.dot(grad_vertices.flatten())
             return energy
         else:
-            diff = (vertices - torch.tensor(self.Vref)).flatten()
+            diff = (vertices - torch.tensor(self.vertices_ref)).flatten()
             # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
             # 40x slower than scipy !
             grad_vertices = torch.tensor(

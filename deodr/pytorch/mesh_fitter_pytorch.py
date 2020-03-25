@@ -3,10 +3,10 @@
 
 import copy
 
-from deodr import LaplacianRigidEnergy
-from deodr.pytorch import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
-from deodr.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
-from deodr.pytorch import TriMeshPytorch as TriMesh
+from .. import LaplacianRigidEnergy
+from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
+from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
+from .triangulated_mesh_pytorch import TriMeshPytorch as TriMesh
 
 import numpy as np
 
@@ -436,9 +436,7 @@ class MeshRGBFitterWithPose:
 
     def step(self):
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
-        vertices_with_grad = torch.tensor(
-            self.vertices, dtype=torch.float64, requires_grad=True
-        )
+        vertices_with_grad =self.vertices.clone().detach().requires_grad_(True) 
         vertices_with_grad_centered = (
             vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
         )
