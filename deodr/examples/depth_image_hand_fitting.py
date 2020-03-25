@@ -1,14 +1,20 @@
-from deodr import read_obj
-import deodr
-from imageio import imsave
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import time
-import glob
+"""Example of fitting a hand mesh to a depth image."""
+
 import datetime
-import os
+import glob
 import json
+import os
+import time
+
+import cv2
+
+import deodr
+
+from imageio import imsave
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 
 def run(
@@ -37,7 +43,7 @@ def run(
     depth_image = depth_image / max_depth
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
-    faces, vertices = read_obj(obj_file)
+    faces, vertices = deodr.read_obj(obj_file)
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)

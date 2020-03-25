@@ -84,7 +84,8 @@ def renderScene(scene,
 	scene_c.width = <int> scene.width	
 	scene_c.nb_triangles = nb_triangles
 	scene_c.nb_vertices = nb_vertices
-	scene_c.clockwise= scene.clockwise
+	scene_c.backface_culling = scene.backface_culling
+	scene_c.clockwise = scene.clockwise
 	scene_c.nb_uv = nb_vertices_uv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data
@@ -250,7 +251,8 @@ def renderSceneB(scene,
 	scene_c.width = <int> scene.width
 	scene_c.nb_triangles = nb_triangles
 	scene_c.nb_vertices = nb_vertices
-	scene_c.clockwise = scene.clockwise
+	scene_c.backface_culling = scene.backface_culling
+	scene_c.clockwise = scene.clockwise	
 	scene_c.nb_uv = nb_vertices_uv
 	scene_c.faces = <unsigned int*> faces_c.data
 	scene_c.faces_uv = <unsigned int*> faces_uv_c.data	
@@ -287,7 +289,7 @@ def renderSceneB(scene,
 	if image_ptr  ==  NULL:
 		raise BaseException('image_ptr is NULL')		
 	if z_buffer_ptr  ==  NULL:
-		raise BaseException('ZBuffer_ptr is NULL')
+		raise BaseException('z_buffer_ptr is NULL')
 	
 	if antialiase_error:
 		assert err_buffer.shape[0]  ==  heigth 

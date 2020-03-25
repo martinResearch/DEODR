@@ -1,15 +1,20 @@
-import scipy
+"""Implementation of an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
 import copy
+
+import scipy
 import scipy.sparse
 
 
 class LaplacianRigidEnergy:
+    """Class that implements an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
     def __init__(self, mesh, vertices, cregu):
         self.cT = scipy.sparse.kron(
             mesh.adjacencies.Laplacian.T * mesh.adjacencies.Laplacian,
             scipy.sparse.eye(3),
         ).tocsr()
-        self.Vref = copy.copy(vertices)
+        self.vertices_ref = copy.copy(vertices)
         self.mesh = mesh
         self.cregu = cregu
         self.approx_hessian = self.cregu * self.cT
@@ -20,14 +25,16 @@ class LaplacianRigidEnergy:
         )
         if n_components > 1:
             raise (
-                BaseException("you have more than one connected component in your mesh")
+                BaseException(
+                    "You have more than one connected component in your mesh."
+                )
             )
 
     def eval(
         self, vertices, return_grad=True, return_hessian=True, refresh_rotations=True
     ):
 
-        diff = (vertices - self.Vref).flatten()
+        diff = (vertices - self.vertices_ref).flatten()
         grad_vertices = self.cregu * (self.cT * diff).reshape((vertices.shape[0], 3))
         energy = 0.5 * diff.dot(grad_vertices.flatten())
         if not (return_grad):

@@ -1,16 +1,26 @@
-from deodr.triangulated_mesh import ColoredTriMesh
-from deodr import differentiable_renderer
-import deodr
-import numpy as np
-import matplotlib.pyplot as plt
-import trimesh
-import cv2
-import time
-from scipy.spatial.transform import Rotation
+"""Example of interactive 3D mesh visualization using deodr and opencv."""
+
 import os
+import time
+
+import cv2
+
+import deodr
+from deodr import differentiable_renderer
+from deodr.triangulated_mesh import ColoredTriMesh
+
+import matplotlib.pyplot as plt
+
+import numpy as np
+
+from scipy.spatial.transform import Rotation
+
+import trimesh
 
 
 class Interactor:
+    """Class that implements various mouse interaction with the 3D scene."""
+
     def __init__(
         self,
         camera,
@@ -90,7 +100,7 @@ class Interactor:
                 self.x_last = x
                 self.y_last = y
             else:
-                raise (BaseException(f"unkown camera mode {self.mode}"))
+                raise (BaseException(f"unknown camera mode {self.mode}"))
 
         if self.right_is_down:
             if self.mode == "camera_centered":
@@ -106,7 +116,7 @@ class Interactor:
                 self.x_last = x
                 self.y_last = y
             else:
-                raise (BaseException(f"unkown camera mode {self.mode}"))
+                raise (BaseException(f"unknown camera mode {self.mode}"))
 
         if self.middle_is_down:
             object_depth = (
@@ -144,7 +154,7 @@ def mesh_viewer(
     else:
         raise (
             BaseException(
-                f"unkown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh,"
+                f"unknown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh,"
                 " can be string or trimesh.base.Trimesh"
             )
         )

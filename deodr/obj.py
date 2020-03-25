@@ -1,7 +1,9 @@
 #! /usr/bin/env python
+"""Function to oad wavefront OBJ files
 
-# OBJ file format.  See http://www.fileformat.info/format/wavefrontobj/
-# At the moment only v and f keywords are supported
+See http://www.fileformat.info/format/wavefrontobj/.
+At the moment only v and f keywords are supported
+"""
 
 import numpy as np
 

@@ -1,13 +1,19 @@
-import numpy as np
-from . import differentiable_renderer_cython
+"""Module to do differentiable rendering of 2D and 3D scenes."""
+
 import copy
+
+import numpy as np
+
+from . import differentiable_renderer_cython
 
 
 class Camera:
+    """Camera class with the same distortion parameterization as opencv."""
+
     def __init__(
         self, extrinsic, intrinsic, resolution, distortion=None, checks=True, tol=1e-6
     ):
-        """camera with same distortion paramterization as opencv"""
+
         if checks:
             assert extrinsic.shape == (3, 4)
             assert intrinsic.shape == (3, 3)
@@ -52,29 +58,29 @@ class Camera:
     def project_points(
         self, points_3d, get_jacobians=False, store_backward=None, return_depths=True
     ):  # similar to cv2.project_points
-        pcam = self.world_to_camera(points_3d)
-        depths = pcam[:, 2]
-        projected = pcam[:, :2] / depths[:, None]
+        p_camera = self.world_to_camera(points_3d)
+        depths = p_camera[:, 2]
+        projected = p_camera[:, :2] / depths[:, None]
 
         if self.distortion is None:
             projected_image_coordinates = self.left_mul_intrinsic(projected)
             if store_backward is not None:
-                store_backward["project_points"] = (pcam, depths, projected)
+                store_backward["project_points"] = (p_camera, depths, projected)
         else:
             k1, k2, p1, p2, k3, = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             r2 = x ** 2 + y ** 2
             radial_distortion = 1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3
-            tangential_distortionx = 2 * p1 * x * y + p2 * (r2 + 2 * x ** 2)
-            tangential_distortiony = p1 * (r2 + 2 * y ** 2) + 2 * p2 * x * y
-            distortedx = x * radial_distortion + tangential_distortionx
-            distortedy = y * radial_distortion + tangential_distortiony
-            distorted = self.column_stack((distortedx, distortedy))
+            tangential_distortion_x = 2 * p1 * x * y + p2 * (r2 + 2 * x ** 2)
+            tangential_distortion_y = p1 * (r2 + 2 * y ** 2) + 2 * p2 * x * y
+            distorted_x = x * radial_distortion + tangential_distortion_x
+            distorted_y = y * radial_distortion + tangential_distortion_y
+            distorted = self.column_stack((distorted_x, distorted_y))
             projected_image_coordinates = self.left_mul_intrinsic(distorted)
             if store_backward is not None:
                 store_backward["project_points"] = (
-                    pcam,
+                    p_camera,
                     depths,
                     projected,
                     r2,
@@ -91,13 +97,13 @@ class Camera:
     ):
 
         if self.distortion is None:
-            pcam, depths, projected = store_backward["project_points"]
+            p_camera, depths, projected = store_backward["project_points"]
             projected_b = projected_image_coordinates_b.dot(
                 self.intrinsic[:2, :2].T
             )  # not sure about transpose
 
         else:
-            pcam, depths, projected, r2, radial_distortion = store_backward[
+            p_camera, depths, projected, r2, radial_distortion = store_backward[
                 "project_points"
             ]
             k1, k2, p1, p2, k3, = self.distortion
@@ -106,32 +112,32 @@ class Camera:
             distorted_b = projected_image_coordinates_b.dot(
                 self.intrinsic[:2, :2].T
             )  # not sure about transpose
-            distortedx_b = distorted_b[:, 0]
-            distortedy_b = distorted_b[:, 1]
-            x_b = distortedx_b * radial_distortion
-            y_b = distortedy_b * radial_distortion
-            radial_distortion_b = distortedx_b * x + distortedy_b * y
-            tangential_distortionx_b = distortedx_b
-            tangential_distortiony_b = distortedy_b
-            x_b += tangential_distortionx_b * (2 * p1 * y + p2 * 4 * x)
-            y_b += tangential_distortionx_b * 2 * p1 * x
-            x_b += tangential_distortiony_b * 2 * p2 * y
-            y_b += tangential_distortiony_b * (2 * p2 * x + p1 * 4 * y)
-            r2_b = tangential_distortionx_b * p2 + tangential_distortiony_b * p1
+            distorted_x_b = distorted_b[:, 0]
+            distorted_y_b = distorted_b[:, 1]
+            x_b = distorted_x_b * radial_distortion
+            y_b = distorted_y_b * radial_distortion
+            radial_distortion_b = distorted_x_b * x + distorted_y_b * y
+            tangential_distortion_x_b = distorted_x_b
+            tangential_distortion_y_b = distorted_y_b
+            x_b += tangential_distortion_x_b * (2 * p1 * y + p2 * 4 * x)
+            y_b += tangential_distortion_x_b * 2 * p1 * x
+            x_b += tangential_distortion_y_b * 2 * p2 * y
+            y_b += tangential_distortion_y_b * (2 * p2 * x + p1 * 4 * y)
+            r2_b = tangential_distortion_x_b * p2 + tangential_distortion_y_b * p1
             r2_b += radial_distortion_b * (k1 + 2 * k2 * r2 + 3 * k3 * r2 ** 2)
             x_b += r2_b * 2 * x
             y_b += r2_b * 2 * y
             projected_b = np.column_stack((x_b, y_b))
 
-        pcam_b = np.column_stack(
+        p_camera_b = np.column_stack(
             (
                 projected_b / depths[:, None],
-                -np.sum(projected_b * pcam[:, :2], axis=1) / (depths ** 2),
+                -np.sum(projected_b * p_camera[:, :2], axis=1) / (depths ** 2),
             )
         )
         if depths_b is not None:
-            pcam_b[:, 2] += depths_b
-        points_3d_b = pcam_b.dot(self.extrinsic[:3, :3].T)
+            p_camera_b[:, 2] += depths_b
+        points_3d_b = p_camera_b.dot(self.extrinsic[:3, :3].T)
 
         return points_3d_b
 
@@ -140,10 +146,13 @@ class Camera:
 
 
 class PerspectiveCamera(Camera):
+    """Camera with perspective projection."""
+
     def __init__(
         self, width, height, fov, camera_center, rot=np.eye(3), distortion=None
     ):
-        """"
+        """Perspective camera constructor.
+
         - width: width of the camera in pixels
         - height: eight of the camera in pixels
         - fov: horizontal field of view in degrees
@@ -152,7 +161,6 @@ class PerspectiveCamera(Camera):
             default to identity
         - distortion: distortion parameters
         """
-
         focal = 0.5 * width / np.tan(0.5 * fov * np.pi / 180)
         focal_x = focal
         pixel_aspect_ratio = 1
@@ -160,7 +168,7 @@ class PerspectiveCamera(Camera):
         trans = -rot.T.dot(camera_center)
         cx = width / 2
         cy = height / 2
-        intrinsic = np.array([[focal_x, 0,cx], [0, focal_y, cy], [0, 0, 1]])
+        intrinsic = np.array([[focal_x, 0, cx], [0, focal_y, cy], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         super().__init__(
             extrinsic=extrinsic,
@@ -171,8 +179,9 @@ class PerspectiveCamera(Camera):
 
 
 def default_camera(width, height, fov, vertices, rot=None, distortion=None):
-    """computes the position of the camera center so that the entire mesh is visible
-     and covers most or the image"""
+    """Compute the position of the camera center so that the entire mesh is visible
+    and covers most or the image.
+    """
     cam_vertices = vertices.dot(rot.T)
     box_min = cam_vertices.min(axis=0)
     box_max = cam_vertices.max(axis=0)
@@ -191,8 +200,9 @@ def default_camera(width, height, fov, vertices, rot=None, distortion=None):
 
 
 class Scene2DBase:
-    """this class represents the structure representing the 2.5
-    scene expect by the C++ code"""
+    """Class representing the structure representing the 2.5
+    scene expect by the C++ code
+    """
 
     def __init__(
         self,
@@ -212,7 +222,7 @@ class Scene2DBase:
         texture,
         background,
         clockwise=False,
-        backface_culling = True
+        backface_culling=True,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -234,8 +244,9 @@ class Scene2DBase:
 
 
 class Scene2D(Scene2DBase):
-    """this class represents a 2.5D scene. It contains a set of 2D vertices with
-    associated depths and a list of faces that are triplets of vertices indexes"""
+    """Class representing a 2.5D scene. It contains a set of 2D vertices with
+    associated depths and a list of faces that are triplets of vertices indexes.
+    """
 
     def __init__(
         self,
@@ -255,7 +266,7 @@ class Scene2D(Scene2DBase):
         texture,
         background,
         clockwise=False,
-        backface_culling=False
+        backface_culling=False,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -404,9 +415,10 @@ class Scene2D(Scene2DBase):
 
 
 class Scene3D:
-    """this class represents a 3D scene containing a single mesh, a directional light
+    """Class representing a 3D scene containing a single mesh, a directional light
     and an ambient light. The parameter sigma control the width of
-    antialiasing edge overdraw"""
+    antialiasing edge overdraw.
+    """
 
     def __init__(self, sigma=1):
         self.mesh = None
@@ -493,7 +505,7 @@ class Scene3D:
         )
         return self.ij_b, self.colors_b
 
-    def render(self, camera, return_zbuffer=False,backface_culling=True):
+    def render(self, camera, return_z_buffer=False, backface_culling=True):
         self.store_backward_current = {}
         self.mesh.compute_vertex_normals()
 
@@ -534,7 +546,7 @@ class Scene3D:
         self.width = camera.resolution[0]
 
         self.clockwise = self.mesh.clockwise
-        self.backface_culling=backface_culling
+        self.backface_culling = backface_culling
         image, z_buffer = self._render_2d(ij, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render"] = (
@@ -542,7 +554,7 @@ class Scene3D:
                 self.edgeflags,
             )  # store this field as it could be overwritten when
             # rendering several views
-        if return_zbuffer:
+        if return_z_buffer:
             return image, z_buffer
         else:
             return image
@@ -557,7 +569,7 @@ class Scene3D:
         )
         self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, resolution, depth_scale=1,backface_culling=True):
+    def render_depth(self, camera, resolution, depth_scale=1, backface_culling=True):
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -585,7 +597,7 @@ class Scene3D:
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
-        self.backface_culling=backface_culling
+        self.backface_culling = backface_culling
         image, _ = self._render_2d(ij, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render_depth"] = (camera, depth_scale)
@@ -599,17 +611,18 @@ class Scene3D:
             ij_b, depths_b=depths_b, store_backward=self.store_backward_current
         )
 
-    def render_deffered(
+    def render_deferred(
         self,
         camera,
         depth_scale=1,
         color=True,
         depth=True,
-        faceid=True,
+        face_id=True,
         normal=True,
         luminosity=True,
         uv=True,
         xyz=True,
+        backface_culling=True,
     ):
 
         points_2d, depths = camera.project_points(self.mesh.vertices)
@@ -630,7 +643,7 @@ class Scene3D:
         soup_faces_uv = soup_faces
         soup_ij = points_2d[self.mesh.faces].reshape(soup_nb_vertices, 2)
         soup_xyz = self.mesh.vertices[self.mesh.faces].reshape(soup_nb_vertices, 3)
-        soup_faceids = np.tile(
+        soup_face_ids = np.tile(
             np.arange(0, self.mesh.nb_faces)[:, None], (1, 3)
         ).reshape(soup_nb_vertices, 1)
         soup_depths = depths[self.mesh.faces].reshape(soup_nb_vertices, 1)
@@ -643,8 +656,8 @@ class Scene3D:
         channels = {}
         if depth:
             channels["depth"] = soup_depths * depth_scale
-        if faceid:
-            channels["faceid"] = soup_faceids
+        if face_id:
+            channels["face_id"] = soup_face_ids
         if normal:
             channels["normal"] = soup_normals
         if luminosity:
@@ -654,8 +667,10 @@ class Scene3D:
 
         if self.mesh.uv is None:
             if color:
-                soup_vcolors = self.mesh.vertices_color[self.mesh.faces]
-                channels["color"] = soup_vcolors
+                soup_vertices_colors = self.mesh.vertices_colors[
+                    self.mesh.faces
+                ].reshape(soup_nb_vertices, 3)
+                channels["color"] = soup_vertices_colors
         else:
             soup_uv = self.mesh.uv[self.mesh.faces_uv].reshape(soup_nb_vertices, 2)
             channels["uv"] = soup_uv
@@ -664,10 +679,10 @@ class Scene3D:
         ranges = {}
         for k, v in channels.items():
             size = v.shape[1]
-            ranges[k] = (offset , offset + size)
+            ranges[k] = (offset, offset + size)
             offset += size
 
-        colors = np.column_stack(channels.values())
+        colors = np.column_stack(list(channels.values()))
 
         nb_colors = colors.shape[1]
         uv = np.zeros((soup_nb_vertices, 2))
@@ -682,8 +697,8 @@ class Scene3D:
         texture = np.zeros((0, 0))
 
         background = np.zeros((height, width, nb_colors))
-        if 'depth' in channels:
-            background[:, :, ranges['depth'][0]:ranges['depth'][1]] = depths.max()
+        if "depth" in channels:
+            background[:, :, ranges["depth"][0] : ranges["depth"][1]] = depths.max()
 
         scene_2d = Scene2DBase(
             faces=soup_faces,
@@ -701,6 +716,7 @@ class Scene3D:
             nb_colors=nb_colors,
             texture=texture,
             background=background,
+            backface_culling=backface_culling,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))
@@ -708,6 +724,6 @@ class Scene3D:
 
         output = {}
         for k, v in channels.items():
-            output[k]=buffers[:, :, ranges[k][0]:ranges[k][1]]           
+            output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
 
         return output

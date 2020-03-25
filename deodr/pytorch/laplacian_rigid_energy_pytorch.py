@@ -1,5 +1,9 @@
+"""Pytorch implementation of an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
 import numpy as np
+
 import torch
+
 from ..laplacian_rigid_energy import LaplacianRigidEnergy
 
 
@@ -14,6 +18,8 @@ def scipy_sparse_to_torch(sparse_matrix):
 
 
 class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
+    """Pytorch class that implements an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
     def __init__(self, mesh, vertices, cregu):
         super().__init__(mesh, vertices, cregu)
         self.cT_torch = scipy_sparse_to_torch(self.cT)
@@ -23,14 +29,14 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
     ):
         assert isinstance(vertices, torch.Tensor)
         if vertices.requires_grad:
-            diff = (vertices - self.Vref).flatten()
+            diff = (vertices - self.vertices_ref).flatten()
             grad_vertices = self.cregu * (
                 self.cT_torch.matmul(diff[:, None])
             ).reshape_as(vertices)
             energy = 0.5 * diff.dot(grad_vertices.flatten())
             return energy
         else:
-            diff = (vertices - torch.tensor(self.Vref)).flatten()
+            diff = (vertices - torch.tensor(self.vertices_ref)).flatten()
             # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
             # 40x slower than scipy !
             grad_vertices = torch.tensor(

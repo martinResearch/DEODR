@@ -1,6 +1,14 @@
+"""Module to render deodr scenes using OpenGL through moderngl.
+
+This is used to have a reference implementation using OpenGL shaders that produce identical images to deodr
+"""
+
 import moderngl
-from pyrr import Matrix44
+
 import numpy as np
+
+from pyrr import Matrix44
+
 from . import shaders as opengl_shaders
 
 
@@ -34,6 +42,8 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
 
 
 class OffscreenRenderer:
+    """Class to perform offscreen rendering of deodr scenes using moderngl."""
+
     def __init__(self):
         self.ctx = moderngl.create_standalone_context()
 
@@ -73,7 +83,7 @@ class OffscreenRenderer:
 
         #
         shader_program["light_directional"].value = tuple(deodr_scene.light_directional)
-        shader_program["ligth_ambient"].value = deodr_scene.light_ambient
+        shader_program["light_ambient"].value = deodr_scene.light_ambient
         shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:

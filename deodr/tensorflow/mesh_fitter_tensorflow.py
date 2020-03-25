@@ -1,15 +1,22 @@
-from deodr.tensorflow import (
-    Scene3DTensorflow,
-    LaplacianRigidEnergyTensorflow,
+"""Modules containing Tensorflow classes to fit 3D meshes to images using differentiable rendering."""
+
+
+import copy
+
+from .. import LaplacianRigidEnergy
+from . import (
     CameraTensorflow,
+    LaplacianRigidEnergyTensorflow,
+    Scene3DTensorflow,
 )
-from deodr.tensorflow import TriMeshTensorflow as TriMesh
-from deodr.tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
-from deodr import LaplacianRigidEnergy
+from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
+from .triangulated_mesh_tensorflow import TriMeshTensorflow as TriMesh
+
 import numpy as np
+
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
-import copy
+
 import tensorflow as tf
 
 
@@ -22,6 +29,8 @@ def qrot(q, v):
 
 
 class MeshDepthFitter:
+    """Class to fit a deformable mesh to a depth image using Tensorflow."""
+
     def __init__(
         self,
         vertices,
@@ -207,6 +216,8 @@ class MeshDepthFitter:
 
 
 class MeshRGBFitterWithPose:
+    """Class to fit a deformable mesh to a color image using Tensorflow."""
+
     def __init__(
         self,
         vertices,

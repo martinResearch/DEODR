@@ -1,3 +1,5 @@
+"""Tooling functions for 3D geometry processing with their backward derivatives implementations."""
+
 import numpy as np
 
 

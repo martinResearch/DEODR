@@ -15,6 +15,7 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 		int     nb_triangles
 		int nb_vertices;
 		bool clockwise;
+		bool backface_culling;
 		int nb_uv;
 		int     height
 		int     width

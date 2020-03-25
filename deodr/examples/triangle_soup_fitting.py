@@ -1,12 +1,20 @@
-from deodr import differentiable_renderer_cython
-from deodr.differentiable_renderer import Scene2D
-from imageio import imread
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
+"""Example with fitting a 32 triangles soup to an image."""
+
+
 import copy
 import os
+
+import cv2
+
 import deodr
+from deodr import differentiable_renderer_cython
+from deodr.differentiable_renderer import Scene2D
+
+from imageio import imread
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 
 def create_example_scene(n_tri=30, width=200, height=200):

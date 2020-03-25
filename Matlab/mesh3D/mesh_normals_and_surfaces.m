@@ -24,7 +24,7 @@ NS=0.5*[NSX;NSY;NSZ];
 M.Surfaces=normes(NS,1);
 M.NormalsF=NS./(ones(3,1)*M.Surfaces);
 
-%tmp=M._vertices_Faces*M.NormalsF';
+%tmp=M._vertices_faces*M.NormalsF';
 MeanNormals=( M.NormalsF*M.vertices_faces');  
 M.NormalsV=MeanNormals.*(ones(3,1)*(1./normes(MeanNormals,1)));
 M.NormalsV_B=zeros(size( M.NormalsV));

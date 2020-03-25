@@ -1,21 +1,26 @@
-from scipy import sparse
+"""Implementation of triangulated meshes."""
+
 import numpy as np
-from .tools import normalize, normalize_backward, cross_backward
+
+from scipy import sparse
+
+from .tools import cross_backward, normalize, normalize_backward
 
 
 class TriMeshAdjacencies:
-    """this class stores adjacency matrices and methods that use this adjacencies.
-    Unlike the TriMesh class there are no vertices stored in this class"""
+    """Class that stores adjacency matrices and methods that use this adjacencies.
+    Unlike the TriMesh class there are no vertices stored in this class
+    """
 
     def __init__(self, faces, clockwise=False):
         self.faces = faces
         self.nb_faces = faces.shape[0]
         self.nb_vertices = np.max(faces.flat) + 1
-	
+
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
-        self._vertices_Faces = sparse.coo_matrix(
+        self._vertices_faces = sparse.coo_matrix(
             (v, (i, j)), shape=(self.nb_vertices, self.nb_faces)
         )
         id_faces = np.hstack(
@@ -42,12 +47,12 @@ class TriMeshAdjacencies:
         np.add.at(nb_inc, id_edge, edge_increase)
         nb_dec = np.zeros((self.nb_edges))
         np.add.at(nb_dec, id_edge, ~edge_increase)
-        self.isManifold = (
+        self.is_manifold = (
             np.all(unique_counts <= 2) and np.all(nb_inc <= 1) and np.all(nb_dec <= 1)
         )
-        self.is_closed = self.isManifold and np.all(unique_counts == 2)
+        self.is_closed = self.is_manifold and np.all(unique_counts == 2)
 
-        self.edges_faces_Ones = sparse.coo_matrix(
+        self.edges_faces_ones = sparse.coo_matrix(
             (np.ones((len(id_edge))), (id_edge, id_faces)),
             shape=(self.nb_edges, self.nb_faces),
         )
@@ -62,7 +67,7 @@ class TriMeshAdjacencies:
             (id_edge, (id_faces, v)), shape=(self.nb_faces, 3)
         ).todense()
         self.adjacency_vertices = (
-            (self._vertices_Faces * self._vertices_Faces.T) > 0
+            (self._vertices_faces * self._vertices_faces.T) > 0
         ) - sparse.eye(self.nb_vertices)
         self.degree_v_e = self.adjacency_vertices.dot(
             np.ones((self.nb_vertices))
@@ -71,7 +76,7 @@ class TriMeshAdjacencies:
             sparse.diags([self.degree_v_e], [0], (self.nb_vertices, self.nb_vertices))
             - self.adjacency_vertices
         )
-        self.hasBoundaries = np.any(np.sum(self.edges_faces_Ones, axis=1) == 1)
+        self.hasBoundaries = np.any(np.sum(self.edges_faces_ones, axis=1) == 1)
         assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
@@ -84,9 +89,9 @@ class TriMeshAdjacencies:
         )
 
     def compute_face_normals(self, vertices):
-        tris = vertices[self.faces, :]
-        u = tris[:, 1, :] - tris[:, 0, :]
-        v = tris[:, 2, :] - tris[:, 0, :]
+        triangles = vertices[self.faces, :]
+        u = triangles[:, 1, :] - triangles[:, 0, :]
+        v = triangles[:, 2, :] - triangles[:, 0, :]
         if self.clockwise:
             n = -np.cross(u, v)
         else:
@@ -102,13 +107,13 @@ class TriMeshAdjacencies:
             u_b, v_b = cross_backward(u, v, -n_b)
         else:
             u_b, v_b = cross_backward(u, v, n_b)
-        tris_b = np.stack((-u_b - v_b, u_b, v_b), axis=1)
+        triangles_b = np.stack((-u_b - v_b, u_b, v_b), axis=1)
         vertices_b = np.zeros((self.nb_vertices, 3))
-        np.add.at(vertices_b, self.faces, tris_b)
+        np.add.at(vertices_b, self.faces, triangles_b)
         return vertices_b
 
     def compute_vertex_normals(self, face_normals):
-        n = self._vertices_Faces * face_normals
+        n = self._vertices_faces * face_normals
         normals = normalize(n, axis=1)
         self.store_backward["compute_vertex_normals"] = n
         return normals
@@ -116,53 +121,57 @@ class TriMeshAdjacencies:
     def compute_vertex_normals_backward(self, normals_b):
         n = self.store_backward["compute_vertex_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
-        face_normals_b = self._vertices_Faces.T * n_b
+        face_normals_b = self._vertices_faces.T * n_b
         return face_normals_b
 
     def edge_on_silhouette(self, vertices_2d):
-        """this computes the a boolean for each of edges of each face that is true if
-        and only if the edge is one the silhouette of the mesh given a view point"""
-        tris = vertices_2d[self.faces, :]
-        u = tris[:, 1, :] - tris[:, 0, :]
-        v = tris[:, 2, :] - tris[:, 0, :]
+        """Compute the a boolean for each of edges of each face that is true if
+        and only if the edge is one the silhouette of the mesh given a view point
+        """
+        triangles = vertices_2d[self.faces, :]
+        u = triangles[:, 1, :] - triangles[:, 0, :]
+        v = triangles[:, 2, :] - triangles[:, 0, :]
         if self.clockwise:
             face_visible = np.cross(u, v) > 0
         else:
             face_visible = np.cross(u, v) < 0
-        edge_bool = (self.edges_faces_Ones * face_visible) == 1
+        edge_bool = (self.edges_faces_ones * face_visible) == 1
         return edge_bool[self.Faces_Edges]
 
 
 class TriMesh:
-    def __init__(self, faces, vertices=None, clockwise=False):
+    """Class that implements a triangulated mesh."""
 
+    def __init__(self, faces, vertices=None, clockwise=False):
         self.faces = faces
         self.nb_vertices = np.max(faces) + 1
         self.nb_faces = faces.shape[0]
 
         self.vertices = None
-        self.faceNormals = None
+        self.face_normals = None
         self.vertex_normals = None
         self.clockwise = clockwise
         self.compute_adjacencies()
-        assert self.adjacencies.isManifold
+        assert self.adjacencies.is_manifold
 
         if vertices is not None:
             self.set_vertices(vertices)
-            self.check_orientation()
+            if self.adjacencies.is_closed:
+                self.check_orientation()
 
     def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
 
     def set_vertices(self, vertices):
         self.vertices = vertices
-        self.faceNormals = None
+        self.face_normals = None
         self.vertex_normals = None
 
     def compute_volume(self):
         """Compute the volume enclosed by the triangulated surface. It assumes the
         surfaces is a closed manifold. This is done by summing the volumes of the
-        simplices formed by joining the origin and the vertices of each triangle"""
+        simplices formed by joining the origin and the vertices of each triangle.
+        """
         return (
             (1 if self.clockwise else -1)
             * np.sum(
@@ -180,40 +189,43 @@ class TriMesh:
         )
 
     def check_orientation(self):
-        """check the mesh faces are properly oriented for the normals to point
-         outward"""
+        """Check the mesh faces are properly oriented for the normals to point
+        outward.
+        """
         if self.compute_volume() > 0:
             raise (
                 BaseException(
                     "The volume within the surface is negative. It seems that you faces"
-                    "are not oriented cooreclt accourding to the clockwise flag"
+                    "are not oriented correctly according to the clockwise flag"
                 )
             )
 
     def compute_face_normals(self):
-        self.faceNormals = self.adjacencies.compute_face_normals(self.vertices)
+        self.face_normals = self.adjacencies.compute_face_normals(self.vertices)
 
     def compute_vertex_normals(self):
-        if self.faceNormals is None:
+        if self.face_normals is None:
             self.compute_face_normals()
-        self.vertex_normals = self.adjacencies.compute_vertex_normals(self.faceNormals)
+        self.vertex_normals = self.adjacencies.compute_vertex_normals(self.face_normals)
 
     def compute_vertex_normals_backward(self, vertex_normals_b):
-        self.faceNormals_b = self.adjacencies.compute_vertex_normals_backward(
+        self.face_normals_b = self.adjacencies.compute_vertex_normals_backward(
             vertex_normals_b
         )
         self.vertices_b += self.adjacencies.compute_face_normals_backward(
-            self.faceNormals_b
+            self.face_normals_b
         )
 
     def edge_on_silhouette(self, points_2d):
-        """this computes the a boolean for each of edges that is true if and only if
-        the edge is one the silhouette of the mesh"""
-
+        """Compute the a boolean for each of edges that is true if and only if
+        the edge is one the silhouette of the mesh.
+        """
         return self.adjacencies.edge_on_silhouette(points_2d)
 
 
 class ColoredTriMesh(TriMesh):
+    """Class that implements a colored triangulated mesh."""
+
     def __init__(
         self,
         faces,
@@ -261,7 +273,7 @@ class ColoredTriMesh(TriMesh):
 
     @staticmethod
     def from_trimesh(mesh):  # inspired from pyrender
-        """Gets the vertex colors, texture coordinates, and material properties
+        """Get the vertex colors, texture coordinates, and material properties
         from a :class:`~trimesh.base.Trimesh`.
         """
         colors = None
@@ -276,7 +288,9 @@ class ColoredTriMesh(TriMesh):
 
         # Process face colors
         elif mesh.visual.kind == "face":
-            raise BaseException("not suported yet, will need antialisaing at the seams")
+            raise BaseException(
+                "not supported yet, will need antialisaing at the seams"
+            )
 
         # Process texture colors
         elif mesh.visual.kind == "texture":
