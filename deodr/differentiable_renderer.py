@@ -682,7 +682,7 @@ class Scene3D:
             ranges[k] = (offset, offset + size)
             offset += size
 
-        colors = np.column_stack(channels.values())
+        colors = np.column_stack(list(channels.values()))
 
         nb_colors = colors.shape[1]
         uv = np.zeros((soup_nb_vertices, 2))
