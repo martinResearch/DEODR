@@ -1,10 +1,16 @@
+"""Tensorflow interface to deodr."""
+
 import numpy as np
-from .. import differentiable_renderer_cython
+
 import tensorflow as tf
-from ..differentiable_renderer import Scene3D, Camera
+
+from .. import differentiable_renderer_cython
+from ..differentiable_renderer import Camera, Scene3D
 
 
 class CameraTensorflow(Camera):
+    """Tensorflow implementation of the camera class."""
+
     def __init__(self, extrinsic, intrinsic, resolution, distortion=None):
         super().__init__(
             extrinsic, intrinsic, resolution, distortion=distortion, checks=False
@@ -35,6 +41,8 @@ class CameraTensorflow(Camera):
 
 
 def TensorflowDifferentiableRender2D(ij, colors, scene):
+    """Tensorflow implementation of the 2D rendering function."""
+
     @tf.custom_gradient
     def forward(
         ij, colors
@@ -56,8 +64,8 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
             scene.texture_b = np.zeros(scene.texture.shape)
             image_copy = (
                 image.copy()
-            )  # making a copy to avoid removing antializaing on the image returned by
-            # the forward pass (the c++ backpropagation undo antializating), could be
+            )  # making a copy to avoid removing antialiasing on the image returned by
+            # the forward pass (the c++ backpropagation undo antialiasing), could be
             # optional if we don't care about getting aliased images
             differentiable_renderer_cython.renderSceneB(
                 scene, 1, image_copy, z_buffer, image_b.numpy()
@@ -70,6 +78,8 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
 
 
 class Scene3DTensorflow(Scene3D):
+    """Tensorflow implementation of deodr 3D scenes."""
+
     def __init__(self):
         super().__init__()
 

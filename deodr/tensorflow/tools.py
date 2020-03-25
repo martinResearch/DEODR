@@ -1,4 +1,7 @@
+"""Small tools for tensorflow."""
+
 import numpy as np
+
 import tensorflow as tf
 
 

@@ -1,5 +1,12 @@
-import pyrender
+"""Module to render deodr scenes using OpenGL through pyrender.
+
+Note that pyrender does not support camera distortion.
+"""
+
 import numpy as np
+
+import pyrender
+
 import trimesh
 
 
@@ -11,7 +18,7 @@ def arcsinc(x):
 
 
 def min_rotation(vec1, vec2):
-    """ Find the rotation matrix that aligns vec1 to vec2
+    """Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vec1,
@@ -33,11 +40,11 @@ def min_rotation(vec1, vec2):
     return rotation_matrix
 
 
-def deodr_directional_light_to_pyrender(deodr_directional_ligth):
-    directional_light_intensity = np.linalg.norm(deodr_directional_ligth)
+def deodr_directional_light_to_pyrender(deodr_directional_light):
+    directional_light_intensity = np.linalg.norm(deodr_directional_light)
     if directional_light_intensity > 0:
         directional_light_direction = (
-            deodr_directional_ligth / directional_light_intensity
+            deodr_directional_light / directional_light_intensity
         )
         directional_light_rotation = min_rotation(
             np.array([0, 0, -1]), directional_light_direction
@@ -105,7 +112,7 @@ def deodr_mesh_to_pyrender(deodr_mesh):
 
 
 def render(deodr_scene, camera):
-    """renders a deodr scene using pyrender"""
+    """Render a deodr scene using pyrender"""
     bg_color = deodr_scene.background[0, 0]
     if not (np.all(deodr_scene.background == bg_color[None, None, :])):
         raise (

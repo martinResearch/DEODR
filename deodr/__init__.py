@@ -18,10 +18,12 @@ __all__ = [
     "TriMesh",
     "ColoredTriMesh",
 ]
-from .differentiable_renderer import Scene2D, Scene3D, Camera
-from .obj import read_obj
-from .laplacian_rigid_energy import LaplacianRigidEnergy
-from .triangulated_mesh import TriMesh, ColoredTriMesh
+
 import os
+
+from .differentiable_renderer import Camera, Scene2D, Scene3D
+from .laplacian_rigid_energy import LaplacianRigidEnergy
+from .obj import read_obj
+from .triangulated_mesh import ColoredTriMesh, TriMesh
 
 data_path = os.path.join(os.path.dirname(__file__), "data")

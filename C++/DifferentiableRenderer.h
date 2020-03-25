@@ -2286,7 +2286,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 	{
 		for (int it = 0; it < scene.nb_triangles; it++)
 		{
-			size_t k = sum_depth[it].index;// we render the silhoutette edges from the furthest from the camera to the nearest as we don't use zbuffer for discontinuity edge overdraw
+			size_t k = sum_depth[it].index;// we render the silhoutette edges from the furthest from the camera to the nearest as we don't use z_buffer for discontinuity edge overdraw
 			unsigned int * face = &scene.faces[k * 3];
 
 			//k=order[i];

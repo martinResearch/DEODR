@@ -1,9 +1,14 @@
+"""Tensorflow implementation of an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
 import tensorflow as tf
-from ..laplacian_rigid_energy import LaplacianRigidEnergy
+
 from .tools import scipy_sparse_matrix_to_tensorflow
+from ..laplacian_rigid_energy import LaplacianRigidEnergy
 
 
 class LaplacianRigidEnergyTensorflow(LaplacianRigidEnergy):
+    """Tensorflow class that implements an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
     def __init__(self, mesh, vertices, cregu):
         super().__init__(mesh, vertices, cregu)
         self.cT_tf = scipy_sparse_matrix_to_tensorflow(self.cT)

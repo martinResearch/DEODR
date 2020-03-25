@@ -1,13 +1,19 @@
-from deodr import Scene3D, Camera, LaplacianRigidEnergy
-from deodr import TriMesh, ColoredTriMesh
+"""Modules containing classes to fit 3D meshes to images using differentiable rendering."""
+
+import copy
+
 import numpy as np
+
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
-import copy
-from .tools import qrot, normalize, qrot_backward, normalize_backward
+
+from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D, TriMesh
+from .tools import normalize, normalize_backward, qrot, qrot_backward
 
 
 class MeshDepthFitter:
+    """Class to fit a deformable mesh to a depth image."""
+
     def __init__(
         self,
         vertices,
@@ -186,6 +192,8 @@ class MeshDepthFitter:
 
 
 class MeshRGBFitterWithPose:
+    """Class to fit a deformable mesh to a color image."""
+
     def __init__(
         self,
         vertices,
@@ -393,6 +401,8 @@ class MeshRGBFitterWithPose:
 
 
 class MeshRGBFitterWithPoseMultiFrame:
+    """Class to fit a deformable mesh to multiple color images."""
+
     def __init__(
         self,
         vertices,

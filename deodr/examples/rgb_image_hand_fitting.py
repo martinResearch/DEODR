@@ -1,14 +1,22 @@
-from deodr import read_obj
-from imageio import imread, imsave
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import time
+"""Example with fitting a colored hand mesh model to an image."""
+
+
 import datetime
 import glob
 import json
 import os
+import time
+
+import cv2
+
 import deodr
+from deodr import read_obj
+
+from imageio import imread, imsave
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 
 def run(

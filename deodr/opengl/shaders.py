@@ -1,3 +1,5 @@
+"""OpenGL sharders used to render scenes with camera distortion."""
+
 vertex_shader_source = """
 #version 140
 uniform mat4 intrinsic;
@@ -17,21 +19,21 @@ out vec3 v_norm;
 out vec3 v_text;
 
 void main() {
-        v_vert = in_vert;
+ +       v_vert = in_vert;
         v_norm = in_norm;
         v_text = in_text;
-        vec4 pcam = extrinsic* vec4(v_vert, 1.0);
-        vec2 projected = pcam.xy/pcam.z;
+        vec4 p_camera = extrinsic* vec4(v_vert, 1.0);
+        vec2 projected = p_camera.xy/p_camera.z;
         float x = projected.x;
         float y = projected.y;
         float r2 = x * x + y * y;
         float radial_distortion = 1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 *r2;
-        float tangential_distortionx = 2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x);
-        float tangential_distortiony = p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y;
-        float distortedx = x * radial_distortion + tangential_distortionx;
-        float distortedy = y * radial_distortion + tangential_distortiony;
-        pcam.xy = vec2(distortedx, distortedy)*pcam.z;
-        gl_Position=intrinsic*pcam;
+        float tangential_distortion_x = 2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x);
+        float tangential_distortion_y = p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y;
+        float distorted_x = x * radial_distortion + tangential_distortion_x;
+        float distorted_y = y * radial_distortion + tangential_distortion_y;
+        p_camera.xy = vec2(distorted_-9+-**/x, distorted_y)*p_camera.z;
+        gl_Position=intrinsic*p_camera;
 }
 """
 
@@ -40,7 +42,7 @@ fragment_shader_rgb_source = """
 uniform sampler2D Texture;
 uniform vec4 Color;
 uniform vec3 light_directional;
-uniform float ligth_ambient;
+uniform float light_ambient;
 in vec3 v_vert;
 in vec3 v_norm;
 in vec3 v_text;
@@ -48,7 +50,7 @@ in vec3 v_text;
 out vec4 f_color;
 
 void main() {
-        float lum = ligth_ambient + max(dot(normalize(v_norm),- light_directional),0.0);
+        float lum = light_ambient + max(dot(normalize(v_norm),- light_directional),0.0);
         vec3 color = texture(Texture, v_text.xy).rgb;
         color = color * (1.0 - Color.a) + Color.rgb * Color.a;
         f_color = vec4(color * lum, 1.0);

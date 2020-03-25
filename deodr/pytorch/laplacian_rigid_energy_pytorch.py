@@ -1,5 +1,9 @@
+"""Pytorch implementation of an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
 import numpy as np
+
 import torch
+
 from ..laplacian_rigid_energy import LaplacianRigidEnergy
 
 
@@ -14,6 +18,8 @@ def scipy_sparse_to_torch(sparse_matrix):
 
 
 class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
+    """Pytorch class that implements an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+
     def __init__(self, mesh, vertices, cregu):
         super().__init__(mesh, vertices, cregu)
         self.cT_torch = scipy_sparse_to_torch(self.cT)

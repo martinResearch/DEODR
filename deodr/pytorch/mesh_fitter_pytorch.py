@@ -1,12 +1,19 @@
-from deodr.pytorch import Scene3DPytorch, LaplacianRigidEnergyPytorch, CameraPytorch
+"""Modules containing pytorch classes to fit 3D meshes to images using differentiable rendering."""
+
+
+import copy
+
 from deodr import LaplacianRigidEnergy
-from deodr.pytorch import TriMeshPytorch as TriMesh
+from deodr.pytorch import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
 from deodr.pytorch import ColoredTriMeshPytorch as ColoredTriMesh
+from deodr.pytorch import TriMeshPytorch as TriMesh
+
 import numpy as np
+
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
+
 import torch
-import copy
 
 
 def print_grad(name):
@@ -27,6 +34,8 @@ def qrot(q, v):
 
 
 class MeshDepthFitterEnergy(torch.nn.Module):
+    """Pytorch module to fit a deformable mesh to a depth image."""
+
     def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000):
         super(MeshDepthFitterEnergy, self).__init__()
         self.mesh = TriMesh(
@@ -112,6 +121,8 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
 
 class MeshDepthFitterPytorchOptim:
+    """Pytorch optimizer to fit a deformable mesh to an image."""
+
     def __init__(
         self, vertices, faces, euler_init, translation_init, cregu=2000, lr=0.8
     ):
@@ -154,6 +165,8 @@ class MeshDepthFitterPytorchOptim:
 
 
 class MeshDepthFitter:
+    """Class to fit a deformable mesh to a depth image."""
+
     def __init__(
         self,
         vertices,
@@ -325,6 +338,8 @@ class MeshDepthFitter:
 
 
 class MeshRGBFitterWithPose:
+    """Class to fit a deformable mesh to a color image."""
+
     def __init__(
         self,
         vertices,

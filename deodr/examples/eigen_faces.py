@@ -1,10 +1,18 @@
-import sklearn.datasets
-import matplotlib.pyplot as plt
-from sklearn import decomposition
-from scipy.spatial import Delaunay
-import numpy as np
-from deodr.differentiable_renderer import Scene2D
+"""example fitting a texture mesh to an image using face images"""
+
 import cv2
+
+from deodr.differentiable_renderer import Scene2D
+
+import matplotlib.pyplot as plt
+
+import numpy as np
+
+from scipy.spatial import Delaunay
+
+import sklearn.datasets
+from sklearn import decomposition
+
 
 faces = sklearn.datasets.fetch_olivetti_faces()
 

@@ -1,10 +1,16 @@
+"""Pytorch interface to deodr."""
+
 import numpy as np
-from .. import differentiable_renderer_cython
+
 import torch
-from ..differentiable_renderer import Scene3D, Camera
+
+from .. import differentiable_renderer_cython
+from ..differentiable_renderer import Camera, Scene3D
 
 
 class CameraPytorch(Camera):
+    """Pytorch implementation of the camera class."""
+
     def __init__(self, extrinsic, intrinsic, resolution, distortion=None):
         super().__init__(
             extrinsic, intrinsic, resolution, distortion=distortion, checks=False
@@ -26,6 +32,8 @@ class CameraPytorch(Camera):
 
 
 class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
+    """Pytorch implementation of the 2D rendering function."""
+
     @staticmethod
     def forward(ctx, ij, colors, scene):
         nb_color_chanels = colors.shape[1]
@@ -62,6 +70,8 @@ TorchDifferentiableRender2D = TorchDifferentiableRenderer2DFunc.apply
 
 
 class Scene3DPytorch(Scene3D):
+    """Pytorch implementation of deodr 3D scenes."""
+
     def __init__(self):
         super().__init__()
 

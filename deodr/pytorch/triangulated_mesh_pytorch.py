@@ -1,5 +1,10 @@
+"""Pytorch implementation of a triangulated mesh."""
+
+
 import numpy as np
+
 import torch
+
 from ..triangulated_mesh import TriMesh, TriMeshAdjacencies
 
 
@@ -11,6 +16,10 @@ def print_grad(name):
 
 
 class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
+    """Class that stores adjacency matrices and methods that use this adjacencies using pytorch sparse matrices.
+    Unlike the TriMesh class there are no vertices stored in this class.
+    """
+
     def __init__(self, faces, clockwise=False):
         super().__init__(faces, clockwise)
         self.faces_torch = torch.LongTensor(faces)
@@ -18,7 +27,7 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         j = torch.LongTensor(
             np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         )
-        self._vertices_Faces_torch = torch.sparse.DoubleTensor(
+        self._vertices_faces_torch = torch.sparse.DoubleTensor(
             torch.stack((i, j)),
             torch.ones((self.nb_faces, 3), dtype=torch.float64).flatten(),
             torch.Size((self.nb_vertices, self.nb_faces)),
@@ -38,7 +47,7 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
         return nn
 
     def compute_vertex_normals(self, face_normals):
-        n = self._vertices_Faces_torch.mm(face_normals)
+        n = self._vertices_faces_torch.mm(face_normals)
         l2 = (n ** 2).sum(dim=1)
         norm = l2.sqrt()
         return n / norm[:, None]
@@ -48,6 +57,8 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 
 
 class TriMeshPytorch(TriMesh):
+    """Pytorch implementation of a triangulated mesh."""
+
     def __init__(self, faces, vertices=None, clockwise=False):
         super().__init__(faces, vertices, clockwise)
 
@@ -56,6 +67,8 @@ class TriMeshPytorch(TriMesh):
 
 
 class ColoredTriMeshPytorch(TriMeshPytorch):
+    """Pytorch implementation of colored a triangulated mesh."""
+
     def __init__(
         self,
         faces,
