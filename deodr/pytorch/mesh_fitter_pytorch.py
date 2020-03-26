@@ -3,17 +3,17 @@
 
 import copy
 
-from .. import LaplacianRigidEnergy
-from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
-from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
-from .triangulated_mesh_pytorch import TriMeshPytorch as TriMesh
-
 import numpy as np
 
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
 import torch
+
+from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
+from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
+from .triangulated_mesh_pytorch import TriMeshPytorch as TriMesh
+from .. import LaplacianRigidEnergy
 
 
 def print_grad(name):
@@ -101,7 +101,8 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         depth_scale = 1 * self.depthScale
         depth = self.scene.render_depth(
             self.CameraMatrix,
-            resolution=(self.width, self.height),
+            width=self.width,
+            height=self.height,
             depth_scale=depth_scale,
         )
         depth = torch.clamp(depth, 0, self.scene.max_depth)
@@ -243,7 +244,8 @@ class MeshDepthFitter:
         self.camera = CameraPytorch(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.width, self.height),
+            width=self.width,
+            height=self.height,
             distortion=distortion,
         )
         self.iter = 0
@@ -273,7 +275,7 @@ class MeshDepthFitter:
 
         depth_scale = 1 * self.depthScale
         depth = self.scene.render_depth(
-            self.camera, resolution=(self.width, self.height), depth_scale=depth_scale
+            self.camera, width=self.width, height=self.height, depth_scale=depth_scale
         )
         depth = torch.clamp(depth, 0, self.scene.max_depth)
 
@@ -429,14 +431,15 @@ class MeshRGBFitterWithPose:
         self.camera = CameraPytorch(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.width, self.height),
+            width=self.width,
+            height=self.height,
             distortion=distortion,
         )
         self.iter = 0
 
     def step(self):
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
-        vertices_with_grad =self.vertices.clone().detach().requires_grad_(True) 
+        vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)
         vertices_with_grad_centered = (
             vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
         )

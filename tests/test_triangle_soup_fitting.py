@@ -1,3 +1,5 @@
+"""Test using triangle soup rendering."""
+
 from deodr.examples.triangle_soup_fitting import run
 
 

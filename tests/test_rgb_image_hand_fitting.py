@@ -1,3 +1,5 @@
+"""Test using rgb_image hand fitting."""
+
 from deodr.examples.rgb_image_hand_fitting import run
 
 

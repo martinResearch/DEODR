@@ -12,5 +12,5 @@ __all__ = [
 
 from .differentiable_renderer_tensorflow import CameraTensorflow, Scene3DTensorflow
 from .laplacian_rigid_energy_tensorflow import LaplacianRigidEnergyTensorflow
-from .mesh_fitter_tensorflow import MeshDepthFitter,MeshRGBFitterWithPose
-from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow, TriMeshTensorflow 
+from .mesh_fitter_tensorflow import MeshDepthFitter, MeshRGBFitterWithPose
+from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow, TriMeshTensorflow

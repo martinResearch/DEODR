@@ -35,11 +35,13 @@
 # up to date version of that script can found on
 # https://github.com/martinResearch/markdownLatex
 
-import tempfile
+"""Script to render latex figure for each equation found in readme.md"""
+
+import os
+import re
 import shutil
 import sys
-import re
-import os
+import tempfile
 
 
 for arg in sys.argv:

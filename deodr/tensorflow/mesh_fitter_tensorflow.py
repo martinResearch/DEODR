@@ -3,7 +3,13 @@
 
 import copy
 
-from .. import LaplacianRigidEnergy
+import numpy as np
+
+import scipy.sparse.linalg
+import scipy.spatial.transform.rotation
+
+import tensorflow as tf
+
 from . import (
     CameraTensorflow,
     LaplacianRigidEnergyTensorflow,
@@ -11,13 +17,7 @@ from . import (
 )
 from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 from .triangulated_mesh_tensorflow import TriMeshTensorflow as TriMesh
-
-import numpy as np
-
-import scipy.sparse.linalg
-import scipy.spatial.transform.rotation
-
-import tensorflow as tf
+from .. import LaplacianRigidEnergy
 
 
 def qrot(q, v):
@@ -107,7 +107,8 @@ class MeshDepthFitter:
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
             intrinsic=intrinsic,
-            resolution=(self.width, self.height),
+            width=self.width,
+            height=self.height,
             distortion=distortion,
         )
         self.iter = 0
@@ -143,7 +144,8 @@ class MeshDepthFitter:
             depth_scale = 1 * self.depthScale
             depth = self.scene.render_depth(
                 self.camera,
-                resolution=(self.width, self.height),
+                width=self.width,
+                height=self.height,
                 depth_scale=depth_scale,
             )
             depth = tf.clip_by_value(depth, 0, self.scene.max_depth)
@@ -308,7 +310,8 @@ class MeshRGBFitterWithPose:
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             distortion=distortion,
-            resolution=(self.width, self.height),
+            width=self.width,
+            height=self.height,
         )
         self.iter = 0
 
