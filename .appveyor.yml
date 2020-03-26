@@ -33,7 +33,7 @@ environment:
 build_script:
   # on linux
   - sh: ls ~/venv3.6.10/bin
-  - sh: source ~/venv3.6.10/activate
+  - sh: ~/venv3.6.10/bin/activate
   - sh: echo $encrypted_text  
   - sh: sudo pip install cibuildwheel==1.3.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
