@@ -17,6 +17,7 @@ branches:
     - master
   
 environment:
+   PYTHON: "C:\\Python36"
    encrypted_text:
       secure: DO1HPdoSaKp+2RIX2pNCpKvSiYmuLRqE39iNmzqHXRo=
    encrypted_pypi_api_token:
@@ -33,18 +34,18 @@ environment:
 build_script:
   # on linux
   - sh: echo $encrypted_text  
-  - sh: sudo pip3 install cibuildwheel==1.3.0 
+  - sh: sudo pip install cibuildwheel==1.3.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
-  - sh: sudo pip3 install twine==1.15.0
+  - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
-  - sh: python3 -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
   # on windows  
   - cmd: echo %encrypted_text%
-  - cmd: pip3 install cibuildwheel==1.0.0
+  - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
-  - cmd: pip3 install twine==1.15.0
+  - cmd: pip install twine==1.15.0
   - cmd: echo %TWINE_REPOSITORY_URL%
-  - cmd: python3 -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   
 artifacts:
   - path: "wheelhouse\\*.whl"
