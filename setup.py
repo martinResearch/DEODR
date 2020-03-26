@@ -1,10 +1,12 @@
 """Setup script for the DEODR project."""
 
+from setuptools import find_packages, setup 
+
 from Cython.Build import cythonize
 
 import numpy as np
 
-from setuptools import find_packages, setup 
+
 
 # compilation mode for debuging
 # extensions = [
