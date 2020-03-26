@@ -11,7 +11,14 @@ class Camera:
     """Camera class with the same distortion parameterization as opencv."""
 
     def __init__(
-        self, extrinsic, intrinsic, resolution, distortion=None, checks=True, tol=1e-6
+        self,
+        extrinsic,
+        intrinsic,
+        height,
+        width,
+        distortion=None,
+        checks=True,
+        tol=1e-6,
     ):
 
         if checks:
@@ -28,15 +35,8 @@ class Camera:
         self.extrinsic = extrinsic
         self.intrinsic = intrinsic
         self.distortion = distortion
-        self.resolution = resolution
-
-    @property
-    def width(self):
-        return self.resolution[0]
-
-    @property
-    def height(self):
-        return self.resolution[1]
+        self.height = height
+        self.width = width
 
     def world_to_camera(self, points_3d):
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
@@ -174,7 +174,8 @@ class PerspectiveCamera(Camera):
             extrinsic=extrinsic,
             intrinsic=intrinsic,
             distortion=distortion,
-            resolution=(width, height),
+            width=width,
+            height=height,
         )
 
 
@@ -542,8 +543,8 @@ class Scene3D:
             )  # could eventually be non zero if we were using texture
             self.texture = np.zeros((0, 0))
 
-        self.height = camera.resolution[1]
-        self.width = camera.resolution[0]
+        self.height = camera.height
+        self.width = camera.width
 
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
@@ -569,7 +570,7 @@ class Scene3D:
         )
         self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, resolution, depth_scale=1, backface_culling=True):
+    def render_depth(self, camera, height, width, depth_scale=1, backface_culling=True):
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -590,8 +591,8 @@ class Scene3D:
         self.shade = np.zeros(
             (self.mesh.nb_vertices), dtype=np.bool
         )  # eventually used when using texture
-        self.height = resolution[1]
-        self.width = resolution[0]
+        self.height = height
+        self.width = width
         self.shaded = np.zeros(
             (self.mesh.nb_faces), dtype=np.bool
         )  # eventually used when using texture
@@ -689,8 +690,8 @@ class Scene3D:
         textured = np.zeros((soup_nb_faces), dtype=np.bool)
         shade = np.zeros((soup_nb_vertices), dtype=np.bool)
 
-        height = camera.resolution[1]
-        width = camera.resolution[0]
+        height = camera.height
+        width = camera.width
         shaded = np.zeros(
             (soup_nb_faces), dtype=np.bool
         )  # eventually used when using texture

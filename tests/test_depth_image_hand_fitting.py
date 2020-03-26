@@ -1,3 +1,5 @@
+"""Test using depth image hand fitting."""
+
 from deodr.examples.depth_image_hand_fitting import run
 
 

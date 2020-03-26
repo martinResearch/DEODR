@@ -11,9 +11,9 @@ from ..differentiable_renderer import Camera, Scene3D
 class CameraTensorflow(Camera):
     """Tensorflow implementation of the camera class."""
 
-    def __init__(self, extrinsic, intrinsic, resolution, distortion=None):
+    def __init__(self, extrinsic, intrinsic, height, width, distortion=None):
         super().__init__(
-            extrinsic, intrinsic, resolution, distortion=distortion, checks=False
+            extrinsic, intrinsic, height, width, distortion=distortion, checks=False
         )
 
     def world_to_camera(self, points_3d):

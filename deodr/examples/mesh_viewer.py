@@ -180,7 +180,8 @@ def mesh_viewer(
     camera = differentiable_renderer.Camera(
         extrinsic=extrinsic,
         intrinsic=intrinsic,
-        resolution=(width, height),
+        width=width,
+        height=height,
         distortion=distortion,
     )
 

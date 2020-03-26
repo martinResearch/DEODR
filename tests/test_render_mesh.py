@@ -1,8 +1,13 @@
+"""Test using rgb mesh rendering."""
+
 import os
-import imageio
-import numpy as np
+
 import deodr
-from deodr.examples.render_mesh import example_rgb, example_moderngl
+from deodr.examples.render_mesh import example_moderngl, example_rgb
+
+import imageio
+
+import numpy as np
 
 
 def test_render_mesh_moderngl():
