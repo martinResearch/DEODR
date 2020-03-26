@@ -33,6 +33,7 @@ environment:
 build_script:
   # on linux
   - sh: echo $encrypted_text
+  - sh: sudo pip install wheel==0.34.2
   - sh: sudo pip install cibuildwheel==1.0.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
