@@ -436,6 +436,14 @@ class Scene3D:
         self.texture_b = np.zeros((0, 0))
 
     def set_light(self, light_directional, light_ambient):
+        """
+        light_ambient : scalar. Instensity of the ambient light
+        light_directional : 3d vector. Directional light are at an infinite distance and thus
+        there is no position.  The light_directional vector corresponds to the  direction
+        multiplied by the intensity (instead of a nomalized direction and a scalar intensity).
+        This  parameterization has been chosen because it makes it easier to do gradient
+        descent  as there is not normalization constraint. However it does not support colored lights.
+        """
         self.light_directional = np.array(light_directional)
         self.light_ambient = light_ambient
 

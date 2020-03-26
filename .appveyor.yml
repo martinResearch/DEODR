@@ -32,14 +32,12 @@ environment:
          
 build_script:
   # on linux
-  - sh: echo $encrypted_text
-  - sh: sudo pip install cibuildwheel==1.0.0 
+  - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
   # on windows  
-  - cmd: echo %encrypted_text%
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
   - cmd: pip install twine==1.15.0
