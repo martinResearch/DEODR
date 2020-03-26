@@ -17,7 +17,7 @@ branches:
     - master
   
 environment:
-   VENV: ~/venv3.6.10
+   VENV: /Users/appveyor/venv3.6.10
    encrypted_text:
       secure: DO1HPdoSaKp+2RIX2pNCpKvSiYmuLRqE39iNmzqHXRo=
    encrypted_pypi_api_token:
