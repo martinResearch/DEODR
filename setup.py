@@ -1,6 +1,6 @@
 """Setup script for the DEODR project."""
 
-from setuptools import find_packages, setup 
+from setuptools import setup, find_packages  
 
 from Cython.Build import cythonize
 
