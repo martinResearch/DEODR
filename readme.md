@@ -197,7 +197,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**PyTorch3D's renderer**](https://pytorch3d.org/docs/renderer). The method implemented keeps a list of the K nearest faces intersecting the ray corresponding to each pixel in the image (as opposed to traditional rasterization which returns only the index of the closest face in the mesh per pixel). The top K face properties can then be aggregated using different methods (such as the sigmoid/softmax approach proposed by Li et at in SoftRasterizer). Note however that the K face selection is not a continuous operation and thus may potentially lead to discontinuities in the rendered pixel intensities with respect to the shape parameters.  
 
-* [**Tensorflow graphics**](https://github.com/tensorflow/graphics). Library tha tallows differentiable rendering. At the date of march 2020 discontinuities along occlusion boundaries are not handled yet in a differentiable manner. As a result fitting using a loss defined with the rendered image may not converge well in some scenario.
+* [**Tensorflow graphics**](https://github.com/tensorflow/graphics). Library from google that allows differentiable rendering. At the date of march 2020 discontinuities along occlusion boundaries are not handled yet in a differentiable manner. As a result fitting using a loss defined with the rendered image may not converge well in some scenario.
 
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
