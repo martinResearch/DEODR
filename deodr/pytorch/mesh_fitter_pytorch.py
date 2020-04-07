@@ -112,7 +112,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         self.depth = depth
         self.diff_image = diff_image
         energy_data = torch.sum(diff_image)
-        energy_rigid = self.rigid_energy.eval(
+        energy_rigid = self.rigid_energy.evaluate(
             self._vertices, return_grad=False, return_hessian=False
         )
         energy = energy_data + energy_rigid
@@ -289,7 +289,7 @@ class MeshDepthFitter:
 
         grad_data = vertices_with_grad.grad.numpy()
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
             self.vertices.numpy()
         )
         energy = energy_data + energy_rigid
@@ -486,7 +486,7 @@ class MeshRGBFitterWithPose:
 
         grad_data = vertices_with_grad.grad
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
             self.vertices
         )
         energy = energy_data + energy_rigid.numpy()

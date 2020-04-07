@@ -27,7 +27,7 @@ def create_example_scene(n_tri=30, width=200, height=200):
     scale_material = np.array([[height_material - 1, 0], [0, width_material - 1]])
 
     triangles = []
-    for k in range(n_tri):
+    for _ in range(n_tri):
 
         tmp = scale_matrix.dot(
             np.random.rand(2, 1).dot(np.ones((1, 3)))
@@ -138,12 +138,12 @@ def run(nb_max_iter=500, display=True):
         speed_color = np.zeros((n_vertices, 3))
 
         losses = []
-        for iter in range(nb_max_iter):
+        for niter in range(nb_max_iter):
             image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
                 sigma, antialiase_error, image_target
             )
-
-            # imsave(os.path.join(iterfolder,f'soup_{iter}.png'), combinedIMage)
+            print(f'iter {niter} loss = {loss}')
+            # imsave(os.path.join(iterfolder,f'soup_{niter}.png'), combinedIMage)
 
             losses.append(loss)
             if loss_image.ndim == 2:

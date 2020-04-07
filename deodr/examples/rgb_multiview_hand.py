@@ -86,7 +86,7 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
-    for iter in range(max_iter):
+    for niter in range(max_iter):
         energy, image, diff_image = hand_fitter.step()
         energies.append(energy)
         durations.append(time.time() - start)
@@ -107,7 +107,7 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
                 )
             if save_images:
                 imsave(
-                    os.path.join(iterfolder, f"hand_iter_{iter}.png"),
+                    os.path.join(iterfolder, f"hand_iter_{niter}.png"),
                     (combined_image * 255).astype(np.uint8),
                 )
         cv2.waitKey(1)

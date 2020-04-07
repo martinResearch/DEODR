@@ -30,7 +30,7 @@ class LaplacianRigidEnergy:
                 )
             )
 
-    def eval(
+    def evaluate(
         self, vertices, return_grad=True, return_hessian=True, refresh_rotations=True
     ):
 

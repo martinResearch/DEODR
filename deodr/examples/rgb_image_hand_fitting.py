@@ -85,7 +85,7 @@ def run(
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
-    for iter in range(max_iter):
+    for niter in range(max_iter):
         energy, image, diff_image = hand_fitter.step()
         energies.append(energy)
         durations.append(time.time() - start)
@@ -100,7 +100,7 @@ def run(
                 )
             if save_images:
                 imsave(
-                    os.path.join(iterfolder, f"hand_iter_{iter}.png"), combined_image
+                    os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image
                 )
         cv2.waitKey(1)
 
