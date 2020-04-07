@@ -189,10 +189,10 @@ variables = {"points_deformed": points_deformed, "pca_coefs": pca_coefs}
 lambdas = {"points_deformed": 0.0001, "pca_coefs": 0.5}
 
 
-for iter in range(nb_iter):
+for niter in range(nb_iter):
 
     E, grads = fun(**variables)
-    print(f"E={E}")
+    print(f"iter{niter} E={E}")
     for name in variables.keys():
         variables[name] = variables[name] - lambdas[name] * grads[name]
 

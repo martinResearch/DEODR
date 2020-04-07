@@ -24,7 +24,7 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
         super().__init__(mesh, vertices, cregu)
         self.cT_torch = scipy_sparse_to_torch(self.cT)
 
-    def eval(
+    def evaluate(
         self, vertices, return_grad=True, return_hessian=True, refresh_rotations=True
     ):
         assert isinstance(vertices, torch.Tensor)

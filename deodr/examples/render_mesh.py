@@ -86,7 +86,7 @@ def example_channels(display=True, save_image=False, width=640, height=480):
             ax.imshow(normalize(v))
 
     if save_image:
-        for i, (name, v) in enumerate(channels.items()):
+        for name, v in channels.items():
             image_file = os.path.abspath(
                 os.path.join(deodr.data_path, f"test/duck_{name}.png")
             )

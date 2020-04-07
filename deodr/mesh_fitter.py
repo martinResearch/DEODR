@@ -144,7 +144,7 @@ class MeshDepthFitter:
         grad_data = self.vertices_b
         # update v
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
             self.vertices
         )
         energy = energy_data + energy_rigid
@@ -332,7 +332,7 @@ class MeshRGBFitterWithPose:
         image_b = 2 * (image - self.hand_image)
         energy_data = np.sum(diff_image)
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
             self.vertices
         )
         energy = energy_data + energy_rigid
@@ -589,7 +589,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
             self.render_backward(image_b)
         energy_data = np.sum(energy_datas)
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.eval(
+        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
             self.vertices
         )
         energy = energy_data + energy_rigid

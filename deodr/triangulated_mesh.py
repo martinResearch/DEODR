@@ -142,7 +142,7 @@ class TriMeshAdjacencies:
 class TriMesh:
     """Class that implements a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False):
+    def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
         self.faces = faces
         self.nb_vertices = np.max(faces) + 1
         self.nb_faces = faces.shape[0]
@@ -151,16 +151,17 @@ class TriMesh:
         self.face_normals = None
         self.vertex_normals = None
         self.clockwise = clockwise
-        self.compute_adjacencies()
-        assert self.adjacencies.is_manifold
-
-        if vertices is not None:
-            self.set_vertices(vertices)
-            if self.adjacencies.is_closed:
-                self.check_orientation()
+        self.set_vertices(vertices)
+        if compute_adjacencies:
+            self.compute_adjacencies()
 
     def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
+        assert self.adjacencies.is_manifold
+        if self.vertices is not None:
+
+            if self.adjacencies.is_closed:
+                self.check_orientation()
 
     def set_vertices(self, vertices):
         self.vertices = vertices
@@ -236,9 +237,13 @@ class ColoredTriMesh(TriMesh):
         texture=None,
         colors=None,
         nb_colors=None,
+        compute_adjacencies=True,
     ):
         super(ColoredTriMesh, self).__init__(
-            faces, vertices=vertices, clockwise=clockwise
+            faces,
+            vertices=vertices,
+            clockwise=clockwise,
+            compute_adjacencies=compute_adjacencies,
         )
         self.faces_uv = faces_uv
         self.uv = uv
@@ -272,7 +277,7 @@ class ColoredTriMesh(TriMesh):
         ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True, color=[0, 1, 0])
 
     @staticmethod
-    def from_trimesh(mesh):  # inspired from pyrender
+    def from_trimesh(mesh, compute_adjacencies=True):  # inspired from pyrender
         """Get the vertex colors, texture coordinates, and material properties
         from a :class:`~trimesh.base.Trimesh`.
         """
@@ -339,4 +344,5 @@ class ColoredTriMesh(TriMesh):
             uv=uv,
             texture=texture,
             colors=colors2,
+            compute_adjacencies=compute_adjacencies,
         )

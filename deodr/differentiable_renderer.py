@@ -2,6 +2,7 @@
 
 import copy
 
+
 import numpy as np
 
 from . import differentiable_renderer_cython
@@ -152,9 +153,7 @@ class Camera:
 class PerspectiveCamera(Camera):
     """Camera with perspective projection."""
 
-    def __init__(
-        self, width, height, fov, camera_center, rot=np.eye(3), distortion=None
-    ):
+    def __init__(self, width, height, fov, camera_center, rot=None, distortion=None):
         """Perspective camera constructor.
 
         - width: width of the camera in pixels
@@ -165,6 +164,8 @@ class PerspectiveCamera(Camera):
             default to identity
         - distortion: distortion parameters
         """
+        if rot is None:
+            rot = np.eye(3)
         focal = 0.5 * width / np.tan(0.5 * fov * np.pi / 180)
         focal_x = focal
         pixel_aspect_ratio = 1
@@ -448,7 +449,10 @@ class Scene3D:
         This  parameterization has been chosen because it makes it easier to do gradient
         descent  as there is not normalization constraint. However it does not support colored lights.
         """
-        self.light_directional = np.array(light_directional)
+        if light_directional is not None:
+            self.light_directional = np.array(light_directional)
+        else:
+            self.light_directional = None
         self.light_ambient = light_ambient
 
     def set_mesh(self, mesh):
@@ -459,12 +463,16 @@ class Scene3D:
         self.background = background_image
 
     def compute_vertices_luminosity(self):
-        directional = np.maximum(
-            0, -np.sum(self.mesh.vertex_normals * self.light_directional, axis=1)
-        )
+        if self.light_directional is not None:
+            directional = np.maximum(
+                0, -np.sum(self.mesh.vertex_normals * self.light_directional, axis=1)
+            )
+        else:
+            directional = np.zeros((self.mesh.nb_vertices))
         if self.store_backward_current is not None:
             self.store_backward_current["compute_vertices_luminosity"] = directional
-        return directional + self.light_ambient
+        vertices_luminosity = directional + self.light_ambient
+        return vertices_luminosity
 
     def _compute_vertices_colors_with_illumination(self):
 
@@ -482,19 +490,22 @@ class Scene3D:
         ]
         vertices_luminosity_b = np.sum(self.mesh.vertices_colors * colors_b, axis=1)
         self.mesh.vertices_colors_b = colors_b * vertices_luminosity[:, None]
-        self.light_ambient_b = np.sum(vertices_luminosity_b)
-        directional_b = vertices_luminosity_b
-        self.compute_vertices_luminosity_backward(directional_b)
 
-    def compute_vertices_luminosity_backward(self, directional_b):
+        self.compute_vertices_luminosity_backward(vertices_luminosity_b)
+
+    def compute_vertices_luminosity_backward(self, vertices_luminosity_b):
         directional = self.store_backward_current["compute_vertices_luminosity"]
-        self.light_directional_b = -np.sum(
-            ((directional_b * (directional > 0))[:, None]) * self.mesh.vertex_normals,
-            axis=0,
-        )
-        self.vertex_normals_b = (
-            -((directional_b * (directional > 0))[:, None]) * self.light_directional
-        )
+        if self.light_directional is not None:
+            self.light_directional_b = -np.sum(
+                ((vertices_luminosity_b * (directional > 0))[:, None])
+                * self.mesh.vertex_normals,
+                axis=0,
+            )
+            self.vertex_normals_b = (
+                -((vertices_luminosity_b * (directional > 0))[:, None])
+                * self.light_directional
+            )
+        self.light_ambient_b = np.sum(vertices_luminosity_b)
 
     def _render_2d(self, ij, colors):
         nb_color_chanels = colors.shape[1]
@@ -520,7 +531,9 @@ class Scene3D:
 
     def render(self, camera, return_z_buffer=False, backface_culling=True):
         self.store_backward_current = {}
-        self.mesh.compute_vertex_normals()
+
+        if self.light_directional is not None:
+            self.mesh.compute_vertex_normals()
 
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -582,7 +595,8 @@ class Scene3D:
         self.mesh.vertices_b = camera.project_points_backward(
             points_2d_b, store_backward=self.store_backward_current
         )
-        self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
+        if self.light_directional is not None:
+            self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
     def render_depth(self, camera, height, width, depth_scale=1, backface_culling=True):
         self.store_backward_current = {}
@@ -590,14 +604,14 @@ class Scene3D:
             self.mesh.vertices, store_backward=self.store_backward_current
         )
 
-        # compute silhouette edges    
+        # compute silhouette edges
         if self.sigma > 0:
             edgeflags = self.mesh.edge_on_silhouette(points_2d)
         else:
             edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
 
         self.faces = self.mesh.faces.astype(np.uint32)
-        self.faces_uv = self.faces       
+        self.faces_uv = self.faces
         colors = depths[:, None] * depth_scale
         self.depths = depths
         self.edgeflags = edgeflags
@@ -647,7 +661,9 @@ class Scene3D:
         self.store_backward_current = None
 
         if self.sigma > 0:
-            raise BaseException('Antialiasing is not supposed to be used when using deferred rendering, please use sigma==0')
+            raise BaseException(
+                "Antialiasing is not supposed to be used when using deferred rendering, please use sigma==0"
+            )
 
         edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
 
@@ -669,7 +685,7 @@ class Scene3D:
         soup_depths = depths[self.mesh.faces].reshape(soup_nb_vertices, 1)
 
         channels = {}
-        if depth:            
+        if depth:
             channels["depth"] = soup_depths * depth_scale
         if face_id:
             soup_face_ids = np.tile(
@@ -748,7 +764,7 @@ class Scene3D:
         differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
 
         output = {}
-        for k, v in channels.items():
+        for k in channels.key():
             output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
 
         return output

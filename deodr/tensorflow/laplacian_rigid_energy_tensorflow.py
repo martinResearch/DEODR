@@ -13,7 +13,7 @@ class LaplacianRigidEnergyTensorflow(LaplacianRigidEnergy):
         super().__init__(mesh, vertices, cregu)
         self.cT_tf = scipy_sparse_matrix_to_tensorflow(self.cT)
 
-    def eval(self, vertices, return_grad=True, return_hessian=True):
+    def evaluate(self, vertices, return_grad=True, return_hessian=True):
         assert isinstance(vertices, tf.Tensor)
         diff = tf.reshape(vertices - tf.constant(self.vertices_ref), [-1])
         grad_vertices = tf.reshape(
