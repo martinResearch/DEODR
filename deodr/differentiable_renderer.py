@@ -712,7 +712,7 @@ class Scene3D:
                     self.mesh.faces
                 ].reshape(soup_nb_vertices, 3)
                 channels["color"] = soup_vertices_colors
-        else:
+        elif uv:
             soup_uv = self.mesh.uv[self.mesh.faces_uv].reshape(soup_nb_vertices, 2)
             channels["uv"] = soup_uv
 
@@ -726,7 +726,7 @@ class Scene3D:
         colors = np.column_stack(list(channels.values()))
 
         nb_colors = colors.shape[1]
-        uv = np.zeros((soup_nb_vertices, 2))
+        uv_zeros = np.zeros((soup_nb_vertices, 2))
         textured = np.zeros((soup_nb_faces), dtype=np.bool)
         shade = np.zeros((soup_nb_vertices), dtype=np.bool)
 
@@ -747,7 +747,7 @@ class Scene3D:
             ij=soup_ij,
             depths=soup_depths,
             textured=textured,
-            uv=uv,
+            uv=uv_zeros,
             shade=shade,
             colors=colors,
             shaded=shaded,
@@ -764,7 +764,7 @@ class Scene3D:
         differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
 
         output = {}
-        for k in channels.key():
+        for k in channels.keys():
             output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
 
         return output
