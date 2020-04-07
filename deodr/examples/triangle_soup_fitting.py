@@ -142,7 +142,7 @@ def run(nb_max_iter=500, display=True):
             image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
                 sigma, antialiase_error, image_target
             )
-            print(f'iter {niter} loss = {loss}')
+            print(f"iter {niter} loss = {loss}")
             # imsave(os.path.join(iterfolder,f'soup_{niter}.png'), combinedIMage)
 
             losses.append(loss)

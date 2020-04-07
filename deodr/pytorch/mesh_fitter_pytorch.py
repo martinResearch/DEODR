@@ -289,9 +289,11 @@ class MeshDepthFitter:
 
         grad_data = vertices_with_grad.grad.numpy()
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
-            self.vertices.numpy()
-        )
+        (
+            energy_rigid,
+            grad_rigidity,
+            approx_hessian_rigidity,
+        ) = self.rigid_energy.evaluate(self.vertices.numpy())
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
@@ -486,9 +488,11 @@ class MeshRGBFitterWithPose:
 
         grad_data = vertices_with_grad.grad
 
-        energy_rigid, grad_rigidity, approx_hessian_rigidity = self.rigid_energy.evaluate(
-            self.vertices
-        )
+        (
+            energy_rigid,
+            grad_rigidity,
+            approx_hessian_rigidity,
+        ) = self.rigid_energy.evaluate(self.vertices)
         energy = energy_data + energy_rigid.numpy()
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
