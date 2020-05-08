@@ -32,9 +32,11 @@ environment:
          
 build_script:
   # releasing pure source distribution (no binaries) as tar.gz file on pypi  
-  - sh: sudo pip install numpy cython
-  - sh: python setup.py sdist    
-  - sh: python -m twine upload dist/*.tar.gz --skip-existing -p $encrypted_pypi_api_token
+  - cmd: set PYTHON=C:\\Miniconda36-x64
+  - cmd: set PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;
+  - cmd: pip install numpy cython
+  - cmd: python setup.py sdist    
+  - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p $encrypted_pypi_api_token
   # releasing precompiled wheels for linux
   - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
