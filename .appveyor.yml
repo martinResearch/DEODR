@@ -34,8 +34,6 @@ build_script:
   - cmd: set PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;
   - cmd: pip install numpy cython
   - cmd: python setup.py sdist 
-  - cmd: pip install twine==1.15.0  
-  - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token
   # releasing precompiled wheels for linux
   - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
@@ -52,3 +50,6 @@ build_script:
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
+   artifacts:
+ - path: "dist/*.tar.gz"
+   name: Source_distribution
