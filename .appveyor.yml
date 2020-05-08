@@ -7,8 +7,8 @@
 # 4) do step 3 and 4 but this time on test.pypi.org , fill in of "encrypted_pypi_api_token"  in the branches/only/pypi_test part
 
 image: 
-    - ubuntu
     - Visual Studio 2019
+    - ubuntu
 platform:
   - x64
 skip_branch_with_pr: true  
