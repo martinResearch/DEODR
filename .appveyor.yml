@@ -31,15 +31,16 @@ environment:
  
          
 build_script:
+  # releasing pure source distribution (no binaries) as tar.gz file on pypi  
+  - sh: sudo pip install numpy cython
+  - sh: python setup.py sdist    
+  - sh: python -m twine upload dist/*.tar.gz --skip-existing -p $encrypted_pypi_api_token
   # releasing precompiled wheels for linux
   - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
-  # releasing pure source distribution (no binaries) as tar.gz file on pypi  
-  - sh: python setup.py sdist    
-  - sh: python -m twine upload dist/*.tar.gz --skip-existing -p $encrypted_pypi_api_token
   # releasing precompiled wheels for windows  
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
