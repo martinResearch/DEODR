@@ -29,3 +29,7 @@ DEODR/differentiable_renderer_cython.html
 
 Matlab/render.mexw64
 Matlab/render_b.mexw64
+
+python_venv/
+dist/
+deodr.egg-info/
