@@ -51,5 +51,5 @@ artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
     
- - path: "dist/*.tar.gz"
-   name: Source_distribution
+  - path: "dist/*.tar.gz"
+    name: Source_distribution
