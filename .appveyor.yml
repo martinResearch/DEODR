@@ -17,8 +17,6 @@ branches:
     - master
   
 environment:
-   encrypted_text:
-      secure: DO1HPdoSaKp+2RIX2pNCpKvSiYmuLRqE39iNmzqHXRo=
    encrypted_pypi_api_token:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
    TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
@@ -37,7 +35,7 @@ build_script:
   - cmd: pip install numpy cython
   - cmd: python setup.py sdist 
   - cmd: pip install twine==1.15.0  
-  - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p $encrypted_pypi_api_token
+  - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token
   # releasing precompiled wheels for linux
   - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
