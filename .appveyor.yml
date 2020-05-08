@@ -50,6 +50,7 @@ build_script:
 artifacts:
   - path: "wheelhouse\\*.whl"
     name: Wheels
-   artifacts:
+    
+artifacts:
  - path: "dist/*.tar.gz"
    name: Source_distribution
