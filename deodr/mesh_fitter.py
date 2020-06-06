@@ -28,19 +28,20 @@ class MeshDepthFitter:
         self.cregu = cregu
         self.inertia = inertia
         self.damping = damping
-        self.step_factor_vertices = 0.0005
-        self.step_max_vertices = 0.5
-        self.step_factor_quaternion = 0.00006
-        self.step_max_quaternion = 0.1
-        self.step_factor_translation = 0.00005
-        self.step_max_translation = 0.1
+        self.step_factor_vertices = 0.001
+        self.step_max_vertices = 0.001
+        self.step_factor_quaternion = 0.00003
+        self.step_max_quaternion = 0.03
+        self.step_factor_translation = 0.000002
+        self.step_max_translation = 0.001
 
         self.mesh = TriMesh(
             faces, vertices=vertices
         )  # we do a copy to avoid negative stride not support by pytorch
-        object_center = vertices.mean(axis=0)
-        object_radius = np.max(np.std(vertices, axis=0))
-        self.camera_center = object_center + np.array([-0.5, 0, 5]) * object_radius
+        self.camera = camera
+
+        self.width = self.camera.width
+        self.height = self.camera.height
 
         self.scene = Scene3D()
         self.scene.set_mesh(self.mesh)
@@ -49,7 +50,8 @@ class MeshDepthFitter:
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
-
+        self.background_depth = None
+        self.max_depth = None
         self.reset()
 
     def set_mesh_transform_init(self, euler, translation):
@@ -67,34 +69,28 @@ class MeshDepthFitter:
         self.speed_quaternion = np.zeros(4)
 
     def set_max_depth(self, max_depth):
-        self.scene.max_depth = max_depth
-        self.scene.set_background(
-            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
-        )
+        """"When the object you are fitting to fitting to is closer to the camera
+        than the rest of the scene use  max_depth equal to the maximum depth
+        of the object you are fitting to. Otherwise provide the scene background depth
+        thought set_background_depth"""
+        self.max_depth = max_depth
+
+    def set_background_depth(self, background_depth):
+        assert self.height == background_depth.shape[0]
+        assert self.width == background_depth.shape[1]
+        if background_depth.ndim == 2:
+            background_depth = background_depth[:, :, None]
+        self.background_depth = background_depth
+        self.scene.set_background(background_depth)
 
     def set_depth_scale(self, depth_scale):
-        self.depthScale = depth_scale
+        self.depth_scale = depth_scale
 
     def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
+        assert self.width == hand_image.shape[1]
+        assert self.height == hand_image.shape[0]
         assert hand_image.ndim == 2
         self.hand_image = hand_image
-        if focal is None:
-            focal = 2 * self.width
-        rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
-        extrinsic = np.column_stack((rot, trans))
-        self.camera = Camera(
-            extrinsic=extrinsic,
-            intrinsic=intrinsic,
-            distortion=distortion,
-            height=self.height,
-            width=self.width,
-        )
         self.iter = 0
 
     def render(self):
@@ -109,15 +105,19 @@ class MeshDepthFitter:
             self.camera,
             width=self.width,
             height=self.height,
-            depth_scale=self.depthScale,
+            depth_scale=self.depth_scale,
         )
-        depth = np.clip(self.depth_not_cliped, 0, self.scene.max_depth)
+        if self.max_depth is None:
+            depth = np.maximum(self.depth_not_cliped, 0)
+        else:
+            depth = np.clip(self.depth_not_cliped, 0, self.max_depth)
         return depth
 
     def render_backward(self, depth_b):
         self.scene.clear_gradients()
         depth_b[self.depth_not_cliped < 0] = 0
-        depth_b[self.depth_not_cliped > self.scene.max_depth] = 0
+        if self.max_depth is not None:
+            depth_b[self.depth_not_cliped > self.max_depth] = 0
         self.scene.render_depth_backward(depth_b)
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
@@ -131,7 +131,10 @@ class MeshDepthFitter:
         return
 
     def step(self):
-
+        if self.background_depth is None:
+            self.set_background_depth(
+                np.full((self.height, self.width, 1), self.max_depth, dtype=np.float)
+            )
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
         depth = self.render()
 

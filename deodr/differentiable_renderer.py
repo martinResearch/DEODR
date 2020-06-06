@@ -188,6 +188,8 @@ def default_camera(width, height, fov, vertices, rot=None, distortion=None):
     """Compute the position of the camera center so that the entire mesh is visible
     and covers most or the image.
     """
+    if rot is None:
+        rot = np.eye(3, 3)
     cam_vertices = vertices.dot(rot.T)
     box_min = cam_vertices.min(axis=0)
     box_max = cam_vertices.max(axis=0)
@@ -431,6 +433,8 @@ class Scene3D:
         self.light_directional = None
         self.light_ambient = None
         self.sigma = sigma
+        self.background = None
+        self.background_depth = None
 
     def clear_gradients(self):
         # fields to store gradients
@@ -510,7 +514,12 @@ class Scene3D:
     def _render_2d(self, ij, colors):
         nb_color_chanels = colors.shape[1]
         image = np.empty((self.height, self.width, nb_color_chanels))
-        z_buffer = np.empty((self.height, self.width))
+
+        if self.background_depth is None:
+            z_buffer = np.empty((self.height, self.width))
+        else:
+            z_buffer = self.background_depth.copy()
+
         self.ij = np.array(ij)
         self.colors = np.array(colors)
         differentiable_renderer_cython.renderScene(self, self.sigma, image, z_buffer)

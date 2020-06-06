@@ -16,9 +16,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from deodr import differentiable_renderer
+
 
 def run(
-    dl_library="none", plot_curves=False, save_images=False, display=True, max_iter=150
+    dl_library="none", plot_curves=False, save_images=False, display=True, max_iter=1000
 ):
 
     file_folder = os.path.dirname(__file__)
@@ -37,24 +39,36 @@ def run(
         .reshape(240, 320)
         .astype(np.float)
     )
-    depth_image = depth_image[20:-20, 60:-60]
-    max_depth = 450
+    depth_image = depth_image[20:-20, 60:-60] / 1000  # crop and convert in meters
+    max_depth = 0.40
     depth_image[depth_image == 0] = max_depth
-    depth_image = depth_image / max_depth
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = deodr.read_obj(obj_file)
 
-    euler_init = np.array([0.1, 0.1, 0.1])
-    translation_init = np.zeros(3)
+    vertices_rescaled = 0.09 * vertices
+
+    euler_init = np.array([0.1, -0.3, 4.0])
+    translation_init = [0, -0.02, -0.16]
+    # translation_init = np.zeros(3)
+
+    height, width = depth_image.shape
+    camera = differentiable_renderer.default_camera(
+        width, height, fov=60, vertices=vertices_rescaled, rot=None
+    )
 
     hand_fitter = MeshDepthFitter(
-        vertices, faces, euler_init, translation_init, cregu=1000
+        vertices_rescaled,
+        faces,
+        euler_init,
+        translation_init,
+        camera=camera,
+        cregu=20000,
     )
 
     hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])
-    hand_fitter.set_max_depth(1)
-    hand_fitter.set_depth_scale(110 / max_depth)
+    hand_fitter.set_max_depth(max_depth)
+    hand_fitter.set_depth_scale(1)
     energies = []
     durations = []
     start = time.time()
@@ -68,8 +82,9 @@ def run(
         energies.append(energy)
         durations.append(time.time() - start)
         if save_images or display:
-            combined_image = np.column_stack(
-                (depth_image, synthetic_depth, 3 * diff_image)
+            combined_image = (
+                np.column_stack((depth_image, synthetic_depth, 3 * diff_image))
+                / max_depth
             )
             if display:
                 cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
