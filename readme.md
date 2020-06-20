@@ -201,7 +201,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**SDFDiff**](https://github.com/YueJiang-nj/CVPR2020-SDFDiff).[15] Differentiable Implicit surface rendering using signed distance functions. This approach seems not to deal with visibility changes along the silhouette and self occlusions in a differentiable way, and thus the change in visibility in these locations is not captured in the back-propagated gradients which will hamper convergence, especially in scenarios where the silhouette is an important signal for the fitting..
 
-* [**DIST**](https://github.com/B1ueber2y/DIST-Renderer)[16] Differentiable Implicit surface rendering using signed distance functions. The change of in visibility along the object/background boundary is taken into account in the computation of the silhouette mask, but does not seem to be not taken into account in the rendered color image. This could hamper convergence for concave objects that exhibit self occlusion in the chosen camera view point. 
+* [**DIST**](https://github.com/B1ueber2y/DIST-Renderer)[16] Differentiable Implicit surface rendering using signed distance functions. The change of in visibility along the object/background boundary is taken into account in the computation of the silhouette mask only, and is not taken into account in the rendered color, depth or normal images. This could hamper convergence of the surface fitting methods that uses these images in the loss for concave objects that exhibit self occlusion in the chosen camera view point(s). 
 
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
