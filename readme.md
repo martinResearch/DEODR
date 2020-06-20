@@ -199,6 +199,10 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**Tensorflow graphics**](https://github.com/tensorflow/graphics). Library from google that allows differentiable rendering. At the date of march 2020 discontinuities along occlusion boundaries are not handled yet in a differentiable manner. As a result fitting using a loss defined with the rendered image may not converge well in some scenario.
 
+* **SDFDiff**.[15] Differentiable Implcite surface rendering using signed distance functions. This approach seems not to deal with visibility changes along the silhouette and self occlusions in a differentiable way, and thus the change in visibility in these locations is not captured in the backpropagated gradients which will hamper convergence, especially in scenario where the silhouette is an important signal for the fitting.
+
+* **DIST**[16] Differentiable Implcite surface rendering using signed distance functions. The change of in visibility along the object/background boundary is taken into account in the compation of the silhouette mask, but does not seem to be not taken into account in the rendered color image. This could hamper convergence for concave objects that exhibit self occlusion in the chosen camera view point. 
+
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
@@ -230,3 +234,7 @@ Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobs
 [13] *Reparameterizing discontinuous integrands for differentiable rendering*. Guillaume Loubet, Nicolas Holzschuch and Wenzel Jakob. SIGGRAPH Asia 2019. [project page](https://rgl.epfl.ch/publications/Loubet2019Reparameterizing)
 
 [14] *TensorFlow Graphics: Computer Graphics Meets Deep Learning*. Valentin, Julien and Keskin, Cem and Pidlypenskyi, Pavel and Makadia, Ameesh and Sud, Avneesh and Bouaziz, Sofien. 2019
+
+[15] *SDFDiff: Differentiable Rendering of Signed Distance Fields for 3D Shape Optimization*. Yue Jiang, Dantong Ji, Zhizhong Han, Matthias Zwicker. CVPR 2020.
+
+[16] *DIST: Rendering Deep Implicit Signed Distance Function with Differentiable Sphere Tracing*. Shaohui Liu1, Yinda Zhang, Songyou Peng, Boxin Shi, Marc Pollefeys, Zhaopeng Cui. CVPR 2020. 
