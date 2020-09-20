@@ -32,7 +32,7 @@ setup(
     url="https://github.com/martinResearch/DEODR",
     license="BSD",
     packages=find_packages(),
-    package_data={"deodr": ["*.pyx", "data/*.*", "data/**/*.*"]},
+    package_data={"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]},
     ext_modules=my_modules,  # additional source file(s)),
     include_dirs=[np.get_include()],
     setup_requires=["numpy", "scipy", "cython"],
