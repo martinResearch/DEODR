@@ -2253,6 +2253,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 					for (int j = 0; j < 2; j++)
 					{
 						uv[i][j] = scene.uv[face_uv[i] * 2 + j] - 1;
+						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 					}
 				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size);
 			}
@@ -2319,6 +2320,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 							for (int i = 0; i < 2; i++)
 								for (int j = 0; j < 2; j++)
 									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
+									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j];
 							double shade[2];
 							for (int i = 0; i < 2; i++)
 								shade[i] = scene.shade[face[sub[i]]];
@@ -2437,6 +2439,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 								for (int j = 0; j < 2; j++)
 								{
 									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
+									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j];
 									uv_b[i][j] = scene.uv_b[face_uv[sub[i]] * 2 + j];
 								}
 
@@ -2539,6 +2542,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 					for (int j = 0; j < 2; j++)
 					{
 						uv[i][j] = scene.uv[face_uv[i] * 2 + j] - 1;
+						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 						uv_b[i][j] = scene.uv_b[face_uv[i] * 2 + j];
 					}
 

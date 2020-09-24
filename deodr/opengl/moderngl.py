@@ -117,7 +117,10 @@ class OffscreenRenderer:
         normals = mesh.vertex_normals[mesh.faces].reshape(-1, 3)
         uv = mesh.uv[mesh.faces_uv].reshape(-1, 2)
         moderngl_uv = np.column_stack(
-            ((uv[:, 0]) / mesh.texture.shape[0], (uv[:, 1] / mesh.texture.shape[1]))
+            (
+                (uv[:, 0] + 0.5) / mesh.texture.shape[0],
+                ((uv[:, 1] + 0.5) / mesh.texture.shape[1]),
+            )
         )
 
         vbo_vert = ctx.buffer(vertices.astype("f4").tobytes())
