@@ -308,11 +308,14 @@ class ColoredTriMesh(TriMesh):
                 if texture.shape[2] == 4:
                     texture = texture[:, :, :3]  # removing alpha channel
 
-                uv = np.column_stack(
-                    (
-                        (mesh.visual.uv[:, 0]) * texture.shape[0],
-                        (1 - mesh.visual.uv[:, 1]) * texture.shape[1],
+                uv = (
+                    np.column_stack(
+                        (
+                            (mesh.visual.uv[:, 0]) * texture.shape[0],
+                            (1 - mesh.visual.uv[:, 1]) * texture.shape[1],
+                        )
                     )
+                    - 0.5
                 )
 
         # merge identical 3D vertices even if their uv are different to keep surface
@@ -346,3 +349,44 @@ class ColoredTriMesh(TriMesh):
             colors=colors2,
             compute_adjacencies=compute_adjacencies,
         )
+
+    def to_trimesh(self):
+        # lazy modules loading
+        import PIL
+        import trimesh
+
+        # largely inspired from trimesh's load_obj function
+
+        if self.vertices_colors is not None:
+            raise BaseException(
+                "convertion to timesh with per vertex color not support yet"
+            )
+
+        v = self.vertices
+        faces = self.faces
+        faces_tex = self.faces_uv
+
+        vt = np.column_stack(
+            (
+                (self.uv[:, 0] + 0.5) / self.texture.shape[0],
+                1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[1]),
+            )
+        )
+        new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
+            faces, faces_tex
+        )
+        assert np.allclose(v[faces], v[mask_v][new_faces])
+        assert new_faces.max() < len(v[mask_v])
+
+        new_vertices = v[mask_v].copy()
+        uv = vt[mask_vt].copy()
+
+        texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
+        texture_pil = PIL.Image.fromarray(texture_uint8)
+        material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
+        visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
+
+        trimesh_mesh = trimesh.Trimesh(
+            vertices=new_vertices, faces=new_faces, visual=visual
+        )
+        return trimesh_mesh
