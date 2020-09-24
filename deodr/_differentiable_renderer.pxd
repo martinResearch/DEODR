@@ -29,5 +29,6 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 		double* shade_b
 		double* colors_b
 		double* texture_b
+		bool strict_edge
 	void renderScene(Scene scene,double* image,double* z_buffer,double sigma,bool antialiase_error ,double* obs,double*  err_buffer)
 	void renderScene_B(Scene scene,double* image,double* z_buffer,double* image_b,double sigma,bool antialiase_error ,double* obs,double*  err_buffer, double* err_buffer_b)
