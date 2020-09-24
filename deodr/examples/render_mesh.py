@@ -77,6 +77,8 @@ def example_channels(display=True, save_image=False, width=640, height=480):
             nv = v
         return (nv - nv.min()) / (nv.max() - nv.min())
 
+    scene.sigma = 0
+
     channels = scene.render_deferred(camera)
     if display:
         plt.figure()
