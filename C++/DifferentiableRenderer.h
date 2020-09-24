@@ -547,6 +547,17 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 		right_edge_id[0] = (id) % 3;  left_edge_id[0] = (id + 2) % 3;
 	}
 
+	
+	// deal with edge case of horizontal segment
+	if (isinf(edge_eq[right_edge_id[0]][0]))
+	{
+		right_edge_id[0]= (id + 1) % 3;
+	}
+	if (isinf(edge_eq[left_edge_id[0]][0]))
+	{
+		left_edge_id[0]= (id + 1) % 3;
+	}
+	
 	id = y_order[2];
 	if (edge_eq[(id) % 3][0] < edge_eq[(id + 2) % 3][0])
 	{
@@ -555,6 +566,16 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	else
 	{
 		right_edge_id[1] = (id + 2) % 3;  left_edge_id[1] = (id) % 3;
+	}
+	
+	// deal with edge case of horizontal segment
+	if (isinf(edge_eq[right_edge_id[1]][0]))
+	{
+		right_edge_id[1]= (id + 1) % 3;
+	}
+	if (isinf(edge_eq[left_edge_id[1]][0]))
+	{
+		left_edge_id[1]= (id + 1) % 3;
 	}
 }
 
