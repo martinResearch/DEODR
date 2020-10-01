@@ -83,7 +83,7 @@ def example_channels(display=True, save_image=False, width=640, height=480):
     if display:
         plt.figure()
         for i, (name, v) in enumerate(channels.items()):
-            ax = plt.subplot(2, 3, i + 1)
+            ax = plt.subplot(2, 4, i + 1)
             ax.set_title(name)
             ax.imshow(normalize(v))
 
@@ -160,7 +160,7 @@ def example_moderngl(display=True, width=640, height=480):
 
 
 if __name__ == "__main__":
-    example_moderngl(display=False)
+    example_moderngl(display=True)
     example_rgb(save_image=False)
     example_channels(save_image=False)
     example_pyrender()

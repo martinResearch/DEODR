@@ -836,6 +836,7 @@ class Scene3D:
         color=True,
         depth=True,
         face_id=True,
+        barycentric=True,
         normal=True,
         luminosity=True,
         uv=True,
@@ -880,6 +881,11 @@ class Scene3D:
                 np.arange(0, self.mesh.nb_faces)[:, None], (1, 3)
             ).reshape(soup_nb_vertices, 1)
             channels["face_id"] = soup_face_ids
+        if barycentric:
+            soup_barycentric = np.tile(
+                np.eye(3, 3)[None, :, :], (self.mesh.nb_faces, 1, 1)
+            ).reshape(soup_nb_vertices, 3)
+            channels["barycentric"] = soup_barycentric
         if normal:
             soup_normals = self.mesh.vertex_normals[self.mesh.faces].reshape(
                 soup_nb_vertices, 3
