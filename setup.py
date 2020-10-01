@@ -25,7 +25,7 @@ libname = "deodr"
 
 setup(
     name=libname,
-    version="0.1.15",
+    version="0.1.16",
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
     description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",
