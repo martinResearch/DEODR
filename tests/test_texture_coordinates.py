@@ -3,9 +3,6 @@
 
 from deodr.differentiable_renderer import Scene2D
 
-
-import matplotlib.pyplot as plt
-
 import numpy as np
 
 
