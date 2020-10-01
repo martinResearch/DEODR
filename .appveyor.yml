@@ -36,7 +36,7 @@ build_script:
   - cmd: python setup.py sdist 
   
   # testing the installation from source distribution
-  - cmd: for /f "delims=" %%a in ('dir /b /s .\dist\*.tar.gz') do set "targz_file=%%a"
+  - cmd: for /f "delims=" %a in ('dir /b /s .\dist\*.tar.gz') do set targz_file=%a
   - cmd: pip install %targz_file%
   
   # releasing precompiled wheels for linux
@@ -52,7 +52,7 @@ build_script:
   - cmd: echo %TWINE_REPOSITORY_URL%
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   
-  # uploading the weels and source distribution to pipy
+  # uploading to weels and source distribution pipy
   - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token%
