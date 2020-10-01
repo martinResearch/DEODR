@@ -504,9 +504,7 @@ class Scene2D(Scene2DBase):
         z_buffer = np.zeros((self.height, self.width))
         err_buffer = np.empty((self.height, self.width))
         antialiase_error = True
-        renderScene(
-            self, sigma, image, z_buffer, antialiase_error, obs, err_buffer
-        )
+        renderScene(self, sigma, image, z_buffer, antialiase_error, obs, err_buffer)
         self.store_backward = (sigma, obs, image, z_buffer, err_buffer)
         return image, z_buffer, err_buffer
 
@@ -514,9 +512,7 @@ class Scene2D(Scene2DBase):
         image = np.zeros((self.height, self.width, self.nb_colors))
         z_buffer = np.zeros((self.height, self.width))
         antialiase_error = False
-        renderScene(
-            self, sigma, image, z_buffer, antialiase_error, None, None
-        )
+        renderScene(self, sigma, image, z_buffer, antialiase_error, None, None)
         self.store_backward = (sigma, image, z_buffer)
         return image, z_buffer
 
@@ -717,9 +713,7 @@ class Scene3D:
         ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
         self.ij = np.array(ij)
         self.colors = np.array(colors)
-        renderSceneB(
-            self, self.sigma, image.copy(), z_buffer, image_b
-        )
+        renderSceneB(self, self.sigma, image.copy(), z_buffer, image_b)
         return self.ij_b, self.colors_b
 
     def render(self, camera, return_z_buffer=False, backface_culling=True):
