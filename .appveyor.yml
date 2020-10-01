@@ -36,7 +36,7 @@ build_script:
   - cmd: python setup.py sdist 
   
   # testing the installation from source distribution
-  - cmd: for /f "delims=" %a in ('dir /b /s .\dist\*.tar.gz') do set targz_file=%a
+  - cmd: for /f "delims=" %%a in ('dir /b /s .\dist\*.tar.gz') do set targz_file=%%a
   - cmd: pip install %targz_file%
   
   # releasing precompiled wheels for linux
