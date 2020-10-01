@@ -34,18 +34,28 @@ build_script:
   - cmd: set PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;
   - cmd: pip install numpy cython
   - cmd: python setup.py sdist 
+  
+  # testing the installation from source distribution
+  - cmd: for /f "delims=" %a in ('dir /b /s .\dist\*.tar.gz') do set targz_file=%a
+  - cmd: pip install %targz_file%
+  
   # releasing precompiled wheels for linux
   - sh: sudo pip install cibuildwheel==1.1.0 
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
   - sh: sudo pip install twine==1.15.0
   - sh: echo $TWINE_REPOSITORY_URL
-  - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
+
   # releasing precompiled wheels for windows  
   - cmd: pip install cibuildwheel==1.0.0
   - cmd: cibuildwheel --output-dir wheelhouse
   - cmd: pip install twine==1.15.0
   - cmd: echo %TWINE_REPOSITORY_URL%
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
+  
+  # uploading the weels and source distribution to pipy
+   - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
+   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
+   - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token%
   
 artifacts:
   - path: "wheelhouse\\*.whl"

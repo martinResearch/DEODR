@@ -10,3 +10,5 @@ tensorflow
 moderngl
 pyrr
 pytest-xvfb
+flake8
+flake8-quotes
