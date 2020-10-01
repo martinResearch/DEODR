@@ -26,3 +26,4 @@ def test_render_mesh(update=False):
 
 if __name__ == "__main__":
     test_render_mesh()
+    test_render_mesh_moderngl()

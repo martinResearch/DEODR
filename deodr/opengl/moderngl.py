@@ -44,9 +44,10 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
 class OffscreenRenderer:
     """Class to perform offscreen rendering of deodr scenes using moderngl."""
 
-    def __init__(self):
+    def __init__(self, znear=None, zfar=None):
         self.ctx = moderngl.create_standalone_context()
-
+        self.znear = znear
+        self.zfar = zfar
         # Shaders
         self.shader_program = self.ctx.program(
             vertex_shader=opengl_shaders.vertex_shader_source,
@@ -55,7 +56,7 @@ class OffscreenRenderer:
         self.fbo = None
         self.texture = None
 
-    def render(self, deodr_scene, camera):
+    def render(self, deodr_scene, camera, znear=None, zfar=None):
         ctx = self.ctx
         shader_program = self.shader_program
         bg_color = deodr_scene.background[0, 0]
@@ -66,14 +67,25 @@ class OffscreenRenderer:
                      image that correspond to a uniform color"
                 )
             )
-        # Context creation
+
+        if znear is None:
+            if self.znear is None:
+                raise BaseException(
+                    "OffscreenRenderer: you need to provide a znear value either in the constructor or when calling render"
+                )
+            znear = self.znear
+
+        if zfar is None:
+            if self.zfar is None:
+                raise BaseException(
+                    "OffscreenRenderer: you need to provide a zfar value either in the constructor or when calling render"
+                )
+            zfar = self.zfar
 
         # Setting up camera
 
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
 
-        zfar = 1000
-        znear = 0.1
         intrinsic = Matrix44(
             np.diag([1, -1, -1, 1]).dot(
                 opencv_to_opengl_perspective(camera, znear, zfar)

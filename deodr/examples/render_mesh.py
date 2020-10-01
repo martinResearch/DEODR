@@ -133,7 +133,7 @@ def example_moderngl(display=True, width=640, height=480):
     camera.extrinsic[1, 1] = camera.extrinsic[1, 1] * 0.9
 
     image_no_antialiasing = scene.render(camera)
-    moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+    moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer(znear=0.1, zfar=1000)
     image_moderngl = moderngl_renderer.render(scene, camera)
     diff = np.abs(
         image_no_antialiasing.astype(np.float) * 255 - image_moderngl.astype(np.float)

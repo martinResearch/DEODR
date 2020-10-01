@@ -142,6 +142,8 @@ def mesh_viewer(
     display_fps=True,
     title=None,
     use_moderngl=False,
+    zfar=None,
+    znear=None,
 ):
     if type(obj_file_or_trimesh) == str:
         if title is None:
@@ -160,6 +162,7 @@ def mesh_viewer(
         )
 
     mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+
     if display_texture_map:
         ax = plt.subplot(111)
         if mesh.textured:
@@ -170,6 +173,13 @@ def mesh_viewer(
 
     camera_center = object_center + np.array([0, 0, 3]) * object_radius
     focal = 2 * width
+
+    if zfar is None:
+        zfar = (
+            10 * (np.sqrt(np.sum((camera_center - object_center) ** 2))) + object_radius
+        )
+    if znear is None:
+        znear = zfar * 0.0001
 
     rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     translation = -rotation.T.dot(camera_center)
@@ -212,7 +222,9 @@ def mesh_viewer(
     if use_moderngl:
         import deodr.opengl.moderngl
 
-        offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer(
+            znear=znear, zfar=zfar
+        )
         scene.mesh.compute_vertex_normals()
     while cv2.getWindowProperty(windowname, 0) >= 0:
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
@@ -246,7 +258,7 @@ def mesh_viewer(
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    mesh_viewer(obj_file, use_moderngl=False)
+    mesh_viewer(obj_file, use_moderngl=True)
 
 
 if __name__ == "__main__":
