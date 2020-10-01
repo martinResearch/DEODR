@@ -19,7 +19,7 @@ import numpy as np
 
 extensions = "deodr/differentiable_renderer_cython.pyx"
 
-my_modules = cythonize(extensions, annotate=True, language="c++", include_path=[np.get_include()])
+my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
 
@@ -34,6 +34,7 @@ setup(
     packages=find_packages(),
     package_data={"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]},
     data_files=[('C++', ['C++/DifferentiableRenderer.h'])],
+    include_dirs=[np.get_include()],
     ext_modules=my_modules,  # additional source file(s)),
     setup_requires=["numpy", "scipy", "cython"],
     install_requires=["numpy", "scipy"],
