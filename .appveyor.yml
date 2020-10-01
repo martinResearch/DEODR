@@ -53,9 +53,9 @@ build_script:
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   
   # uploading the weels and source distribution to pipy
-   - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
-   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
-   - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token%
+  - sh: python -m twine upload wheelhouse/*.whl --skip-existing -p $encrypted_pypi_api_token
+  - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
+  - cmd: python -m twine upload dist/*.tar.gz --skip-existing -p %encrypted_pypi_api_token%
   
 artifacts:
   - path: "wheelhouse\\*.whl"
