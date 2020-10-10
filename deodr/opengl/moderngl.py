@@ -44,10 +44,9 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
 class OffscreenRenderer:
     """Class to perform offscreen rendering of deodr scenes using moderngl."""
 
-    def __init__(self, znear=None, zfar=None):
+    def __init__(self):
         self.ctx = moderngl.create_standalone_context()
-        self.znear = znear
-        self.zfar = zfar
+
         # Shaders
         self.shader_program = self.ctx.program(
             vertex_shader=opengl_shaders.vertex_shader_source,
@@ -56,11 +55,10 @@ class OffscreenRenderer:
         self.fbo = None
         self.texture = None
 
-    def render(self, deodr_scene, camera, znear=None, zfar=None):
-        ctx = self.ctx
-        shader_program = self.shader_program
-        bg_color = deodr_scene.background[0, 0]
-        if False and not (np.all(deodr_scene.background == bg_color[None, None, :])):
+    def set_scene(self, deodr_scene):
+
+        self.bg_color = deodr_scene.background[0, 0]
+        if False and not (np.all(deodr_scene.background == self.bg_color[None, None, :])):
             raise (
                 BaseException(
                     "does not support background image yet, please provide a backround\
@@ -68,85 +66,90 @@ class OffscreenRenderer:
                 )
             )
 
-        if znear is None:
-            if self.znear is None:
-                raise BaseException(
-                    "OffscreenRenderer: you need to provide a znear value either in the constructor or when calling render"
-                )
-            znear = self.znear
-
-        if zfar is None:
-            if self.zfar is None:
-                raise BaseException(
-                    "OffscreenRenderer: you need to provide a zfar value either in the constructor or when calling render"
-                )
-            zfar = self.zfar
-
-        # Setting up camera
-
-        extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
-
-        intrinsic = Matrix44(
-            np.diag([1, -1, -1, 1]).dot(
-                opencv_to_opengl_perspective(camera, znear, zfar)
-            )
+        self.shader_program["light_directional"].value = tuple(
+            deodr_scene.light_directional
         )
-        intrinsic
+        self.shader_program["light_ambient"].value = deodr_scene.light_ambient
 
-        #
-        shader_program["light_directional"].value = tuple(deodr_scene.light_directional)
-        shader_program["light_ambient"].value = deodr_scene.light_ambient
-        shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
-        shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
-        if camera.distortion is None:
-            k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
-        else:
-            k1, k2, p1, p2, k3, = camera.distortion
-        shader_program["k1"].value = k1
-        shader_program["k2"].value = k2
-        shader_program["k3"].value = k3
-        shader_program["p1"].value = p1
-        shader_program["p2"].value = p2
+        self.set_mesh(deodr_scene.mesh)
 
-        # Texture
-        assert not deodr_scene.mesh.texture.flags["WRITEABLE"]
-        texture_id = id(deodr_scene.mesh.texture)
-        if self.texture is None or self.texture_id != texture_id:
-            self.texture_id = id(deodr_scene.mesh.texture)
-            self.texture = ctx.texture(
-                (deodr_scene.mesh.texture.shape[0], deodr_scene.mesh.texture.shape[1]),
-                deodr_scene.mesh.texture.shape[2],
-                (deodr_scene.mesh.texture * 255).astype(np.uint8).tobytes(),
-            )
-        # texture.build_mipmaps()
+    def set_mesh(self, mesh):
 
-        # compputing the box around the displaced mesh to get maximum accuracy
-        # of the xyz point cloud using unit8 opengl type
+        self.set_texture(mesh.texture)
+        # create triangles soup
 
-        # creat triangles soup
-        mesh = deodr_scene.mesh
         vertices = mesh.vertices[mesh.faces].reshape(-1, 3)
+        min_max = np.stack((vertices.min(axis=0), vertices.max(axis=0)))
+        self.bounding_box_corners = np.stack(
+            np.meshgrid(min_max[:, 0], min_max[:, 1], min_max[:, 2]), axis=-1
+        ).reshape(-1, 3)
         normals = mesh.vertex_normals[mesh.faces].reshape(-1, 3)
         uv = mesh.uv[mesh.faces_uv].reshape(-1, 2)
         moderngl_uv = np.column_stack(
             (
-                (uv[:, 0] + 0.5) / mesh.texture.shape[0],
-                ((uv[:, 1] + 0.5) / mesh.texture.shape[1]),
+                (uv[:, 0] + 0.5) / mesh.texture.shape[1],
+                ((uv[:, 1] + 0.5) / mesh.texture.shape[0]),
             )
         )
 
-        vbo_vert = ctx.buffer(vertices.astype("f4").tobytes())
-        vbo_norm = ctx.buffer(normals.astype("f4").tobytes())
-        vbo_uv = ctx.buffer(moderngl_uv.astype("f4").tobytes())
+        vbo_vert = self.ctx.buffer(vertices.astype("f4").tobytes())
+        vbo_norm = self.ctx.buffer(normals.astype("f4").tobytes())
+        vbo_uv = self.ctx.buffer(moderngl_uv.astype("f4").tobytes())
 
-        vao = ctx.vertex_array(
-            shader_program,
+        self.vao = self.ctx.vertex_array(
+            self.shader_program,
             [
                 (vbo_vert, "3f", "in_vert"),
                 (vbo_norm, "3f", "in_norm"),
                 (vbo_uv, "2f", "in_text"),
             ],
         )
+
+    def set_texture(self, texture):
+        # Texture
+        assert not texture.flags["WRITEABLE"]
+        texture_id = id(texture)
+        if self.texture is None or self.texture_id != texture_id:
+            self.texture_id = id(texture)
+            self.texture = self.ctx.texture(
+                (texture.shape[1], texture.shape[0]),
+                texture.shape[2],
+                (texture * 255).astype(np.uint8).tobytes(),
+            )
+        # texture.build_mipmaps()
+
+    def set_camera(self, camera):
+        extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
+
+        intrinsic = Matrix44(
+            np.diag([1, -1, -1, 1]).dot(
+                opencv_to_opengl_perspective(camera, self.znear, self.zfar)
+            )
+        )
+
+        #
+
+        self.shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
+        self.shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
+        if camera.distortion is None:
+            k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
+        else:
+            k1, k2, p1, p2, k3, = camera.distortion
+        self.shader_program["k1"].value = k1
+        self.shader_program["k2"].value = k2
+        self.shader_program["k3"].value = k3
+        self.shader_program["p1"].value = p1
+        self.shader_program["p2"].value = p2
+
+    def render(self, camera):
+        ctx = self.ctx
+        self.zfar = camera.world_to_camera(self.bounding_box_corners)[:, 2].max()
+        self.znear = 1e-3 * self.zfar
+        # Setting up camera
+        self.set_camera(camera)
+
+        # compputing the box around the displaced mesh to get maximum accuracy
+        # of the xyz point cloud using unit8 opengl type
 
         # Framebuffers
         if self.fbo is None:
@@ -158,9 +161,9 @@ class OffscreenRenderer:
         # Rendering the RGB image
         self.fbo.use()
         ctx.enable(moderngl.DEPTH_TEST)
-        ctx.clear(bg_color[0], bg_color[1], bg_color[2])
+        ctx.clear(self.bg_color[0], self.bg_color[1], self.bg_color[2])
         self.texture.use()
-        vao.render()
+        self.vao.render()
         data = self.fbo.read(components=3, alignment=1)
         array_rgb = np.frombuffer(data, dtype=np.uint8).reshape(
             camera.height, camera.width, 3

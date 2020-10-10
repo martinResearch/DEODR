@@ -785,7 +785,7 @@ class Scene3D:
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, height, width, depth_scale=1, backface_culling=True):
+    def render_depth(self, camera, depth_scale=1, backface_culling=True):
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -807,8 +807,8 @@ class Scene3D:
         self.shade = np.zeros(
             (self.mesh.nb_vertices), dtype=np.bool
         )  # eventually used when using texture
-        self.height = height
-        self.width = width
+        self.height = camera.height
+        self.width = camera.width
         self.shaded = np.zeros(
             (self.mesh.nb_faces), dtype=np.bool
         )  # eventually used when using texture

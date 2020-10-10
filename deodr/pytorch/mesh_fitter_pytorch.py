@@ -275,7 +275,7 @@ class MeshDepthFitter:
 
         depth_scale = 1 * self.depthScale
         depth = self.scene.render_depth(
-            self.camera, width=self.width, height=self.height, depth_scale=depth_scale
+            self.camera, depth_scale=depth_scale
         )
         depth = torch.clamp(depth, 0, self.scene.max_depth)
 
