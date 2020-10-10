@@ -165,7 +165,8 @@ class TriMesh:
         self.face_normals = None
         self.vertex_normals = None
         self.clockwise = clockwise
-        self.set_vertices(vertices)
+        if vertices is not None:
+            self.set_vertices(vertices)
         if compute_adjacencies:
             self.compute_adjacencies()
 
