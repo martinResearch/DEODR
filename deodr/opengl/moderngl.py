@@ -58,7 +58,7 @@ class OffscreenRenderer:
     def set_scene(self, deodr_scene):
 
         self.bg_color = deodr_scene.background[0, 0]
-        if False and not (np.all(deodr_scene.background == bg_color[None, None, :])):
+        if False and not (np.all(deodr_scene.background == self.bg_color[None, None, :])):
             raise (
                 BaseException(
                     "does not support background image yet, please provide a backround\
@@ -66,9 +66,10 @@ class OffscreenRenderer:
                 )
             )
 
-        self.shader_program["light_directional"].value = tuple(deodr_scene.light_directional)
+        self.shader_program["light_directional"].value = tuple(
+            deodr_scene.light_directional
+        )
         self.shader_program["light_ambient"].value = deodr_scene.light_ambient
-
 
         self.set_mesh(deodr_scene.mesh)
 
@@ -78,8 +79,10 @@ class OffscreenRenderer:
         # create triangles soup
 
         vertices = mesh.vertices[mesh.faces].reshape(-1, 3)
-        min_max = np.stack((vertices.min(axis=0),vertices.max(axis=0)))
-        self.bounding_box_corners = np.stack(np.meshgrid(min_max[:,0],min_max[:,1],min_max[:,2]),axis=-1).reshape(-1,3)
+        min_max = np.stack((vertices.min(axis=0), vertices.max(axis=0)))
+        self.bounding_box_corners = np.stack(
+            np.meshgrid(min_max[:, 0], min_max[:, 1], min_max[:, 2]), axis=-1
+        ).reshape(-1, 3)
         normals = mesh.vertex_normals[mesh.faces].reshape(-1, 3)
         uv = mesh.uv[mesh.faces_uv].reshape(-1, 2)
         moderngl_uv = np.column_stack(
@@ -110,14 +113,13 @@ class OffscreenRenderer:
             self.texture_id = id(texture)
             self.texture = self.ctx.texture(
                 (texture.shape[1], texture.shape[0]),
-                 texture.shape[2],
+                texture.shape[2],
                 (texture * 255).astype(np.uint8).tobytes(),
             )
         # texture.build_mipmaps()
 
     def set_camera(self, camera):
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
-
 
         intrinsic = Matrix44(
             np.diag([1, -1, -1, 1]).dot(
@@ -141,12 +143,10 @@ class OffscreenRenderer:
 
     def render(self, camera):
         ctx = self.ctx
-        self.zfar = camera.world_to_camera(self.bounding_box_corners)[:,2].max()        
-        self.znear = 1e-3* self.zfar
+        self.zfar = camera.world_to_camera(self.bounding_box_corners)[:, 2].max()
+        self.znear = 1e-3 * self.zfar
         # Setting up camera
         self.set_camera(camera)
-
-
 
         # compputing the box around the displaced mesh to get maximum accuracy
         # of the xyz point cloud using unit8 opengl type

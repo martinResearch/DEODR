@@ -82,8 +82,10 @@ class TriMeshAdjacencies:
         assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
-    def boundary_edges():
-        is_boundary_edge = np.array(np.sum(submesh.adjacencies.edges_faces_ones, axis=1) == 1).squeeze(axis=1)
+    def boundary_edges(self):
+        is_boundary_edge = np.array(
+            np.sum(self.adjacencies.edges_faces_ones, axis=1) == 1
+        ).squeeze(axis=1)
         return self.edges[is_boundary_edge, :]
 
     def id_edge(self, idv):
@@ -150,11 +152,11 @@ class TriMesh:
 
     def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
 
-        assert(np.issubdtype(faces.dtype, np.integer))
+        assert np.issubdtype(faces.dtype, np.integer)
         assert faces.ndim == 2
         assert faces.shape[1] == 3
         assert np.all(faces >= 0)
-        
+
         self.faces = faces
         self.nb_vertices = np.max(faces) + 1
         self.nb_faces = faces.shape[0]
@@ -169,7 +171,7 @@ class TriMesh:
 
     def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
-        
+
         if self.vertices is not None:
 
             if self.adjacencies.is_closed:
@@ -304,7 +306,7 @@ class ColoredTriMesh(TriMesh):
 
         # Process vertex colors
         if mesh.visual.kind == "vertex":
-            colors = mesh.visual.vertex_colors.copy()[:,:3]
+            colors = mesh.visual.vertex_colors.copy()[:, :3]
 
         # Process face colors
         elif mesh.visual.kind == "face":
@@ -343,7 +345,7 @@ class ColoredTriMesh(TriMesh):
         )
         faces = inv_ids[mesh.faces].astype(np.uint32)
         if colors is not None:
-            colors2 = colors[return_index,:]
+            colors2 = colors[return_index, :]
             if np.any(colors != colors2[inv_ids, :]):
                 raise (
                     BaseException(
@@ -397,8 +399,8 @@ class ColoredTriMesh(TriMesh):
         uv = vt[mask_vt].copy()
 
         texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
-        if texture_uint8.shape[2]==1:
-            texture_uint8=texture_uint8.squeeze(axis=2)
+        if texture_uint8.shape[2] == 1:
+            texture_uint8 = texture_uint8.squeeze(axis=2)
         texture_pil = PIL.Image.fromarray(texture_uint8)
         material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
         visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)

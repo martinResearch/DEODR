@@ -65,14 +65,13 @@ class Interactor:
         if event == cv2.EVENT_MBUTTONUP:
             self.middle_is_down = False
 
+        self.ctrl_is_down = flags & cv2.EVENT_FLAG_CTRLKEY
 
-        self.ctrl_is_down =  flags & cv2.EVENT_FLAG_CTRLKEY
+        if self.left_is_down and not (self.ctrl_is_down):
 
-        if self.left_is_down and not(self.ctrl_is_down):
-            
             if self.mode == "camera_centered":
-                print(center_in_camera)
-                center_in_camera= self.camera.world_to_camera(self.object_center)
+
+                center_in_camera = self.camera.world_to_camera(self.object_center)
                 rotation = Rotation.from_rotvec(
                     np.array(
                         [
@@ -110,7 +109,7 @@ class Interactor:
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
 
-        if self.right_is_down and not(self.ctrl_is_down):
+        if self.right_is_down and not (self.ctrl_is_down):
             if self.mode == "camera_centered":
                 self.camera.extrinsic[2, 3] += self.z_translation_speed * (
                     self.y_last - y
@@ -128,24 +127,21 @@ class Interactor:
 
         if self.middle_is_down or (self.left_is_down and self.ctrl_is_down):
             # translation
-            
+
             object_depth = (
                 self.camera.extrinsic[2, :3].dot(self.object_center)
                 + self.camera.extrinsic[2, 3]
             )
 
-            
-            tx = (
-                self.xy_translation_speed * object_depth * (x - self.x_last)
-            )
-            ty=  (
-                self.xy_translation_speed * object_depth * (y - self.y_last)
-            )
+            tx = self.xy_translation_speed * object_depth * (x - self.x_last)
+            ty = self.xy_translation_speed * object_depth * (y - self.y_last)
 
-            self.object_center -= self.camera.extrinsic[0,:3] * tx + self.camera.extrinsic[1,:3] * ty
+            self.object_center -= (
+                self.camera.extrinsic[0, :3] * tx + self.camera.extrinsic[1, :3] * ty
+            )
             self.camera.extrinsic[0, 3] += tx
             self.camera.extrinsic[1, 3] += ty
-            center_in_camera= self.camera.world_to_camera(self.object_center)            
+            center_in_camera = self.camera.world_to_camera(self.object_center)
             self.x_last = x
             self.y_last = y
             assert np.max(np.abs(center_in_camera[:2])) < 1e-3
@@ -159,9 +155,8 @@ def mesh_viewer(
     display_fps=True,
     title=None,
     use_moderngl=False,
-    light_directional=(-0.5, 0, -0.5), 
-    light_ambient=0.3
-    
+    light_directional=(-0.5, 0, -0.5),
+    light_ambient=0.3,
 ):
     if type(obj_file_or_trimesh) == str:
         if title is None:
@@ -206,7 +201,9 @@ def mesh_viewer(
     )
 
     scene = differentiable_renderer.Scene3D()
-    scene.set_light(light_directional=np.array(light_directional), light_ambient=light_ambient)
+    scene.set_light(
+        light_directional=np.array(light_directional), light_ambient=light_ambient
+    )
     scene.set_mesh(mesh)
     background_image = np.ones((height, width, 3))
     scene.set_background(background_image)

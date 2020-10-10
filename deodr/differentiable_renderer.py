@@ -829,7 +829,6 @@ class Scene3D:
             ij_b, depths_b=depths_b, store_backward=self.store_backward_current
         )
 
-
     def render_deferred(
         self,
         camera,
