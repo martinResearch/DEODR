@@ -20,8 +20,8 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
     Unlike the TriMesh class there are no vertices stored in this class.
     """
 
-    def __init__(self, faces, clockwise=False):
-        super().__init__(faces, clockwise)
+    def __init__(self, faces, clockwise=False, nb_vertices=None):
+        super().__init__(faces=faces, clockwise=clockwise, nb_vertices=nb_vertices)
         self.faces_torch = torch.LongTensor(faces)
         i = self.faces_torch.flatten()
         j = torch.LongTensor(
@@ -59,11 +59,11 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 class TriMeshPytorch(TriMesh):
     """Pytorch implementation of a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False):
-        super().__init__(faces, vertices, clockwise)
+    def __init__(self, faces, vertices=None, nb_vertices=None, clockwise=False):
+        super().__init__(faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise)
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacenciesPytorch(self.faces)
+        self.adjacencies = TriMeshAdjacenciesPytorch(self.faces, nb_vertices=self.nb_vertices)
 
 
 class ColoredTriMeshPytorch(TriMeshPytorch):
@@ -73,6 +73,7 @@ class ColoredTriMeshPytorch(TriMeshPytorch):
         self,
         faces,
         vertices=None,
+        nb_vertices=None,
         clockwise=False,
         faces_uv=None,
         uv=None,
@@ -80,7 +81,7 @@ class ColoredTriMeshPytorch(TriMeshPytorch):
         colors=None,
     ):
         super(ColoredTriMeshPytorch, self).__init__(
-            faces, vertices=vertices, clockwise=clockwise
+            faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise
         )
         self.faces_uv = faces_uv
         self.uv = uv

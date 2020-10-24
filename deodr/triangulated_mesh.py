@@ -12,11 +12,22 @@ class TriMeshAdjacencies:
     Unlike the TriMesh class there are no vertices stored in this class
     """
 
-    def __init__(self, faces, clockwise=False):
+    def __init__(self, faces, clockwise=False, nb_vertices=None):
+        """
+        unless specified explicitly the number of vertices is assumed to be np.max(faces.flat)+1
+        """
+        assert np.issubdtype(faces.dtype, np.integer)
+        assert faces.ndim == 2
+        assert faces.shape[1] == 3
+
         self.faces = faces
         self.nb_faces = faces.shape[0]
-        self.nb_vertices = np.max(faces.flat) + 1
-
+        if nb_vertices is None:
+            # unless specified explicitly the number of vertices is assumed to be np.max(faces.flat)+1
+            nb_vertices = np.max(faces.flat) + 1
+        else:
+            assert(nb_vertices > np.max(faces.flat))
+        self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
@@ -142,28 +153,45 @@ class TriMeshAdjacencies:
 class TriMesh:
     """Class that implements a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
+    def __init__(self, faces, vertices=None, nb_vertices=None, clockwise=False, compute_adjacencies=True):
+       
+        assert np.issubdtype(faces.dtype, np.integer)
+        assert faces.ndim == 2
+        assert faces.shape[1] == 3
         self.faces = faces
-        self.nb_vertices = np.max(faces) + 1
+        self.max_face_index = np.max(faces)        
         self.nb_faces = faces.shape[0]
 
+        if nb_vertices is None:
+            if vertices is None:
+                raise BaseException("you need to not provide vertices or nb_vertices so that the number of vertices is known")
+            assert vertices.ndim == 2 
+            nb_vertices = vertices.shape[0]
+        elif vertices is not None:
+            assert vertices.ndim == 2 
+            assert(vertices == vertices.shape[0])
+
+        self.nb_vertices = nb_vertices
         self.vertices = None
         self.face_normals = None
         self.vertex_normals = None
         self.clockwise = clockwise
-        self.set_vertices(vertices)
+        if vertices is not None:
+            self.set_vertices(vertices)
         if compute_adjacencies:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
+        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise, nb_vertices=self.nb_vertices)
         assert self.adjacencies.is_manifold
         if self.vertices is not None:
-
             if self.adjacencies.is_closed:
                 self.check_orientation()
 
     def set_vertices(self, vertices):
+        assert vertices.ndim == 2   
+        if vertices.shape[0] != self.nb_vertices: 
+            raise ValueError(f'Expecting {self.max_face_index+1} vertices.')
         self.vertices = vertices
         self.face_normals = None
         self.vertex_normals = None
@@ -231,6 +259,7 @@ class ColoredTriMesh(TriMesh):
         self,
         faces,
         vertices=None,
+        nb_vertices=None,
         clockwise=False,
         faces_uv=None,
         uv=None,
@@ -242,6 +271,7 @@ class ColoredTriMesh(TriMesh):
         super(ColoredTriMesh, self).__init__(
             faces,
             vertices=vertices,
+            nb_vertices= nb_vertices,
             clockwise=clockwise,
             compute_adjacencies=compute_adjacencies,
         )
