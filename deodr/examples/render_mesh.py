@@ -77,11 +77,13 @@ def example_channels(display=True, save_image=False, width=640, height=480):
             nv = v
         return (nv - nv.min()) / (nv.max() - nv.min())
 
+    scene.sigma = 0
+
     channels = scene.render_deferred(camera)
     if display:
         plt.figure()
         for i, (name, v) in enumerate(channels.items()):
-            ax = plt.subplot(2, 3, i + 1)
+            ax = plt.subplot(2, 4, i + 1)
             ax.set_title(name)
             ax.imshow(normalize(v))
 
@@ -132,7 +134,8 @@ def example_moderngl(display=True, width=640, height=480):
 
     image_no_antialiasing = scene.render(camera)
     moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
-    image_moderngl = moderngl_renderer.render(scene, camera)
+    moderngl_renderer.set_scene(scene)
+    image_moderngl = moderngl_renderer.render(camera)
     diff = np.abs(
         image_no_antialiasing.astype(np.float) * 255 - image_moderngl.astype(np.float)
     )
@@ -158,7 +161,7 @@ def example_moderngl(display=True, width=640, height=480):
 
 
 if __name__ == "__main__":
-    example_moderngl(display=False)
+    example_moderngl(display=True)
     example_rgb(save_image=False)
     example_channels(save_image=False)
     example_pyrender()

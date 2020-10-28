@@ -25,14 +25,15 @@ libname = "deodr"
 
 setup(
     name=libname,
-    version="0.1.14",
+    version="0.1.17",
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
     description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",
     url="https://github.com/martinResearch/DEODR",
     license="BSD",
     packages=find_packages(),
-    package_data={"deodr": ["*.pyx", "data/*.*", "data/**/*.*"]},
+    package_data={"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]},
+    data_files=[("C++", ["C++/DifferentiableRenderer.h"])],
     ext_modules=my_modules,  # additional source file(s)),
     include_dirs=[np.get_include()],
     setup_requires=["numpy", "scipy", "cython"],

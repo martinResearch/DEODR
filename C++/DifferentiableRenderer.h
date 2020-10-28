@@ -43,11 +43,11 @@ using namespace std;
 #define SWAP(_a_, _b_, _c_) { _c_ = _a_; _a_ = _b_; _b_ = _c_; }
 
 
-void get_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end);
-inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA);
-inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA);
-inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size);
-inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size);
+void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end);
+inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA);
+inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA);
+inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size);
+inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size);
 
 struct Scene {
 	unsigned int* faces;
@@ -78,6 +78,7 @@ struct Scene {
 	double* shade_b;
 	double* colors_b;
 	double* texture_b;
+	bool strict_edge;
 };
 
 void  inv_matrix_3x3(double* S, double* T)
@@ -385,9 +386,9 @@ inline void sort3(double v[3], double sv[3], short int i[3])
 
 template <class T> void bilinear_sample(T* A, T I[], int* I_size, double p[2], int sizeA)
 {
-
+	
 	// compute integer part and fractional part
-
+	
 	int fp[2];
 	double e[2];
 
@@ -410,8 +411,7 @@ template <class T> void bilinear_sample(T* A, T I[], int* I_size, double p[2], i
 			fp[k] = I_size[k] - 2;
 			e[k] = 1;
 		}
-	}
-
+	}	
 	// bilinear interpolation 
 
 	int indx00 = sizeA * (fp[0] + I_size[0] * fp[1]);
@@ -490,7 +490,7 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[], T I_B[], int* I_s
 	}
 }
 
-void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][2], int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
+void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][2], bool strict_edge, int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
 {
 
 	// create a matrix that map barycentric coordinates to homogeneous image coordinates
@@ -525,13 +525,26 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	sort3(y_unsorted, y_sorted, y_order);
 
 	// limit upper part
-
-	y_begin[0] = (short)floor(y_sorted[0]) + 1;
+	if (strict_edge)
+	{
+		y_begin[0] = (short)floor(y_sorted[0]) + 1;
+	}
+	else
+	{
+		y_begin[0] = (short)ceil(y_sorted[0]);
+	}	
 	y_end[0] = (short)floor(y_sorted[1]);
+	
 
 	// limit lower part
-
-	y_begin[1] = (short)floor(y_sorted[1]) + 1;
+	if (strict_edge)
+	{
+		y_begin[1] = (short)floor(y_sorted[1]) + 1;
+	}
+	else
+	{	
+		y_begin[1] = (short)ceil(y_sorted[1]);
+	}
 	y_end[1] = (short)floor(y_sorted[2]);
 
 	// set left_edge_id and right_edge_id
@@ -546,7 +559,17 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	{
 		right_edge_id[0] = (id) % 3;  left_edge_id[0] = (id + 2) % 3;
 	}
-
+	
+	// deal with edge case of horizontal segment
+	if (isinf(edge_eq[right_edge_id[0]][0]))
+	{
+		right_edge_id[0]= (id + 1) % 3;
+	}
+	if (isinf(edge_eq[left_edge_id[0]][0]))
+	{
+		left_edge_id[0]= (id + 1) % 3;
+	}
+	
 	id = y_order[2];
 	if (edge_eq[(id) % 3][0] < edge_eq[(id + 2) % 3][0])
 	{
@@ -556,9 +579,19 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	{
 		right_edge_id[1] = (id + 2) % 3;  left_edge_id[1] = (id) % 3;
 	}
+	
+	// deal with edge case of horizontal segment
+	if (isinf(edge_eq[right_edge_id[1]][0]))
+	{
+		right_edge_id[1]= (id + 1) % 3;
+	}
+	if (isinf(edge_eq[left_edge_id[1]][0]))
+	{
+		left_edge_id[1]= (id + 1) % 3;
+	}
 }
 
-template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T* Avertex[], double z_buffer[], T image[], int height, int width, int sizeA)
+template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T* Avertex[], double z_buffer[], T image[], int height, int width, int sizeA, bool strict_edge)
 {
 	int     y_begin[2], y_end[2];
 
@@ -572,7 +605,7 @@ template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double 
 	//   compute triangle borders equations
 	//double Vxy[][2],double  bary_to_xy1[9],double  xy1_to_bary[9],double* edge_eq[3],y_begin,y_end,left_edge_id,right_edge_id)
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 	xy1_to_A = new double[3 * sizeA];
@@ -586,12 +619,12 @@ template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double 
 	mul_vect_matrix3x3(xy1_to_Z, Zvertex, xy1_to_bary);
 	for (int k = 0; k < 2; k++)
 	{
-		render_part_interpolated(image, z_buffer, y_begin[k], y_end[k], xy1_to_A, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA);
+		render_part_interpolated(image, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_A, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA);
 	}
 	delete[] xy1_to_A;
 }
 
-template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA)
+template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, bool strict_edge)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][2];
@@ -604,7 +637,7 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	//   compute triangle borders equations
 	//double Vxy[][2],double  bary_to_xy1[9],double  xy1_to_bary[9],double* edge_eq[3],y_begin,y_end,left_edge_id,right_edge_id)
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 
@@ -622,7 +655,7 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	for (short int i = 0; i < 3 * sizeA; i++) xy1_to_A_B[i] = 0;
 	
 	for (int k = 0; k < 2; k++)
-		render_part_interpolated_B(image, image_B, z_buffer, y_begin[k], y_end[k], xy1_to_A, xy1_to_A_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA);
+		render_part_interpolated_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_A, xy1_to_A_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA);
 
 
 	double  xy1_to_bary_B[9] = { 0 };
@@ -651,13 +684,35 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	delete[] xy1_to_A_B;
 }
 
-inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA)
+inline void get_xrange(int width, const double* left_eq, const double* right_eq, short int y, bool strict_edge, short int &x_begin, short int &x_end)
+{
+	// compute beginning and ending of the rasterized line	
+	x_begin = 0;
+	short int temp_x;	
+	if (strict_edge)
+	{	
+		// pixels falling exactly on an edge shared by two triangle will be drawn only once 
+		// when rasterizing the the triangle on the left of the edge.
+		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
+	}
+	else
+	{	
+		// pixels falling exactly on an edge shared by two triangle will be drawn twice
+		temp_x = (short int) ceil(left_eq[0] * y + left_eq[1]);
+	}
+	if (temp_x > x_begin) x_begin = temp_x;
+
+	x_end = width - 1;
+	temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
+	if (temp_x < x_end) x_end = temp_x;
+}
+
+inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA)
 {
 	double t[3];
 	double *A0y;
 	double Z0y;
-	short int x_begin, x_end;
-	int temp_x;
+	short int x_begin, x_end;	
 	double Z;
 	A0y = new double[sizeA];
 
@@ -673,13 +728,7 @@ inline void render_part_interpolated(double* image, double* z_buffer, int y_begi
 
 		// compute beginning and ending of the rasterized line		
 
-		x_begin = 0;
-		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
-		if (temp_x > x_begin) x_begin = temp_x;
-
-		x_end = width - 1;
-		temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
-		if (temp_x < x_end) x_end = temp_x;
+		get_xrange(width, left_eq, right_eq, y, strict_edge, x_begin,x_end);
 
 		//rasterize line
 
@@ -700,14 +749,13 @@ inline void render_part_interpolated(double* image, double* z_buffer, int y_begi
 	delete[]A0y;
 }
 
-inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA)
+inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA)
 {
 	double t[3];
 	//double *A0y;
 	double *A0y_B;
 	double Z0y;
 	short int x_begin, x_end;
-	int temp_x;
 	double Z;
 
 	//A0y  =new double[sizeA];
@@ -729,13 +777,7 @@ inline void render_part_interpolated_B(double* image, double* image_B, double* z
 
 		// compute beginning and ending of the rasterized line		
 
-		x_begin = 0;
-		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
-		if (temp_x > x_begin) x_begin = temp_x;
-
-		x_end = width - 1;
-		temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
-		if (temp_x < x_end) x_end = temp_x;
+		get_xrange(width, left_eq, right_eq, y, strict_edge, x_begin,x_end);
 
 		//rasterize line
 
@@ -762,7 +804,7 @@ inline void render_part_interpolated_B(double* image, double* image_B, double* z
 	delete[]A0y_B;
 }
 
-template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], T image[], int height, int width, int sizeA, T* Texture, int* Texture_size)
+template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], T image[], int height, int width, int sizeA, T* Texture, int* Texture_size, bool strict_edge)
 {
 	int     y_begin[2], y_end[2];
 
@@ -776,7 +818,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 	
 	//   compute triangle borders equations
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 
@@ -791,10 +833,10 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 		}
 
 	for (int k = 0; k < 2; k++)
-		render_part_textured_gouraud(image, z_buffer, y_begin[k], y_end[k], xy1_to_UV, xy1_to_L, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_size);
+		render_part_textured_gouraud(image, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_L, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_size);
 }
 
-template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size)
+template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, bool strict_edge)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][2];
@@ -813,7 +855,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 	
 	//   compute triangle borders equations
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 
@@ -828,7 +870,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 		}
 
 	for (int k = 0; k < 2; k++)
-		render_part_textured_gouraud_B(image, image_B, z_buffer, y_begin[k], y_end[k], xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_B, Texture_size);
+		render_part_textured_gouraud_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_B, Texture_size);
 
 	for (short int i = 0; i < 2; i++)
 		for (short int j = 0; j < 3; j++)
@@ -851,13 +893,12 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 			Vxy_B[v][d] += bary_to_xy1_B[3 * d + v];
 }
 
-inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size)
+inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size)
 {
 	double t[3];
 	double L0y;
 	double Z0y;
 	short int x_begin, x_end;
-	int temp_x;
 	double Z;
 	double *A;
 	double UV0y[2];
@@ -884,13 +925,7 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y
 
 		// compute beginning and ending of the rasterized line		
 
-		x_begin = 0;
-		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
-		if (temp_x > x_begin) x_begin = temp_x;
-
-		x_end = width - 1;
-		temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
-		if (temp_x < x_end) x_end = temp_x;
+		get_xrange(width, left_eq, right_eq, y, strict_edge, x_begin,x_end);
 
 		// line rasterization
 
@@ -920,13 +955,12 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y
 	delete[]A;
 }
 
-inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size)
+inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size)
 {
 	double t[3];
 	double L0y;
 	double Z0y;
 	short int x_begin, x_end;
-	int temp_x;
 	double Z;
 	double *A;
 	double *A_B;
@@ -958,13 +992,7 @@ inline  void render_part_textured_gouraud_B(double* image, double* image_B, doub
 
 		// compute beginning and ending of the rasterized line		
 
-		x_begin = 0;
-		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
-		if (temp_x > x_begin) x_begin = temp_x;
-
-		x_end = width - 1;
-		temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
-		if (temp_x < x_end) x_end = temp_x;
+		get_xrange(width, left_eq, right_eq, y, strict_edge, x_begin,x_end);
 
 		// line rasterization
 
@@ -1233,7 +1261,7 @@ template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te image[]
 
 		// get x range of the line
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 
 		//rasterize line
 
@@ -1312,7 +1340,7 @@ template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double V
 
 		// get x range of the line
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 
 		//rasterize line
 
@@ -1436,7 +1464,7 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 		
 		//rasterize line
 
@@ -1535,7 +1563,7 @@ template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], doub
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 		
 		//rasterize line
 
@@ -1675,7 +1703,7 @@ template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], d
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 
 		//rasterize line
 
@@ -1776,7 +1804,7 @@ template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2],
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 		
 		//rasterize line
 
@@ -1914,7 +1942,7 @@ template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], doubl
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 
 
 		//rasterize line
@@ -2004,7 +2032,7 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 		// get x range of the line
 
 		int x_begin, x_end;
-		get_xrange_from_ineq(ineq, width, y, x_begin, x_end);
+		get_edge_xrange_from_ineq(ineq, width, y, x_begin, x_end);
 		
 		//rasterize line
 
@@ -2080,7 +2108,7 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 	delete[]xy1_to_A_B;
 }
 
-void get_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end)
+void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end)
 {
 	// compute beginning and ending of the rasterized line while doing edge antialiasing		
 	short int temp_x;
@@ -2252,16 +2280,16 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
-						uv[i][j] = scene.uv[face_uv[i] * 2 + j] - 1;
+						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 					}
-				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size);
+				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size, scene.strict_edge);
 			}
 			if (!scene.textured[k])
 			{
 				double* colors[3];
 				for (int i = 0; i < 3; i++)
 					colors[i] = scene.colors + face[i] * scene.nb_colors;
-				rasterize_triangle_interpolated(ij, depths, colors, z_buffer, image, scene.height, scene.width, scene.nb_colors);
+				rasterize_triangle_interpolated(ij, depths, colors, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.strict_edge);
 			}
 		}
 
@@ -2318,7 +2346,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 							double uv[2][2];
 							for (int i = 0; i < 2; i++)
 								for (int j = 0; j < 2; j++)
-									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
+									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j];
 							double shade[2];
 							for (int i = 0; i < 2; i++)
 								shade[i] = scene.shade[face[sub[i]]];
@@ -2436,7 +2464,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 							for (int i = 0; i < 2; i++)
 								for (int j = 0; j < 2; j++)
 								{
-									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j] - 1;
+									uv[i][j] = scene.uv[face_uv[sub[i]] * 2 + j];
 									uv_b[i][j] = scene.uv_b[face_uv[sub[i]] * 2 + j];
 								}
 
@@ -2538,11 +2566,11 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
-						uv[i][j] = scene.uv[face_uv[i] * 2 + j] - 1;
+						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 						uv_b[i][j] = scene.uv_b[face_uv[i] * 2 + j];
 					}
 
-				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size);
+				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, scene.strict_edge);
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
@@ -2563,7 +2591,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 					colors_b[i] = scene.colors_b + face[i] * scene.nb_colors;
 				}
 
-				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors);
+				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.strict_edge);
 			}
 
 			for (int i = 0; i < 3; i++)

@@ -65,8 +65,13 @@ class Interactor:
         if event == cv2.EVENT_MBUTTONUP:
             self.middle_is_down = False
 
-        if self.left_is_down:
+        self.ctrl_is_down = flags & cv2.EVENT_FLAG_CTRLKEY
+
+        if self.left_is_down and not (self.ctrl_is_down):
+
             if self.mode == "camera_centered":
+
+                center_in_camera = self.camera.world_to_camera(self.object_center)
                 rotation = Rotation.from_rotvec(
                     np.array(
                         [
@@ -77,8 +82,10 @@ class Interactor:
                     )
                 )
                 self.camera.extrinsic = rotation.as_dcm().dot(self.camera.extrinsic)
+                # assert np.allclose(center_in_camera, self.camera.world_to_camera(self.object_center))
                 self.x_last = x
                 self.y_last = y
+
             if self.mode == "object_centered_trackball":
 
                 rotation = Rotation.from_rotvec(
@@ -102,7 +109,7 @@ class Interactor:
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
 
-        if self.right_is_down:
+        if self.right_is_down and not (self.ctrl_is_down):
             if self.mode == "camera_centered":
                 self.camera.extrinsic[2, 3] += self.z_translation_speed * (
                     self.y_last - y
@@ -118,20 +125,26 @@ class Interactor:
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
 
-        if self.middle_is_down:
+        if self.middle_is_down or (self.left_is_down and self.ctrl_is_down):
+            # translation
+
             object_depth = (
                 self.camera.extrinsic[2, :3].dot(self.object_center)
                 + self.camera.extrinsic[2, 3]
             )
 
-            self.camera.extrinsic[0, 3] += (
-                self.xy_translation_speed * object_depth * (x - self.x_last)
+            tx = self.xy_translation_speed * object_depth * (x - self.x_last)
+            ty = self.xy_translation_speed * object_depth * (y - self.y_last)
+
+            self.object_center -= (
+                self.camera.extrinsic[0, :3] * tx + self.camera.extrinsic[1, :3] * ty
             )
-            self.camera.extrinsic[1, 3] += (
-                self.xy_translation_speed * object_depth * (y - self.y_last)
-            )
+            self.camera.extrinsic[0, 3] += tx
+            self.camera.extrinsic[1, 3] += ty
+            center_in_camera = self.camera.world_to_camera(self.object_center)
             self.x_last = x
             self.y_last = y
+            assert np.max(np.abs(center_in_camera[:2])) < 1e-3
 
 
 def mesh_viewer(
@@ -142,6 +155,8 @@ def mesh_viewer(
     display_fps=True,
     title=None,
     use_moderngl=False,
+    light_directional=(-0.5, 0, -0.5),
+    light_ambient=0.3,
 ):
     if type(obj_file_or_trimesh) == str:
         if title is None:
@@ -186,7 +201,9 @@ def mesh_viewer(
     )
 
     scene = differentiable_renderer.Scene3D()
-    scene.set_light(light_directional=np.array([-0.5, 0, -0.5]), light_ambient=0.3)
+    scene.set_light(
+        light_directional=np.array(light_directional), light_ambient=light_ambient
+    )
     scene.set_mesh(mesh)
     background_image = np.ones((height, width, 3))
     scene.set_background(background_image)
@@ -203,7 +220,7 @@ def mesh_viewer(
         camera=camera,
         object_center=object_center,
         z_translation_speed=0.01 * object_radius,
-        xy_translation_speed=1e-7 * object_radius,
+        xy_translation_speed=3e-4,
     )
 
     cv2.namedWindow(windowname)
@@ -214,11 +231,13 @@ def mesh_viewer(
 
         offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
         scene.mesh.compute_vertex_normals()
+        offscreen_renderer.set_scene(scene)
+
     while cv2.getWindowProperty(windowname, 0) >= 0:
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
         start = time.clock()
         if use_moderngl:
-            image = offscreen_renderer.render(scene, camera)
+            image = offscreen_renderer.render(camera)
         else:
             image = scene.render(interactor.camera)
 

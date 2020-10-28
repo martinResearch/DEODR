@@ -274,9 +274,7 @@ class MeshDepthFitter:
         self.mesh.set_vertices(vertices_with_grad_transformed)
 
         depth_scale = 1 * self.depthScale
-        depth = self.scene.render_depth(
-            self.camera, width=self.width, height=self.height, depth_scale=depth_scale
-        )
+        depth = self.scene.render_depth(self.camera, depth_scale=depth_scale)
         depth = torch.clamp(depth, 0, self.scene.max_depth)
 
         diff_image = torch.sum(

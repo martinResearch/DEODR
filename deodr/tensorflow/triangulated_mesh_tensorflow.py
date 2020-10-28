@@ -42,9 +42,14 @@ class TriMeshTensorflow(TriMesh):
     """Tensorflow implementation of a triangulated mesh."""
 
     def __init__(self, faces, vertices=None, nb_vertices=None, clockwise=False):
-        super().__init__(faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise)
+        super().__init__(
+            faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise
+        )
+
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacenciesTensorflow(self.faces, nb_vertices=self.nb_vertices)
+        self.adjacencies = TriMeshAdjacenciesTensorflow(
+            self.faces, nb_vertices=self.nb_vertices
+        )
 
 
 class ColoredTriMeshTensorflow(TriMeshTensorflow):

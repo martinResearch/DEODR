@@ -3,6 +3,7 @@
 import numpy as np
 
 from scipy import sparse
+from scipy.optimize import linprog
 
 from .tools import cross_backward, normalize, normalize_backward
 
@@ -26,7 +27,7 @@ class TriMeshAdjacencies:
             # unless specified explicitly the number of vertices is assumed to be np.max(faces.flat)+1
             nb_vertices = np.max(faces.flat) + 1
         else:
-            assert(nb_vertices > np.max(faces.flat))
+            assert nb_vertices > np.max(faces.flat)
         self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
@@ -53,15 +54,22 @@ class TriMeshAdjacencies:
         )
 
         self.nb_edges = np.max(id_edge) + 1
+        self.edge_vertices = np.zeros((self.nb_edges, 2), dtype=np.uint32)
+        self.edge_vertices[id_edge] = edges
 
         nb_inc = np.zeros((self.nb_edges))
         np.add.at(nb_inc, id_edge, edge_increase)
         nb_dec = np.zeros((self.nb_edges))
         np.add.at(nb_dec, id_edge, ~edge_increase)
-        self.is_manifold = (
-            np.all(unique_counts <= 2) and np.all(nb_inc <= 1) and np.all(nb_dec <= 1)
-        )
+        self.is_non_manifold_edge = (unique_counts > 2) | (nb_inc > 1) | (nb_dec > 1)
+
+        self.is_manifold = ~np.any(self.is_non_manifold_edge)
         self.is_closed = self.is_manifold and np.all(unique_counts == 2)
+
+        self.edges_faces_signed = sparse.coo_matrix(
+            (edge_increase * 2 - 1, (id_edge, id_faces)),
+            shape=(self.nb_edges, self.nb_faces),
+        )
 
         self.edges_faces_ones = sparse.coo_matrix(
             (np.ones((len(id_edge))), (id_edge, id_faces)),
@@ -80,6 +88,9 @@ class TriMeshAdjacencies:
         self.adjacency_vertices = (
             (self._vertices_faces * self._vertices_faces.T) > 0
         ) - sparse.eye(self.nb_vertices)
+        degree_v_f =  np.bincount(faces.flatten(),minlength=self.nb_vertices)
+      
+        self.degree_v_f = degree_v_f
         self.degree_v_e = self.adjacency_vertices.dot(
             np.ones((self.nb_vertices))
         )  # degree_v_e(i)=j means that the vertex i appears in j edges
@@ -91,6 +102,12 @@ class TriMeshAdjacencies:
         assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
+    def boundary_edges(self):
+        is_boundary_edge = np.array(
+            np.sum(self.adjacencies.edges_faces_ones, axis=1) == 1
+        ).squeeze(axis=1)
+        return self.edge_vertices[is_boundary_edge, :]
+
     def id_edge(self, idv):
 
         return (
@@ -98,6 +115,13 @@ class TriMeshAdjacencies:
             + np.minimum(idv[:, 0], idv[:, 1]).astype(np.uint64) * self.nb_vertices,
             idv[:, 0] < idv[:, 1],
         )
+
+    def compute_face_areas(self, vertices):
+        triangles = vertices[self.faces, :]
+        u = triangles[:, 1, :] - triangles[:, 0, :]
+        v = triangles[:, 2, :] - triangles[:, 0, :]
+        areas = np.sqrt(np.sum(np.cross(u, v) ** 2, axis=1))
+        return areas
 
     def compute_face_normals(self, vertices):
         triangles = vertices[self.faces, :]
@@ -153,23 +177,34 @@ class TriMeshAdjacencies:
 class TriMesh:
     """Class that implements a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, nb_vertices=None, clockwise=False, compute_adjacencies=True):
-       
+    def __init__(
+        self,
+        faces,
+        vertices=None,
+        nb_vertices=None,
+        clockwise=False,
+        compute_adjacencies=True,
+    ):
+
         assert np.issubdtype(faces.dtype, np.integer)
         assert faces.ndim == 2
         assert faces.shape[1] == 3
+        assert np.all(faces >= 0)
+
         self.faces = faces
-        self.max_face_index = np.max(faces)        
+        self.max_face_index = np.max(faces)
         self.nb_faces = faces.shape[0]
 
         if nb_vertices is None:
             if vertices is None:
-                raise BaseException("you need to not provide vertices or nb_vertices so that the number of vertices is known")
-            assert vertices.ndim == 2 
+                raise BaseException(
+                    "you need to not provide vertices or nb_vertices so that the number of vertices is known"
+                )
+            assert len(vertices.shape) == 2
             nb_vertices = vertices.shape[0]
         elif vertices is not None:
-            assert vertices.ndim == 2 
-            assert(vertices == vertices.shape[0])
+            assert len(vertices.shape) == 2
+            assert nb_vertices == vertices.shape[0]
 
         self.nb_vertices = nb_vertices
         self.vertices = None
@@ -182,16 +217,19 @@ class TriMesh:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise, nb_vertices=self.nb_vertices)
-        assert self.adjacencies.is_manifold
+        self.adjacencies = TriMeshAdjacencies(
+            self.faces, self.clockwise, nb_vertices=self.nb_vertices
+        )
         if self.vertices is not None:
             if self.adjacencies.is_closed:
                 self.check_orientation()
 
     def set_vertices(self, vertices):
-        assert vertices.ndim == 2   
-        if vertices.shape[0] != self.nb_vertices: 
-            raise ValueError(f'Expecting {self.max_face_index+1} vertices.')
+        assert len(vertices.shape) == 2
+        assert vertices.shape[1] == 3
+        if vertices.shape[0] != self.nb_vertices:
+            raise ValueError(f"Expecting {self.max_face_index+1} vertices.")
+
         self.vertices = vertices
         self.face_normals = None
         self.vertex_normals = None
@@ -249,7 +287,47 @@ class TriMesh:
         """Compute the a boolean for each of edges that is true if and only if
         the edge is one the silhouette of the mesh.
         """
+        assert self.adjacencies.is_manifold
         return self.adjacencies.edge_on_silhouette(points_2d)
+
+    def largest_manifold_subset_faces(self):
+        """Return face indices to to keep to get the largest area manifold subset of the surface.
+        This is formulated a linear programming problem."""
+        faces_candidates = (
+            self.adjacencies.is_non_manifold_edge * self.adjacencies.edges_faces_ones
+            >= 1
+        )
+        bounds = np.column_stack(
+            (~faces_candidates, np.ones((self.adjacencies.nb_faces)))
+        )
+        b_ub = np.hstack(
+            (np.ones((self.adjacencies.nb_edges)), np.ones((self.adjacencies.nb_edges)))
+        )
+        c = -self.adjacencies.compute_face_areas(self.vertices)
+        if not isinstance(c, np.ndarray):
+            c = self._data_as_numpy_array(c)
+        A_ub = sparse.vstack(
+            (
+                self.adjacencies.edges_faces_signed > 0,
+                self.adjacencies.edges_faces_signed < 0,
+            )
+        )
+        result = linprog(
+            c,
+            A_ub,
+            b_ub=b_ub,
+            A_eq=None,
+            b_eq=None,
+            bounds=bounds,
+            method="interior-point",
+        )
+        keep_face = result.x > 0.99
+        return keep_face
+
+    def largest_manifold_subset(self):
+        keep_faces = self.largest_manifold_subset_faces()
+        new_faces = self.faces[keep_faces, :]
+        return TriMesh(new_faces, vertices=self.vertices)
 
 
 class ColoredTriMesh(TriMesh):
@@ -271,7 +349,7 @@ class ColoredTriMesh(TriMesh):
         super(ColoredTriMesh, self).__init__(
             faces,
             vertices=vertices,
-            nb_vertices= nb_vertices,
+            nb_vertices=nb_vertices,
             clockwise=clockwise,
             compute_adjacencies=compute_adjacencies,
         )
@@ -319,7 +397,7 @@ class ColoredTriMesh(TriMesh):
 
         # Process vertex colors
         if mesh.visual.kind == "vertex":
-            colors = mesh.visual.vertex_colors.copy()
+            colors = mesh.visual.vertex_colors.copy()[:, :3]
 
         # Process face colors
         elif mesh.visual.kind == "face":
@@ -338,11 +416,14 @@ class ColoredTriMesh(TriMesh):
                 if texture.shape[2] == 4:
                     texture = texture[:, :, :3]  # removing alpha channel
 
-                uv = np.column_stack(
-                    (
-                        (mesh.visual.uv[:, 0]) * texture.shape[0],
-                        (1 - mesh.visual.uv[:, 1]) * texture.shape[1],
+                uv = (
+                    np.column_stack(
+                        (
+                            (mesh.visual.uv[:, 0]) * texture.shape[1],
+                            (1 - mesh.visual.uv[:, 1]) * texture.shape[0],
+                        )
                     )
+                    - 0.5
                 )
 
         # merge identical 3D vertices even if their uv are different to keep surface
@@ -354,7 +435,7 @@ class ColoredTriMesh(TriMesh):
             mesh.vertices, axis=0, return_index=True, return_inverse=True
         )
         faces = inv_ids[mesh.faces].astype(np.uint32)
-        if colors:
+        if colors is not None:
             colors2 = colors[return_index, :]
             if np.any(colors != colors2[inv_ids, :]):
                 raise (
@@ -376,3 +457,80 @@ class ColoredTriMesh(TriMesh):
             colors=colors2,
             compute_adjacencies=compute_adjacencies,
         )
+
+    def to_trimesh(self):
+        # lazy modules loading
+        import PIL
+        import trimesh
+
+        # largely inspired from trimesh's load_obj function
+
+        v = self.vertices
+        if not isinstance(v, np.ndarray):
+            v = self._data_as_numpy_array(v)
+        faces = self.faces
+        if self.vertices_colors is not None:
+
+            trimesh_mesh = trimesh.Trimesh(
+                vertices=v, faces=faces, vertices_colors=self.vertices_colors
+            )
+
+        elif self.texture is not None:
+            faces_tex = self.faces_uv
+
+            vt = np.column_stack(
+                (
+                    (self.uv[:, 0] + 0.5) / self.texture.shape[1],
+                    1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[0]),
+                )
+            )
+            new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
+                faces, faces_tex
+            )
+            assert np.allclose(v[faces], v[mask_v][new_faces])
+            assert new_faces.max() < len(v[mask_v])
+
+            new_vertices = v[mask_v].copy()
+            uv = vt[mask_vt].copy()
+
+            texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
+            if texture_uint8.shape[2] == 1:
+                texture_uint8 = texture_uint8.squeeze(axis=2)
+            texture_pil = PIL.Image.fromarray(texture_uint8)
+            material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
+            visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
+
+            trimesh_mesh = trimesh.Trimesh(
+                vertices=new_vertices, faces=new_faces, visual=visual
+            )
+        else:
+            trimesh_mesh = trimesh.Trimesh(
+                vertices=v, faces=faces
+            )            
+        return trimesh_mesh
+    
+
+    def submesh(self, keep_faces):
+        new_faces = self.faces[keep_faces, :]
+        if self.vertices is None:
+            raise BaseException("You need to provide the vertices first")
+        if self.faces_uv is None:
+            new_faces_uv = None
+        else:
+            new_faces_uv = self.faces_uv[keep_faces, :]
+        compute_adjacencies = self.adjacencies is not None
+        return self.__class__(
+            faces=new_faces,
+            vertices=self.vertices,
+            clockwise=self.clockwise,
+            faces_uv=new_faces_uv,
+            uv=self.uv,
+            texture=self.texture,
+            colors=self.vertices_colors,
+            nb_colors=self.nb_colors,
+            compute_adjacencies=compute_adjacencies,
+        )
+
+    def largest_manifold_subset(self):
+        keep_faces = self.largest_manifold_subset_faces()
+        return self.submesh(keep_faces)
