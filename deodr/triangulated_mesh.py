@@ -10,12 +10,12 @@ from .tools import cross_backward, normalize, normalize_backward
 
 class TriMeshAdjacencies:
     """Class that stores adjacency matrices and methods that use this adjacencies.
-    Unlike the TriMesh class there are no vertices stored in this class
+    Unlike the TriMesh class there are no vertices stored in this class.
     """
 
     def __init__(self, faces, clockwise=False, nb_vertices=None):
         """
-        unless specified explicitly the number of vertices is assumed to be np.max(faces.flat)+1
+        unless specified explicitly the number of vertices is assumed to be np.max(faces)+1
         """
         assert np.issubdtype(faces.dtype, np.integer)
         assert faces.ndim == 2
@@ -25,9 +25,9 @@ class TriMeshAdjacencies:
         self.nb_faces = faces.shape[0]
         if nb_vertices is None:
             # unless specified explicitly the number of vertices is assumed to be np.max(faces.flat)+1
-            nb_vertices = np.max(faces.flat) + 1
+            nb_vertices = np.max(faces) + 1
         else:
-            assert nb_vertices > np.max(faces.flat)
+            assert nb_vertices > np.max(faces)
         self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
@@ -292,7 +292,7 @@ class TriMesh:
 
     def largest_manifold_subset_faces(self):
         """Return face indices to to keep to get the largest area manifold subset of the surface.
-        This is formulated a linear programming problem."""
+        This is formulated as a linear programming problem."""
         faces_candidates = (
             self.adjacencies.is_non_manifold_edge * self.adjacencies.edges_faces_ones
             >= 1
@@ -360,6 +360,8 @@ class ColoredTriMesh(TriMesh):
         self.vertices_colors = colors
         self.textured = not (self.texture is None)
         self.nb_colors = nb_colors
+        if nb_colors is None and texture is  None and colors is None:
+            raise BaseException("You need to provide either nb_colors, texture of colors")
         if nb_colors is None:
             if texture is None:
                 self.nb_colors = colors.shape[1]
@@ -402,7 +404,7 @@ class ColoredTriMesh(TriMesh):
         # Process face colors
         elif mesh.visual.kind == "face":
             raise BaseException(
-                "not supported yet, will need antialisaing at the seams"
+                "not supported yet, will need antialiasing at the seams"
             )
 
         # Process texture colors

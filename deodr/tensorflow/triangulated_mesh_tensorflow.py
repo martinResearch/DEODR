@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 from .tools import scipy_sparse_matrix_to_tensorflow
-from ..triangulated_mesh import TriMesh, TriMeshAdjacencies
+from ..triangulated_mesh import TriMesh, TriMeshAdjacencies, ColoredTriMesh
 
 
 class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
@@ -52,7 +52,7 @@ class TriMeshTensorflow(TriMesh):
         )
 
 
-class ColoredTriMeshTensorflow(TriMeshTensorflow):
+class ColoredTriMeshTensorflow(TriMeshTensorflow, ColoredTriMesh):
     """Tensorflow implementation of a colored triangulated mesh."""
 
     def __init__(
@@ -65,15 +65,23 @@ class ColoredTriMeshTensorflow(TriMeshTensorflow):
         uv=None,
         texture=None,
         colors=None,
+        nb_colors=None,
+        compute_adjacencies=True,
     ):
-        super(ColoredTriMeshTensorflow, self).__init__(
-            faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise
+        ColoredTriMesh.__init__(
+            self,
+            faces,
+            vertices=vertices,
+            nb_vertices=nb_vertices,
+            clockwise=clockwise,
+            faces_uv=faces_uv,
+            uv=uv,
+            texture=texture,
+            colors=colors,
+            nb_colors=nb_colors,
+            compute_adjacencies=compute_adjacencies,
         )
-        self.faces_uv = faces_uv
-        self.uv = uv
-        self.texture = texture
-        self.colors = colors
-        self.textured = not (self.texture is None)
+
 
     def set_vertices_colors(self, colors):
         self.vertices_colors = colors

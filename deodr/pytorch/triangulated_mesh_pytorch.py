@@ -123,12 +123,7 @@ class ColoredTriMeshPytorch(TriMeshPytorch, ColoredTriMesh):
             nb_colors=nb_colors,
             compute_adjacencies=compute_adjacencies,
         )
-        # self.faces_uv = faces_uv
-        # self.uv = uv
-        # self.texture = texture
-        # self.vertices_colors = colors
-        # self.nb_colors = nb_colors
-        # self.textured = not (self.texture is None)
+
 
     def set_vertices_colors(self, colors):
         assert isinstance(colors, torch.Tensor)
