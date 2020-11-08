@@ -23,9 +23,25 @@ my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
 
+
+def get_version(filename):
+    import os
+    import re
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    f = open(os.path.join(here, filename))
+    version_file = f.read()
+    f.close()
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+
 setup(
     name=libname,
-    version="0.1.15",
+    version=get_version("deodr/__init__.py"),
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
     description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",

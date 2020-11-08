@@ -19,6 +19,8 @@ __all__ = [
     "ColoredTriMesh",
 ]
 
+__version__ = "0.1.17"
+
 import os
 
 from .differentiable_renderer import Camera, Scene2D, Scene3D
