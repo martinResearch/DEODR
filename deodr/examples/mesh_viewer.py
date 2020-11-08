@@ -1,10 +1,12 @@
 """Example of interactive 3D mesh visualization using deodr and opencv."""
 
 import argparse
+import os
 import time
 
 import cv2
 
+import deodr
 from deodr import differentiable_renderer
 from deodr.triangulated_mesh import ColoredTriMesh
 
@@ -147,7 +149,7 @@ class Interactor:
 
 
 def mesh_viewer(
-    obj_file_or_trimesh,
+    file_or_mesh,
     display_texture_map=True,
     width=640,
     height=480,
@@ -157,23 +159,28 @@ def mesh_viewer(
     light_directional=(0, 0, 0),
     light_ambient=1,
 ):
-    if type(obj_file_or_trimesh) == str:
+    if isinstance(file_or_mesh, str):
         if title is None:
-            title = obj_file_or_trimesh
-        mesh_trimesh = trimesh.load(obj_file_or_trimesh)
-    elif type(obj_file_or_trimesh) == trimesh.base.Trimesh:
-        mesh_trimesh = obj_file_or_trimesh
+            title = file_or_mesh
+        mesh_trimesh = trimesh.load(file_or_mesh)
+        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+    elif isinstance(file_or_mesh, trimesh.base.Trimesh):
+        mesh_trimesh = file_or_mesh
+        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+        if title is None:
+            title = "unknown"
+    elif isinstance(file_or_mesh, ColoredTriMesh):
+        mesh = file_or_mesh
         if title is None:
             title = "unknown"
     else:
         raise (
             BaseException(
-                f"unknown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh,"
+                f"unknown type {type(file_or_mesh)}for input obj_file_or_trimesh,"
                 " can be string or trimesh.base.Trimesh"
             )
         )
 
-    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
     if display_texture_map:
         ax = plt.subplot(111)
         if mesh.textured:
@@ -268,17 +275,16 @@ def mesh_viewer(
                 font_color,
                 thickness,
             )
-
         cv2.imshow(windowname, image)
         stop = time.clock()
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
         cv2.waitKey(1)
 
 
-def run():
-    obj_file = os.path.join(deodr.data_path, "duck.obj")
-    mesh_viewer(obj_file, use_moderngl=False)
-
-
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(prog="mesh_viewer", usage="%(prog)s [options]")
+    duck_file = os.path.join(deodr.data_path, "duck.obj")
+    parser.add_argument("mesh_file", type=str, nargs="?", default=duck_file)
+    args = parser.parse_args()
+    mesh_file = args.mesh_file
+    mesh_viewer(mesh_file, use_moderngl=True)
