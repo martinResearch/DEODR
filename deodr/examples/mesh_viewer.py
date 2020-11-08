@@ -1,11 +1,10 @@
 """Example of interactive 3D mesh visualization using deodr and opencv."""
 
-import os
+import argparse
 import time
 
 import cv2
 
-import deodr
 from deodr import differentiable_renderer
 from deodr.triangulated_mesh import ColoredTriMesh
 
@@ -155,8 +154,8 @@ def mesh_viewer(
     display_fps=True,
     title=None,
     use_moderngl=False,
-    light_directional=(-0.5, 0, -0.5),
-    light_ambient=0.3,
+    light_directional=(0, 0, 0),
+    light_ambient=1,
 ):
     if type(obj_file_or_trimesh) == str:
         if title is None:
@@ -184,11 +183,12 @@ def mesh_viewer(
     object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
 
     camera_center = object_center + np.array([0, 0, 3]) * object_radius
-    focal = 2 * width
 
     rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     translation = -rotation.T.dot(camera_center)
     extrinsic = np.column_stack((rotation, translation))
+
+    focal = 2 * width
     intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
 
     distortion = [0, 0, 0, 0, 0]
@@ -223,7 +223,8 @@ def mesh_viewer(
         xy_translation_speed=3e-4,
     )
 
-    cv2.namedWindow(windowname)
+    cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(windowname, width, height)
     cv2.setMouseCallback(windowname, interactor.mouse_callback)
 
     if use_moderngl:
@@ -234,11 +235,22 @@ def mesh_viewer(
         offscreen_renderer.set_scene(scene)
 
     while cv2.getWindowProperty(windowname, 0) >= 0:
+
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+        width, height = cv2.getWindowImageRect(windowname)[2:]
+        focal = 2 * width
+        intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
+        camera.intrinsic = intrinsic
+        camera.width = width
+        camera.height = height
+
         start = time.clock()
         if use_moderngl:
             image = offscreen_renderer.render(camera)
         else:
+            if scene.background.shape[0] != height or scene.background.shape[0] != width:
+                background_image = np.ones((height, width, 3))
+                scene.set_background(background_image)
             image = scene.render(interactor.camera)
 
         if display_fps:
