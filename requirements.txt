@@ -3,7 +3,7 @@ scipy==1.5.2
 matplotlib==3.3.2
 Cython==0.29.21
 imageio==2.9.0
-trimesh==3.8.13
+trimesh==3.8.15
 opencv-python==4.4.0.46
 torch==1.6.0
 tensorflow==2.3.1
