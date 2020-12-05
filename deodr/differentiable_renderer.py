@@ -1,7 +1,5 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
-
 import copy
-
 
 import numpy as np
 
@@ -230,6 +228,7 @@ class Scene2DBase:
         clockwise=False,
         backface_culling=True,
         strict_edge=True,
+        perspective_correct=True
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -249,6 +248,7 @@ class Scene2DBase:
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
+        self.perspective_correct = perspective_correct
 
 
 class Scene2D(Scene2DBase):
@@ -276,6 +276,7 @@ class Scene2D(Scene2DBase):
         clockwise=False,
         backface_culling=False,
         strict_edge=True,
+        perspective_correct=True,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -295,6 +296,7 @@ class Scene2D(Scene2DBase):
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
+        self.perspective_correct = perspective_correct
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -578,6 +580,7 @@ class Scene3D:
         self.height = camera.height
         self.width = camera.width
         self.strict_edge = True
+        self.perspective_correct = True
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
         image, z_buffer = self._render_2d(points_2d, colors)
@@ -633,6 +636,7 @@ class Scene3D:
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
         self.strict_edge = True
+        self.perspective_correct = True
         image, _ = self._render_2d(points_2d, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render_depth"] = (camera, depth_scale)

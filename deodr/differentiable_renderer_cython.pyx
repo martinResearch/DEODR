@@ -102,7 +102,7 @@ def renderScene(scene,
 	scene_c.texture_height = scene.texture.shape[0]
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
-	
+	scene_c.perspective_correct = scene.perspective_correct
 
 
 	cdef double* obs_ptr = NULL
@@ -275,7 +275,7 @@ def renderSceneB(scene,
 	scene_c.texture_height = scene.texture.shape[0]
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
-	
+	scene_c.perspective_correct = scene.perspective_correct
 	
 	if scene_c.background  ==  NULL:
 		raise BaseException('scene_c.background is NULL')
