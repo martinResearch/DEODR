@@ -24,7 +24,7 @@ def renderScene(
 
         assert not (image is None)
         assert not (z_buffer is None)
-        heigth = image.shape[0]
+        height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
 
@@ -55,7 +55,7 @@ def renderScene(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -65,13 +65,13 @@ def renderScene(
             assert scene.texture.shape[1] > 0
             assert scene.texture.shape[2] == nb_colors
 
-        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
 
         if antialiase_error:
-            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
-            assert obs.shape[0] == heigth
+            assert obs.shape[0] == height
             assert obs.shape[1] == width
             assert obs.shape[2] == nb_colors
 
@@ -101,13 +101,13 @@ def renderSceneB(
         assert not (image is None)
         assert not (z_buffer is None)
 
-        heigth = image.shape[0]
+        height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
         nb_triangles = scene.faces.shape[0]
 
         assert nb_colors == scene.colors.shape[1]
-        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
         assert nb_triangles == scene.faces_uv.shape[0]
 
@@ -136,7 +136,7 @@ def renderSceneB(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -158,7 +158,7 @@ def renderSceneB(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -173,13 +173,13 @@ def renderSceneB(
             assert scene.texture_b.shape[2] == nb_colors
 
         if antialiase_error:
-            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
-            assert obs.shape[0] == heigth
+            assert obs.shape[0] == height
             assert obs.shape[1] == width
         else:
             assert not (image_b is None)
-            assert image_b.shape[0] == heigth
+            assert image_b.shape[0] == height
             assert image_b.shape[1] == width
 
     differentiable_renderer_cython.renderSceneB(
@@ -617,11 +617,12 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1):
+    def __init__(self, sigma=1, perspective_correct=True):
         self.mesh = None
         self.light_directional = None
         self.light_ambient = None
         self.sigma = sigma
+        self.perspective_correct = perspective_correct
 
     def clear_gradients(self):
         # fields to store gradients
@@ -763,7 +764,7 @@ class Scene3D:
         self.height = camera.height
         self.width = camera.width
         self.strict_edge = True
-        self.perspective_correct = True
+
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
         image, z_buffer = self._render_2d(points_2d, colors)

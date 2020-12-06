@@ -196,7 +196,7 @@ def renderSceneB(scene,
 		assert(scene.textured.shape[0]  ==  nb_triangles)
 		assert(scene.shaded.shape[0]  ==  nb_triangles)
 		assert(scene.background.ndim  ==  3)
-		assert(scene.background.shape[0]  ==  heigth)
+		assert(scene.background.shape[0]  ==  height)
 		assert(scene.background.shape[1]  ==  width)
 		assert(scene.background.shape[2]  ==  nb_colors)
 				
@@ -218,7 +218,7 @@ def renderSceneB(scene,
 		assert(scene.textured.shape[0]  ==  nb_triangles)
 		assert(scene.shaded.shape[0]  ==  nb_triangles)
 		assert(scene.background.ndim  ==  3)
-		assert(scene.background.shape[0]  ==  heigth)
+		assert(scene.background.shape[0]  ==  height)
 		assert(scene.background.shape[1]  ==  width)
 		assert(scene.background.shape[2]  ==  nb_colors)
 			
