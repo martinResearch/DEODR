@@ -417,7 +417,7 @@ class Scene2DBase:
         clockwise=False,
         backface_culling=True,
         strict_edge=True,
-        perspective_correct=True
+        perspective_correct=False
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -465,7 +465,7 @@ class Scene2D(Scene2DBase):
         clockwise=False,
         backface_culling=False,
         strict_edge=True,
-        perspective_correct=True,
+        perspective_correct=False,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -617,7 +617,7 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1, perspective_correct=True):
+    def __init__(self, sigma=1, perspective_correct=False):
         self.mesh = None
         self.light_directional = None
         self.light_ambient = None
@@ -820,7 +820,6 @@ class Scene3D:
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
         self.strict_edge = True
-        self.perspective_correct = True
         image, _ = self._render_2d(points_2d, colors)
         if self.store_backward_current is not None:
             self.store_backward_current["render_depth"] = (camera, depth_scale)

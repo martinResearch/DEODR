@@ -45,9 +45,9 @@ using namespace std;
 
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end);
 inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, bool perspective_correct);
-inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA);
-inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size,  bool perspective_correct);
-inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size);
+inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, bool perspective_correct);
+inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge,double* xy1_to_UV, double* xy1_to_L, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, int* Texture_size, bool perspective_correct);
+inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size, bool perspective_correct);
 
 struct Scene {
 	unsigned int* faces;
@@ -657,7 +657,7 @@ template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double 
 	delete[] xy1_to_A;
 }
 
-template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, bool strict_edge)
+template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][2];
@@ -666,6 +666,11 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	double* xy1_to_A;
 	double  xy1_to_Z[3];
 	int     left_edge_id[2], right_edge_id[2];
+
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
 	
 	//   compute triangle borders equations
 	//double Vxy[][2],double  bary_to_xy1[9],double  xy1_to_bary[9],double* edge_eq[3],y_begin,y_end,left_edge_id,right_edge_id)
@@ -688,7 +693,7 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	for (short int i = 0; i < 3 * sizeA; i++) xy1_to_A_B[i] = 0;
 	
 	for (int k = 0; k < 2; k++)
-		render_part_interpolated_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_A, xy1_to_A_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA);
+		render_part_interpolated_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_A, xy1_to_A_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, perspective_correct);
 
 
 	double  xy1_to_bary_B[9] = { 0 };
@@ -797,7 +802,7 @@ inline void render_part_interpolated(double* image, double* z_buffer, int y_begi
 	delete[]A0y;
 }
 
-inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA)
+inline void render_part_interpolated_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_A_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, bool perspective_correct)
 {
 	double t[3];
 	//double *A0y;
@@ -805,6 +810,12 @@ inline void render_part_interpolated_B(double* image, double* image_B, double* z
 	double Z0y;
 	short int x_begin, x_end;
 	double Z;
+
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
+	
 
 	//A0y  =new double[sizeA];
 	A0y_B = new double[sizeA];
@@ -902,7 +913,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 		render_part_textured_gouraud(image, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_L, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_size, perspective_correct);
 }
 
-template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, bool strict_edge)
+template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][2];
@@ -918,6 +929,11 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 	double  xy1_to_Z_B[3] = { 0 };
 
 	int     left_edge_id[2], right_edge_id[2];
+	
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
 	
 	//   compute triangle borders equations
 
@@ -936,7 +952,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 		}
 
 	for (int k = 0; k < 2; k++)
-		render_part_textured_gouraud_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_B, Texture_size);
+		render_part_textured_gouraud_B(image, image_B, z_buffer, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_UV_B, xy1_to_L, xy1_to_L_B, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_B, Texture_size, perspective_correct);
 
 	for (short int i = 0; i < 2; i++)
 		for (short int j = 0; j < 3; j++)
@@ -1050,7 +1066,7 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int y
 	delete[]A;
 }
 
-inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size)
+inline  void render_part_textured_gouraud_B(double* image, double* image_B, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_UV, double* xy1_to_UV_B, double* xy1_to_L, double* xy1_to_L_B, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, double* Texture, double* Texture_B, int* Texture_size, bool perspective_correct)
 {
 	double t[3];
 	double L0y;
@@ -1064,6 +1080,12 @@ inline  void render_part_textured_gouraud_B(double* image, double* image_B, doub
 
 	A = new double[sizeA];
 	A_B = new double[sizeA];
+
+	
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
 
 	if (y_begin < 0)     y_begin = 0;  if (y_end > height - 1) y_end = height - 1;
 
@@ -1419,7 +1441,7 @@ template <class Te> void rasterize_edge_interpolated(double Vxy[][2], Te image[]
 	delete[]xy1_to_A;
 }
 
-template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double Vxy_B[][2], Te image[], Te image_B[], Te *Avertex[], Te *Avertex_B[], double z_buffer[], double Zvertex[], int height, int width, int sizeA, double sigma,bool clockwise)
+template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double Vxy_B[][2], Te image[], Te image_B[], Te *Avertex[], Te *Avertex_B[], double z_buffer[], double Zvertex[], int height, int width, int sizeA, double sigma,bool clockwise, bool perspective_correct)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_bary_B[6] = { 0 };
@@ -1432,6 +1454,11 @@ template <class Te> void rasterize_edge_interpolated_B(double Vxy[][2], double V
 	double *A0y = new double[sizeA];
 	double *A0y_B = new double[sizeA];
 	
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
+
 	get_edge_stencil_equations(Vxy, height, width, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end,clockwise);
 
 	//double B_inc[2];
@@ -1627,6 +1654,10 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 				double inv_Z = Z0y + xy1_to_Z[0] * x;
 				Z = 1 /  inv_Z;
 			}
+			else
+			{
+				Z = Z0y + xy1_to_Z[0] * x;
+			}
 			if (Z < z_buffer[indx])
 			{
 				double L = L0y + xy1_to_L[0] * x;;
@@ -1658,7 +1689,7 @@ template <class Te> void rasterize_edge_textured_gouraud(double Vxy[][2], double
 	delete[]A;
 }
 
-template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double z_buffer[], Te image[], Te image_B[], int height, int width, int sizeA, Te* Texture, Te* Texture_B, int* Texture_size, double sigma,bool clockwise)
+template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double z_buffer[], Te image[], Te image_B[], int height, int width, int sizeA, Te* Texture, Te* Texture_B, int* Texture_size, double sigma,bool clockwise, bool perspective_correct)
 
 {
 	double  xy1_to_bary[6];
@@ -1674,7 +1705,10 @@ template <class Te> void rasterize_edge_textured_gouraud_B(double Vxy[][2], doub
 	double  *A_B;
 	double  UV0y[2];
 
-
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
 	A = new double[sizeA];
 	A_B = new double[sizeA];
 
@@ -1934,7 +1968,7 @@ template <class T> void rasterize_edge_textured_gouraud_error(double Vxy[][2], d
 	delete[]A;
 }
 
-template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double z_buffer[], T image[], double err_buffer[], double err_buffer_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, double sigma,bool clockwise)
+template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[2], double ShadeVertex_B[2], double z_buffer[], T image[], double err_buffer[], double err_buffer_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, double sigma, bool clockwise, bool perspective_correct)
 {
 	double  xy1_to_bary[6];
 	double  xy1_to_transp[3];
@@ -1948,6 +1982,11 @@ template <class T> void rasterize_edge_textured_gouraud_error_B(double Vxy[][2],
 	double  *A;
 	double  *A_B;
 	double  UV0y[2];
+
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
 	
 	A = new double[sizeA];
 	A_B = new double[sizeA];
@@ -2199,7 +2238,7 @@ template <class T> void rasterize_edge_interpolated_error(double Vxy[][2], doubl
 	delete[]xy1_to_A;
 }
 
-template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], T *Avertex[], T *Avertex_B[], double z_buffer[], T image[], double err_buffer[], double err_buffer_B[], int height, int width, int sizeA, double sigma,bool clockwise)
+template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[2], T *Avertex[], T *Avertex_B[], double z_buffer[], T image[], double err_buffer[], double err_buffer_B[], int height, int width, int sizeA, double sigma, bool clockwise, bool perspective_correct)
 
 {
 	double  xy1_to_bary[6];
@@ -2212,6 +2251,12 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 	double *A0y_B = new double[sizeA];
 	double * xy1_to_A = new double[3 * sizeA];
 	double * xy1_to_A_B = new double[3 * sizeA];
+
+	if (perspective_correct)
+	{
+		throw "backward gradient propagation not supported yet with perspective_correct=True";		
+	}
+	
 
 	get_edge_stencil_equations(Vxy, height, width, sigma, xy1_to_bary, xy1_to_transp, ineq, y_begin, y_end, clockwise);
 
@@ -2703,11 +2748,11 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 
 							if (antialiaseError)
 							{
-								rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, obs, err_buffer, err_buffer_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise);
+								rasterize_edge_textured_gouraud_error_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, obs, err_buffer, err_buffer_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise, scene.perspective_correct);
 							}
 							else
 							{
-								rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise);
+								rasterize_edge_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, sigma, scene.clockwise, scene.perspective_correct);
 							}
 
 							for (int i = 0; i < 2; i++)
@@ -2733,9 +2778,9 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 							}
 
 							if (antialiaseError)
-								rasterize_edge_interpolated_error_B(ij, ij_b, depths, colors, colors_b, z_buffer, obs, err_buffer, err_buffer_b, scene.height, scene.width, scene.nb_colors, sigma, scene.clockwise);
+								rasterize_edge_interpolated_error_B(ij, ij_b, depths, colors, colors_b, z_buffer, obs, err_buffer, err_buffer_b, scene.height, scene.width, scene.nb_colors, sigma, scene.clockwise, scene.perspective_correct);
 							else
-								rasterize_edge_interpolated_B(ij, ij_b, image, image_b, colors, colors_b, z_buffer, depths, scene.height, scene.width, scene.nb_colors, sigma, scene.clockwise);
+								rasterize_edge_interpolated_B(ij, ij_b, image, image_b, colors, colors_b, z_buffer, depths, scene.height, scene.width, scene.nb_colors, sigma, scene.clockwise, scene.perspective_correct);
 						}
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
@@ -2795,7 +2840,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 						uv_b[i][j] = scene.uv_b[face_uv[i] * 2 + j];
 					}
 
-				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, scene.strict_edge);
+				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, scene.strict_edge, scene.perspective_correct);
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
@@ -2816,7 +2861,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 					colors_b[i] = scene.colors_b + face[i] * scene.nb_colors;
 				}
 
-				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.strict_edge);
+				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct);
 			}
 
 			for (int i = 0; i < 3; i++)
