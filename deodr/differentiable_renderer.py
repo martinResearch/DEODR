@@ -1,7 +1,5 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
-
 import copy
-
 
 import numpy as np
 
@@ -26,7 +24,7 @@ def renderScene(
 
         assert not (image is None)
         assert not (z_buffer is None)
-        heigth = image.shape[0]
+        height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
 
@@ -57,7 +55,7 @@ def renderScene(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -67,13 +65,13 @@ def renderScene(
             assert scene.texture.shape[1] > 0
             assert scene.texture.shape[2] == nb_colors
 
-        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
 
         if antialiase_error:
-            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
-            assert obs.shape[0] == heigth
+            assert obs.shape[0] == height
             assert obs.shape[1] == width
             assert obs.shape[2] == nb_colors
 
@@ -103,13 +101,13 @@ def renderSceneB(
         assert not (image is None)
         assert not (z_buffer is None)
 
-        heigth = image.shape[0]
+        height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
         nb_triangles = scene.faces.shape[0]
 
         assert nb_colors == scene.colors.shape[1]
-        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
         assert nb_triangles == scene.faces_uv.shape[0]
 
@@ -138,7 +136,7 @@ def renderSceneB(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -160,7 +158,7 @@ def renderSceneB(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
         assert scene.background.ndim == 3
-        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[0] == height
         assert scene.background.shape[1] == width
         assert scene.background.shape[2] == nb_colors
 
@@ -175,13 +173,13 @@ def renderSceneB(
             assert scene.texture_b.shape[2] == nb_colors
 
         if antialiase_error:
-            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
-            assert obs.shape[0] == heigth
+            assert obs.shape[0] == height
             assert obs.shape[1] == width
         else:
             assert not (image_b is None)
-            assert image_b.shape[0] == heigth
+            assert image_b.shape[0] == height
             assert image_b.shape[1] == width
 
     differentiable_renderer_cython.renderSceneB(
@@ -419,6 +417,7 @@ class Scene2DBase:
         clockwise=False,
         backface_culling=True,
         strict_edge=True,
+        perspective_correct=False,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -438,6 +437,7 @@ class Scene2DBase:
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
+        self.perspective_correct = perspective_correct
 
 
 class Scene2D(Scene2DBase):
@@ -465,6 +465,7 @@ class Scene2D(Scene2DBase):
         clockwise=False,
         backface_culling=False,
         strict_edge=True,
+        perspective_correct=False,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -484,6 +485,7 @@ class Scene2D(Scene2DBase):
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
+        self.perspective_correct = perspective_correct
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -517,6 +519,10 @@ class Scene2D(Scene2DBase):
         return image, z_buffer
 
     def render_error_backward(self, err_buffer_b, make_copies=True):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
         if make_copies:
@@ -545,6 +551,10 @@ class Scene2D(Scene2DBase):
             )
 
     def render_backward(self, image_b, make_copies=True):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
         if (
@@ -584,6 +594,10 @@ class Scene2D(Scene2DBase):
         clear_gradients=True,
         make_copies=True,
     ):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         if mask is None:
             mask = np.ones((obs.shape[0], obs.shape[1]))
         if antialiase_error:
@@ -615,11 +629,12 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1):
+    def __init__(self, sigma=1, perspective_correct=False):
         self.mesh = None
         self.light_directional = None
         self.light_ambient = None
         self.sigma = sigma
+        self.perspective_correct = perspective_correct
 
     def clear_gradients(self):
         # fields to store gradients
@@ -710,6 +725,10 @@ class Scene3D:
         return image, z_buffer
 
     def _render_2d_backward(self, image_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
         self.ij = np.array(ij)
         self.colors = np.array(colors)
@@ -761,6 +780,7 @@ class Scene3D:
         self.height = camera.height
         self.width = camera.width
         self.strict_edge = True
+
         self.clockwise = self.mesh.clockwise
         self.backface_culling = backface_culling
         image, z_buffer = self._render_2d(points_2d, colors)
@@ -776,6 +796,10 @@ class Scene3D:
             return image
 
     def render_backward(self, image_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         camera, self.edgeflags = self.store_backward_current["render"]
         points_2d_b, colors_b = self._render_2d_backward(image_b)
         self._compute_vertices_colors_with_illumination_backward(colors_b)
@@ -822,6 +846,10 @@ class Scene3D:
         return image
 
     def render_depth_backward(self, depth_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         camera, depth_scale = self.store_backward_current["render_depth"]
         ij_b, colors_b = self._render_2d_backward(depth_b)
         depths_b = np.squeeze(colors_b * depth_scale, axis=1)

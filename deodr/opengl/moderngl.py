@@ -58,7 +58,9 @@ class OffscreenRenderer:
     def set_scene(self, deodr_scene):
 
         self.bg_color = deodr_scene.background[0, 0]
-        if False and not (np.all(deodr_scene.background == self.bg_color[None, None, :])):
+        if False and not (
+            np.all(deodr_scene.background == self.bg_color[None, None, :])
+        ):
             raise (
                 BaseException(
                     "does not support background image yet, please provide a backround\
