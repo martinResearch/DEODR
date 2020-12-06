@@ -22,7 +22,7 @@ def renderScene(scene,
 	cdef _differentiable_renderer.Scene scene_c 	
 	assert (not(image is None))
 	assert (not(z_buffer is None))
-	heigth  =  image.shape[0]
+	height  =  image.shape[0]
 	width  =  image.shape[1]
 	nb_colors  =  image.shape[2]
 	
@@ -53,7 +53,7 @@ def renderScene(scene,
 	assert(scene.textured.shape[0]  ==  nb_triangles)
 	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
-	assert(scene.background.shape[0]  ==  heigth)
+	assert(scene.background.shape[0]  ==  height)
 	assert(scene.background.shape[1]  ==  width)
 	assert(scene.background.shape[2]  ==  nb_colors)
 	
@@ -63,7 +63,7 @@ def renderScene(scene,
 		assert(scene.texture.shape[1]>0)
 		assert(scene.texture.shape[2]  ==  nb_colors)
 	
-	assert z_buffer.shape[0]  ==  heigth 
+	assert z_buffer.shape[0]  ==  height 
 	assert z_buffer.shape[1]  ==  width 
 
 	scene_c.nb_colors = nb_colors
@@ -118,9 +118,9 @@ def renderScene(scene,
 
 	
 	if antialiase_error:
-		assert err_buffer.shape[0]  ==  heigth 
+		assert err_buffer.shape[0]  ==  height 
 		assert err_buffer.shape[1]  ==  width
-		assert obs.shape[0]  ==  heigth 
+		assert obs.shape[0]  ==  height 
 		assert obs.shape[1]  ==  width
 		assert obs.shape[2]  ==  nb_colors 
 		
@@ -153,7 +153,7 @@ def renderSceneB(scene,
 	assert (not(z_buffer is None))
 	
 	
-	heigth = image.shape[0]
+	height = image.shape[0]
 	width  = image.shape[1]
 	nb_colors = image.shape[2]
 	
@@ -161,7 +161,7 @@ def renderSceneB(scene,
 	assert(nb_colors  ==  scene.colors.shape[1])
 	
 	
-	assert z_buffer.shape[0]  ==  heigth 
+	assert z_buffer.shape[0]  ==  height 
 	assert z_buffer.shape[1]  ==  width 
 
 	nb_triangles  =  scene.faces.shape[0]
@@ -191,7 +191,7 @@ def renderSceneB(scene,
 	assert(scene.textured.shape[0]  ==  nb_triangles)
 	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
-	assert(scene.background.shape[0]  ==  heigth)
+	assert(scene.background.shape[0]  ==  height)
 	assert(scene.background.shape[1]  ==  width)
 	assert(scene.background.shape[2]  ==  nb_colors)
 	
@@ -214,7 +214,7 @@ def renderSceneB(scene,
 	assert(scene.textured.shape[0]  ==  nb_triangles)
 	assert(scene.shaded.shape[0]  ==  nb_triangles)
 	assert(scene.background.ndim  ==  3)
-	assert(scene.background.shape[0]  ==  heigth)
+	assert(scene.background.shape[0]  ==  height)
 	assert(scene.background.shape[1]  ==  width)
 	assert(scene.background.shape[2]  ==  nb_colors)
 	if scene.texture.size>0:
@@ -294,9 +294,9 @@ def renderSceneB(scene,
 		raise BaseException('z_buffer_ptr is NULL')
 	
 	if antialiase_error:
-		assert err_buffer.shape[0]  ==  heigth 
+		assert err_buffer.shape[0]  ==  height 
 		assert err_buffer.shape[1]  ==  width 
-		assert obs.shape[0]  ==  heigth 
+		assert obs.shape[0]  ==  height 
 		assert obs.shape[1]  ==  width 
 	
 		err_buffer_ptr = <double*>err_buffer.data
@@ -311,7 +311,7 @@ def renderSceneB(scene,
 			raise BaseException('obs_ptr is NULL')
 	else:
 		assert (not(image_b is None))
-		assert image_b.shape[0]  ==  heigth 
+		assert image_b.shape[0]  ==  height 
 		assert image_b.shape[1]  ==  width 
 		image_b_ptr  =  <double*> image_b.data
 		if image_b_ptr  ==  NULL:

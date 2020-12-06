@@ -191,9 +191,10 @@ def mesh_viewer(
     background_image = np.ones((height, width, 3))
     scene.set_background(background_image)
 
-    mesh.texture = mesh.texture[
-        :, :, ::-1
-    ]  # convert texture to GBR to avoid future conversion when ploting in Opencv
+    if mesh.texture is not None:
+        mesh.texture = mesh.texture[
+            :, :, ::-1
+        ]  # convert texture to GBR to avoid future conversion when ploting in Opencv
 
     fps = 0
     fps_decay = 0.1
