@@ -245,7 +245,7 @@ def mesh_viewer(
             image = offscreen_renderer.render(camera)
         else:
             image = scene.render(interactor.camera)
-        
+
         if display_fps:
             font = cv2.FONT_HERSHEY_SIMPLEX
             bottom_left_corner_of_text = (20, height - 20)
@@ -269,24 +269,23 @@ def mesh_viewer(
         if key >= 0:
             if key == ord("p"):
                 # toggle perspective correct mapping (texture or interpolation)
-                scene.perspective_correct = not(scene.perspective_correct)
+                scene.perspective_correct = not (scene.perspective_correct)
                 print(f"perspective_correct = {scene.perspective_correct}")
 
             if key == ord("l"):
                 # toggle directional light + ambient vs ambient = 1
-                use_light = not(use_light)
+                use_light = not (use_light)
                 if use_light:
                     scene.set_light(
-                        light_directional=np.array(light_directional), light_ambient=light_ambient
+                        light_directional=np.array(light_directional),
+                        light_ambient=light_ambient,
                     )
                 else:
-                    scene.set_light(
-                        light_directional=None, light_ambient=1.0
-                    )
+                    scene.set_light(light_directional=None, light_ambient=1.0)
 
             if key == ord("a"):
                 # toggle edge overdraw anti-aliasing
-                use_antiliazing = not(use_antiliazing)
+                use_antiliazing = not (use_antiliazing)
                 if use_antiliazing:
                     scene.sigma = 1.0
                 else:

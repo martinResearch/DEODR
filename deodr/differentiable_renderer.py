@@ -417,7 +417,7 @@ class Scene2DBase:
         clockwise=False,
         backface_culling=True,
         strict_edge=True,
-        perspective_correct=False
+        perspective_correct=False,
     ):
         self.faces = faces
         self.faces_uv = faces_uv
@@ -519,6 +519,10 @@ class Scene2D(Scene2DBase):
         return image, z_buffer
 
     def render_error_backward(self, err_buffer_b, make_copies=True):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
         if make_copies:
@@ -547,6 +551,10 @@ class Scene2D(Scene2DBase):
             )
 
     def render_backward(self, image_b, make_copies=True):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
         if (
@@ -586,6 +594,10 @@ class Scene2D(Scene2DBase):
         clear_gradients=True,
         make_copies=True,
     ):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         if mask is None:
             mask = np.ones((obs.shape[0], obs.shape[1]))
         if antialiase_error:
@@ -713,6 +725,10 @@ class Scene3D:
         return image, z_buffer
 
     def _render_2d_backward(self, image_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
         self.ij = np.array(ij)
         self.colors = np.array(colors)
@@ -780,6 +796,10 @@ class Scene3D:
             return image
 
     def render_backward(self, image_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         camera, self.edgeflags = self.store_backward_current["render"]
         points_2d_b, colors_b = self._render_2d_backward(image_b)
         self._compute_vertices_colors_with_illumination_backward(colors_b)
@@ -826,6 +846,10 @@ class Scene3D:
         return image
 
     def render_depth_backward(self, depth_b):
+        if self.perspective_correct:
+            raise BaseException(
+                "perspective_correct not supported yet for gradient back propagation"
+            )
         camera, depth_scale = self.store_backward_current["render_depth"]
         ij_b, colors_b = self._render_2d_backward(depth_b)
         depths_b = np.squeeze(colors_b * depth_scale, axis=1)

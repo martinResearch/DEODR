@@ -50,7 +50,7 @@ def test_texture_coordinates():
         shaded=shaded,
         edgeflags=edgeflags,
         strict_edge=False,
-        perspective_correct=True
+        perspective_correct=True,
     )
 
     image, depth = scene2D.render(sigma=0)

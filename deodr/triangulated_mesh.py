@@ -308,10 +308,10 @@ class ColoredTriMesh(TriMesh):
         # Process vertex colors
         if mesh.visual.kind == "vertex":
             colors = mesh.visual.vertex_colors.copy()
-            if colors.ndim == 2  and colors.shape[1] == 4:
+            if colors.ndim == 2 and colors.shape[1] == 4:
                 colors = colors[:, :3]
-            colors = colors.astype(np.float)/255
-            
+            colors = colors.astype(np.float) / 255
+
         # Process face colors
         elif mesh.visual.kind == "face":
             raise BaseException(
