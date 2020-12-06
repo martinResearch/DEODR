@@ -62,7 +62,7 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     # update_lights =  True, update_color= True,cregu=1000)
 
     hand_fitter.reset()
-    max_iter = 150
+    max_iter = 300
     hand_image = hand_images[0]
     background_color = np.median(
         np.row_stack(
