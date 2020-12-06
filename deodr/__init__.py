@@ -26,4 +26,8 @@ from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .obj import read_obj
 from .triangulated_mesh import ColoredTriMesh, TriMesh
 
-data_path = os.path.join(os.path.dirname(__file__), "data")
+root_path = os.path.dirname(__file__)
+with open(os.path.join(root_path, "version.txt")) as f:
+    __version__ = f.read().strip()
+
+data_path = os.path.join(root_path, "data")

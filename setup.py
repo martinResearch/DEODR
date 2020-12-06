@@ -1,5 +1,6 @@
 """Setup script for the DEODR project."""
 
+import os
 from setuptools import setup, find_packages
 
 from Cython.Build import cythonize
@@ -23,9 +24,12 @@ my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
 
+with open(os.path.join(os.path.dirname(__file__), "deodr", "version.txt")) as f:
+    version = f.read().strip()
+
 setup(
     name=libname,
-    version="0.1.17",
+    version=version,
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
     description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",

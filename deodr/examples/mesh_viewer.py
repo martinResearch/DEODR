@@ -162,9 +162,14 @@ def mesh_viewer(
     if type(obj_file_or_trimesh) == str:
         if title is None:
             title = obj_file_or_trimesh
-        mesh_trimesh = trimesh.load(obj_file_or_trimesh)
+        mesh = ColoredTriMesh.load(obj_file_or_trimesh)
     elif type(obj_file_or_trimesh) == trimesh.base.Trimesh:
         mesh_trimesh = obj_file_or_trimesh
+        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+        if title is None:
+            title = "unknown"
+    elif type(obj_file_or_trimesh) == ColoredTriMesh:
+        mesh = obj_file_or_trimesh
         if title is None:
             title = "unknown"
     else:
@@ -175,7 +180,6 @@ def mesh_viewer(
             )
         )
 
-    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
     if display_texture_map:
         ax = plt.subplot(111)
         if mesh.textured:
