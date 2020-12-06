@@ -741,9 +741,9 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 		// pixels falling exactly on an edge shared by two triangle will be drawn twice
 		temp_x =  ceil(left_eq[0] * y + left_eq[1]);
 	}
-	if (temp_x > width -1 )
+	if (temp_x > width)
 	{
-		temp_x = width -1;//to avoid overfloor when converting to (short int)
+		temp_x = width;//to avoid overfloor when converting to (short int)
 	}
 	if (temp_x > x_begin) 
 	{
@@ -752,9 +752,9 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 
 	x_end = width - 1;
 	temp_x = floor(right_eq[0] * y + right_eq[1]);
-	if (temp_x < 0)
+	if (temp_x < -1)
 	{
-		temp_x = 0; //to avoid overfloor when converting to (short int)
+		temp_x = -1; //to avoid overfloor when converting to (short int)
 	}	
 	if (temp_x < x_end)
 	{ 
@@ -2407,18 +2407,18 @@ void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, 
 		if (ineq[3 * k] < 0)
 		{				
 			double temp_x = ineq[3 * k + 1] * double(y) + ineq[3 * k + 2];
-			if (temp_x < 0)
+			if (temp_x < -1)
 			{
-				temp_x = 0; //to avoid overfloor when converting to (short int)
+				temp_x = -1; //to avoid overfloor when converting to (short int)
 			}
 			if (temp_x < x_end) { x_end = (short int) temp_x; }
 		}
 		else
 		{			
 			double temp_x = 1 + (-ineq[3 * k + 1] * y - ineq[3 * k + 2]);
-			if (temp_x > (width - 1))
+			if (temp_x > width )
 			{
-				temp_x = (width - 1);	//to avoid overfloor when converting to (short int)
+				temp_x = width;	//to avoid overfloor when converting to (short int)
 			}		
 			if (temp_x > x_begin) { x_begin = (short int) temp_x; }
 		}
