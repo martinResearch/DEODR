@@ -17,7 +17,7 @@ def test_texture_coordinates():
     uv = np.array([[0, 0], [1, 0], [0, 1]])
 
     ij = np.array([[1, 1], [1, 15], [15, 1]])
-    depths = np.array([0, 0, 0])
+    depths = np.array([1, 1, 1])
     shade = np.array([0, 0, 0])
     shade = np.array([1, 1, 1])
     textured = np.array([1], dtype=np.bool)
