@@ -743,7 +743,7 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 	}
 	if (temp_x > width)
 	{
-		temp_x = width;//to avoid overfloor when converting to (short int)
+		temp_x = width;//to avoid overflow when converting to (short int)
 	}
 	if (temp_x > x_begin) 
 	{
@@ -754,7 +754,7 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 	temp_x = floor(right_eq[0] * y + right_eq[1]);
 	if (temp_x < -1)
 	{
-		temp_x = -1; //to avoid overfloor when converting to (short int)
+		temp_x = -1; //to avoid overflow when converting to (short int)
 	}	
 	if (temp_x < x_end)
 	{ 
@@ -2406,21 +2406,31 @@ void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, 
 	{		
 		if (ineq[3 * k] < 0)
 		{				
-			double temp_x = ineq[3 * k + 1] * double(y) + ineq[3 * k + 2];
+			double temp_x = (ineq[3 * k + 1] * y + ineq[3 * k + 2]);
 			if (temp_x < -1)
 			{
-				temp_x = -1; //to avoid overfloor when converting to (short int)
+				temp_x = -1; //to avoid overflow when converting to (short int)
 			}
-			if (temp_x < x_end) { x_end = (short int) temp_x; }
+			// if (temp_x > width )
+			// {
+			// 	temp_x = width;	//to avoid overflow when converting to (short int)
+			// }
+			short int temp_x_int = floor(temp_x);
+			if (temp_x < x_end) { x_end = temp_x_int; }
 		}
 		else
 		{			
 			double temp_x = 1 + (-ineq[3 * k + 1] * y - ineq[3 * k + 2]);
+			// if (temp_x < -1)
+			// {
+			// 	temp_x = -1; //to avoid overflow when converting to (short int)
+			// }
 			if (temp_x > width )
 			{
-				temp_x = width;	//to avoid overfloor when converting to (short int)
-			}		
-			if (temp_x > x_begin) { x_begin = (short int) temp_x; }
+				temp_x = width;	//to avoid overflow when converting to (short int)
+			}	
+			short int temp_x_int = floor(temp_x);
+			if (temp_x > x_begin) { x_begin = temp_x_int; }
 		}
 	}
 }
