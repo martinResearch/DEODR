@@ -369,7 +369,10 @@ inline void dot_prod_B(const double R_B, double V1_B[3], const double V2[3])
 inline void Edge_equ(double e[2], const double v1[2], const double v2[2])
 {
 	e[0] = (v1[0] - v2[0]) / (v1[1] - v2[1]);
-	e[1] = v1[0] - e[0] * v1[1];
+	e[1] = 0.5*(v1[0] + v2[0]) - e[0] * 0.5 * (v1[1] + v2[1]);
+	// using central point to get roundoff errors 
+	// independent from the ordering of the vertices V1 and V2 and avoid gaps
+	// between neighborring triangles (https://github.com/martinResearch/DEODR/issues/61)
 }
 
 inline void sort3(const double v[3], double sv[3], short int i[3])
@@ -726,23 +729,37 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 {
 	// compute beginning and ending of the rasterized line	
 	x_begin = 0;
-	short int temp_x;	
+	double temp_x;	
 	if (strict_edge)
 	{	
 		// pixels falling exactly on an edge shared by two triangle will be drawn only once 
 		// when rasterizing the the triangle on the left of the edge.
-		temp_x = 1 + (short int)floor(left_eq[0] * y + left_eq[1]);
+		temp_x = 1 + floor(left_eq[0] * y + left_eq[1]);
 	}
 	else
 	{	
 		// pixels falling exactly on an edge shared by two triangle will be drawn twice
-		temp_x = (short int) ceil(left_eq[0] * y + left_eq[1]);
+		temp_x =  ceil(left_eq[0] * y + left_eq[1]);
 	}
-	if (temp_x > x_begin) x_begin = temp_x;
+	if (temp_x > width -1 )
+	{
+		temp_x = width -1;//to avoid overfloor when converting to (short int)
+	}
+	if (temp_x > x_begin) 
+	{
+		x_begin = (short int) temp_x;
+	}
 
 	x_end = width - 1;
-	temp_x = (short int)floor(right_eq[0] * y + right_eq[1]);
-	if (temp_x < x_end) x_end = temp_x;
+	temp_x = floor(right_eq[0] * y + right_eq[1]);
+	if (temp_x < 0)
+	{
+		temp_x = 0; //to avoid overfloor when converting to (short int)
+	}	
+	if (temp_x < x_end)
+	{ 
+		x_end = (short int) temp_x;
+	}
 }
 
 inline void render_part_interpolated(double* image, double* z_buffer, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, bool perspective_correct)
@@ -2381,22 +2398,29 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end)
 {
 	// compute beginning and ending of the rasterized line while doing edge antialiasing		
-	short int temp_x;
 
 	x_begin = 0;
 	x_end = width - 1;
 
 	for (short int k = 0; k < 4; k++)
-	{
+	{		
 		if (ineq[3 * k] < 0)
-		{
-			temp_x = (short int)floor(ineq[3 * k + 1] * y + ineq[3 * k + 2]);
-			if (temp_x < x_end) { x_end = temp_x; }
+		{				
+			double temp_x = ineq[3 * k + 1] * double(y) + ineq[3 * k + 2];
+			if (temp_x < 0)
+			{
+				temp_x = 0; //to avoid overfloor when converting to (short int)
+			}
+			if (temp_x < x_end) { x_end = (short int) temp_x; }
 		}
 		else
-		{
-			temp_x = 1 + (short int)floor(-ineq[3 * k + 1] * y - ineq[3 * k + 2]);
-			if (temp_x > x_begin) { x_begin = temp_x; }
+		{			
+			double temp_x = 1 + (-ineq[3 * k + 1] * y - ineq[3 * k + 2]);
+			if (temp_x > (width - 1))
+			{
+				temp_x = (width - 1);	//to avoid overfloor when converting to (short int)
+			}		
+			if (temp_x > x_begin) { x_begin = (short int) temp_x; }
 		}
 	}
 }

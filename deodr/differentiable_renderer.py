@@ -19,7 +19,7 @@ def renderScene(
 
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
-        # when installed from a wheel. this also make inderactive debugginh easier
+        # when installed from a wheel. this also make interactive debugging easier
         # for the library user
 
         assert not (image is None)

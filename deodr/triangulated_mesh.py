@@ -12,11 +12,12 @@ class TriMeshAdjacencies:
     Unlike the TriMesh class there are no vertices stored in this class
     """
 
-    def __init__(self, faces, clockwise=False):
+    def __init__(self, faces, clockwise=False, nb_vertices=None):
         self.faces = faces
         self.nb_faces = faces.shape[0]
-        self.nb_vertices = np.max(faces.flat) + 1
-
+        if nb_vertices is None:
+            nb_vertices = np.max(faces.flat) + 1
+        self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
@@ -171,7 +172,7 @@ class TriMesh:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
+        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise, nb_vertices=self.nb_vertices)
 
         if self.vertices is not None:
 

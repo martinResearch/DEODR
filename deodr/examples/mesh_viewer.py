@@ -2,6 +2,7 @@
 
 import os
 import time
+import pickle
 
 import cv2
 
@@ -295,9 +296,25 @@ def mesh_viewer(
                 else:
                     scene.sigma = 0.0
 
+            if key == ord("s"):
+                filename = os.path.abspath("scene.pickle")                
+                # save scene and camera in pickle file
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(scene, file)
+                print(f"saved scene in {filename}")
+
+                filename = os.path.abspath("camera.pickle")
+                print(f"save scene in {filename}")
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(camera, file)
+                print(f"saved camera in {filename}")
+
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
+    obj_file = os.path.join(deodr.data_path, "cube/rgb_cube.ply")
     mesh_viewer(obj_file, use_moderngl=False)
 
 
