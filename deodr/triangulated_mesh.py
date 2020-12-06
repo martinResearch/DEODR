@@ -413,3 +413,9 @@ class ColoredTriMesh(TriMesh):
             vertices=new_vertices, faces=new_faces, visual=visual
         )
         return trimesh_mesh
+
+    @staticmethod
+    def load(filename):
+        import trimesh
+        mesh_trimesh = trimesh.load(filename)
+        return ColoredTriMesh.from_trimesh(mesh_trimesh)
