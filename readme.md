@@ -20,8 +20,8 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 
 # Features
 
-* linearly interpolated color triangles with arbitrary number of color channels
-* textured triangles with Gouraud shading
+* linearly interpolated color triangles with arbitrary number of color channels.
+* textured triangles with Gouraud shading. The gradient backward pass is supported only for linear texture mapping (it is not implemented for perspective-correct texture mapping yet).
 * derivatives with respect to triangles vertices positions, triangles colors and lights. 
 * derivatives with respect to the texture pixel intensities
 * derivatives with respect to the texture UV coordinates
@@ -40,7 +40,8 @@ Some **unsupported** features:
 * differentiable handling of seams at visible self intersections
 * self-collision detection to prevent interpenetrations (that lead to aliasing and non differentiability along the visible self-intersections)
 * phong shading
-* perspective-correct texture mapping
+* gradients backward pass for perspective-correct texture mapping
+* gradients backward pass for perspective-correct vertex attributes/color interpolation
 * texture mip-mapping (would require [trilinear filtering](https://en.wikipedia.org/wiki/Trilinear_filtering) to make it smoother and differentiable)
 * shadow casting (making it differentiable would be challenging)
  
