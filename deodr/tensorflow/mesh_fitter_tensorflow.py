@@ -144,8 +144,6 @@ class MeshDepthFitter:
             depth_scale = 1 * self.depthScale
             depth = self.scene.render_depth(
                 self.camera,
-                width=self.width,
-                height=self.height,
                 depth_scale=depth_scale,
             )
             depth = tf.clip_by_value(depth, 0, self.scene.max_depth)

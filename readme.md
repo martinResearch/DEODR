@@ -30,7 +30,7 @@ The core triangle rasterization procedures and their adjoint are written in C fo
 * exact gradient of the rendering function
 * classical camera projection representation used in computer vision 
 * camera distortion with OpenCV's 5 distortion parameters described [here](https://docs.opencv.org/2.4/doc/tutorials/calib3d/camera_calibration/camera_calibration.html). It requires small triangles surface tesselations as the distortion is applied only at the vertices projection stage. 
-* possibility to render images corresponding to depth, normals, albedo, shading, xyz coordinates, object/background mask and faces ids.  
+* possibility to render images corresponding to depth, normals, albedo, shading, xyz coordinates, object/background mask and faces ids. Example [here](https://github.com/martinResearch/DEODR/blob/master/deodr/examples/render_mesh.py#L68) 
 
 Some **unsupported** features:
 

@@ -6,6 +6,195 @@ import numpy as np
 from . import differentiable_renderer_cython
 
 
+def renderScene(
+    scene,
+    sigma: float,
+    image: np.ndarray,
+    z_buffer: np.ndarray,
+    antialiase_error: bool = 0,
+    obs: np.ndarray = None,
+    err_buffer: np.ndarray = None,
+    check_valid: bool = True,
+):
+
+    if check_valid:
+        # doing checks here as it seems the debugger in not able to find the pyx file
+        # when installed from a wheel. this also make inderactive debugginh easier
+        # for the library user
+
+        assert not (image is None)
+        assert not (z_buffer is None)
+        heigth = image.shape[0]
+        width = image.shape[1]
+        nb_colors = image.shape[2]
+
+        nb_triangles = scene.faces.shape[0]
+        assert nb_triangles == scene.faces_uv.shape[0]
+        nb_vertices = scene.depths.shape[0]
+        nb_vertices_uv = scene.uv.shape[0]
+
+        assert scene.faces.dtype == np.uint32
+        assert np.all(scene.faces < nb_vertices)
+        assert np.all(scene.faces_uv < nb_vertices_uv)
+
+        assert scene.colors.ndim == 2
+        assert scene.uv.ndim == 2
+        assert scene.ij.ndim == 2
+        assert scene.shade.ndim == 1
+        assert scene.edgeflags.ndim == 2
+        assert scene.textured.ndim == 1
+        assert scene.shaded.ndim == 1
+        assert scene.uv.shape[1] == 2
+        assert scene.ij.shape[0] == nb_vertices
+        assert scene.ij.shape[1] == 2
+        assert scene.shade.shape[0] == nb_vertices
+        assert scene.colors.shape[0] == nb_vertices
+        assert scene.colors.shape[1] == nb_colors
+        assert scene.edgeflags.shape[0] == nb_triangles
+        assert scene.edgeflags.shape[1] == 3
+        assert scene.textured.shape[0] == nb_triangles
+        assert scene.shaded.shape[0] == nb_triangles
+        assert scene.background.ndim == 3
+        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[1] == width
+        assert scene.background.shape[2] == nb_colors
+
+        if scene.texture.size > 0:
+            assert scene.texture.ndim == 3
+            assert scene.texture.shape[0] > 0
+            assert scene.texture.shape[1] > 0
+            assert scene.texture.shape[2] == nb_colors
+
+        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[1] == width
+
+        if antialiase_error:
+            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[1] == width
+            assert obs.shape[0] == heigth
+            assert obs.shape[1] == width
+            assert obs.shape[2] == nb_colors
+
+    differentiable_renderer_cython.renderScene(
+        scene, sigma, image, z_buffer, antialiase_error, obs, err_buffer
+    )
+
+
+def renderSceneB(
+    scene,
+    sigma: float,
+    image,
+    z_buffer,
+    image_b=None,
+    antialiase_error=0,
+    obs=None,
+    err_buffer=None,
+    err_buffer_b=None,
+    check_valid=True,
+):
+
+    if check_valid:
+        # doing checks here as it seems the debugger in not able to find the pyx file
+        # when installed from a wheel. this also make inderactive debugginh easier
+        # for the library user
+
+        assert not (image is None)
+        assert not (z_buffer is None)
+
+        heigth = image.shape[0]
+        width = image.shape[1]
+        nb_colors = image.shape[2]
+        nb_triangles = scene.faces.shape[0]
+
+        assert nb_colors == scene.colors.shape[1]
+        assert z_buffer.shape[0] == heigth
+        assert z_buffer.shape[1] == width
+        assert nb_triangles == scene.faces_uv.shape[0]
+
+        nb_vertices = scene.depths.shape[0]
+        nb_vertices_uv = scene.uv.shape[0]
+
+        assert scene.faces.dtype == np.uint32
+        assert np.all(scene.faces < nb_vertices)
+        assert np.all(scene.faces_uv < nb_vertices_uv)
+
+        assert scene.colors.ndim == 2
+        assert scene.uv.ndim == 2
+        assert scene.ij.ndim == 2
+        assert scene.shade.ndim == 1
+        assert scene.edgeflags.ndim == 2
+        assert scene.textured.ndim == 1
+        assert scene.shaded.ndim == 1
+        assert scene.uv.shape[1] == 2
+        assert scene.ij.shape[0] == nb_vertices
+        assert scene.ij.shape[1] == 2
+        assert scene.shade.shape[0] == nb_vertices
+        assert scene.colors.shape[0] == nb_vertices
+        assert scene.colors.shape[1] == nb_colors
+        assert scene.edgeflags.shape[0] == nb_triangles
+        assert scene.edgeflags.shape[1] == 3
+        assert scene.textured.shape[0] == nb_triangles
+        assert scene.shaded.shape[0] == nb_triangles
+        assert scene.background.ndim == 3
+        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[1] == width
+        assert scene.background.shape[2] == nb_colors
+
+        assert scene.uv_b.ndim == 2
+        assert scene.ij_b.ndim == 2
+        assert scene.shade_b.ndim == 1
+        assert scene.edgeflags.ndim == 2
+        assert scene.textured.ndim == 1
+        assert scene.shaded.ndim == 1
+        assert scene.uv_b.shape[0] == nb_vertices_uv
+        assert scene.uv_b.shape[1] == 2
+        assert scene.ij_b.shape[0] == nb_vertices
+        assert scene.ij_b.shape[1] == 2
+        assert scene.shade_b.shape[0] == nb_vertices
+        assert scene.colors_b.shape[0] == nb_vertices
+        assert scene.colors_b.shape[1] == nb_colors
+        assert scene.edgeflags.shape[0] == nb_triangles
+        assert scene.edgeflags.shape[1] == 3
+        assert scene.textured.shape[0] == nb_triangles
+        assert scene.shaded.shape[0] == nb_triangles
+        assert scene.background.ndim == 3
+        assert scene.background.shape[0] == heigth
+        assert scene.background.shape[1] == width
+        assert scene.background.shape[2] == nb_colors
+
+        if scene.texture.size > 0:
+            assert scene.texture.ndim == 3
+            assert scene.texture_b.ndim == 3
+            assert scene.texture.shape[0] > 0
+            assert scene.texture.shape[1] > 0
+            assert scene.texture.shape[0] == scene.texture_b.shape[0]
+            assert scene.texture.shape[1] == scene.texture_b.shape[1]
+            assert scene.texture.shape[2] == nb_colors
+            assert scene.texture_b.shape[2] == nb_colors
+
+        if antialiase_error:
+            assert err_buffer.shape[0] == heigth
+            assert err_buffer.shape[1] == width
+            assert obs.shape[0] == heigth
+            assert obs.shape[1] == width
+        else:
+            assert not (image_b is None)
+            assert image_b.shape[0] == heigth
+            assert image_b.shape[1] == width
+
+    differentiable_renderer_cython.renderSceneB(
+        scene,
+        sigma,
+        image,
+        z_buffer,
+        image_b,
+        antialiase_error,
+        obs,
+        err_buffer,
+        err_buffer_b,
+    )
+
+
 class Camera:
     """Camera class with the same distortion parameterization as opencv."""
 
@@ -317,9 +506,7 @@ class Scene2D(Scene2DBase):
         z_buffer = np.zeros((self.height, self.width))
         err_buffer = np.empty((self.height, self.width))
         antialiase_error = True
-        differentiable_renderer_cython.renderScene(
-            self, sigma, image, z_buffer, antialiase_error, obs, err_buffer
-        )
+        renderScene(self, sigma, image, z_buffer, antialiase_error, obs, err_buffer)
         self.store_backward = (sigma, obs, image, z_buffer, err_buffer)
         return image, z_buffer, err_buffer
 
@@ -327,9 +514,7 @@ class Scene2D(Scene2DBase):
         image = np.zeros((self.height, self.width, self.nb_colors))
         z_buffer = np.zeros((self.height, self.width))
         antialiase_error = False
-        differentiable_renderer_cython.renderScene(
-            self, sigma, image, z_buffer, antialiase_error, None, None
-        )
+        renderScene(self, sigma, image, z_buffer, antialiase_error, None, None)
         self.store_backward = (sigma, image, z_buffer)
         return image, z_buffer
 
@@ -337,7 +522,7 @@ class Scene2D(Scene2DBase):
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
         if make_copies:
-            differentiable_renderer_cython.renderSceneB(
+            renderSceneB(
                 self,
                 sigma,
                 image,
@@ -349,7 +534,7 @@ class Scene2D(Scene2DBase):
                 err_buffer_b,
             )
         else:
-            differentiable_renderer_cython.renderSceneB(
+            renderSceneB(
                 self,
                 sigma,
                 image,
@@ -368,7 +553,7 @@ class Scene2D(Scene2DBase):
             make_copies
         ):  # if we make copies we keep the antialized image unchanged image
             # along the occlusion boundaries
-            differentiable_renderer_cython.renderSceneB(
+            renderSceneB(
                 self,
                 sigma,
                 image.copy(),
@@ -380,7 +565,7 @@ class Scene2D(Scene2DBase):
                 None,
             )
         else:
-            differentiable_renderer_cython.renderSceneB(
+            renderSceneB(
                 self,
                 sigma,
                 image,
@@ -519,7 +704,7 @@ class Scene3D:
         z_buffer = np.empty((self.height, self.width))
         self.ij = np.array(ij)
         self.colors = np.array(colors)
-        differentiable_renderer_cython.renderScene(self, self.sigma, image, z_buffer)
+        renderScene(self, self.sigma, image, z_buffer)
 
         if self.store_backward_current is not None:
             self.store_backward_current["render_2d"] = (ij, colors, image, z_buffer)
@@ -530,9 +715,7 @@ class Scene3D:
         ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
         self.ij = np.array(ij)
         self.colors = np.array(colors)
-        differentiable_renderer_cython.renderSceneB(
-            self, self.sigma, image.copy(), z_buffer, image_b
-        )
+        renderSceneB(self, self.sigma, image.copy(), z_buffer, image_b)
         return self.ij_b, self.colors_b
 
     def render(self, camera, return_z_buffer=False, backface_culling=True):
@@ -605,7 +788,7 @@ class Scene3D:
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, height, width, depth_scale=1, backface_culling=True):
+    def render_depth(self, camera, depth_scale=1, backface_culling=True):
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -627,8 +810,8 @@ class Scene3D:
         self.shade = np.zeros(
             (self.mesh.nb_vertices), dtype=np.bool
         )  # eventually used when using texture
-        self.height = height
-        self.width = width
+        self.height = camera.height
+        self.width = camera.width
         self.shaded = np.zeros(
             (self.mesh.nb_faces), dtype=np.bool
         )  # eventually used when using texture
@@ -657,6 +840,7 @@ class Scene3D:
         color=True,
         depth=True,
         face_id=True,
+        barycentric=True,
         normal=True,
         luminosity=True,
         uv=True,
@@ -701,6 +885,11 @@ class Scene3D:
                 np.arange(0, self.mesh.nb_faces)[:, None], (1, 3)
             ).reshape(soup_nb_vertices, 1)
             channels["face_id"] = soup_face_ids
+        if barycentric:
+            soup_barycentric = np.tile(
+                np.eye(3, 3)[None, :, :], (self.mesh.nb_faces, 1, 1)
+            ).reshape(soup_nb_vertices, 3)
+            channels["barycentric"] = soup_barycentric
         if normal:
             soup_normals = self.mesh.vertex_normals[self.mesh.faces].reshape(
                 soup_nb_vertices, 3
@@ -770,7 +959,7 @@ class Scene3D:
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))
-        differentiable_renderer_cython.renderScene(scene_2d, 0, buffers, z_buffer)
+        renderScene(scene_2d, 0, buffers, z_buffer)
 
         output = {}
         for k in channels.keys():

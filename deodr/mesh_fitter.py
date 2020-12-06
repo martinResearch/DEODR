@@ -107,8 +107,6 @@ class MeshDepthFitter:
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_cliped = self.scene.render_depth(
             self.camera,
-            width=self.width,
-            height=self.height,
             depth_scale=self.depthScale,
         )
         depth = np.clip(self.depth_not_cliped, 0, self.scene.max_depth)

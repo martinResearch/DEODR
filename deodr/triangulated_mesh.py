@@ -42,6 +42,8 @@ class TriMeshAdjacencies:
         )
 
         self.nb_edges = np.max(id_edge) + 1
+        self.edges = np.zeros((self.nb_edges, 2), dtype=np.uint32)
+        self.edges[id_edge] = edges
 
         nb_inc = np.zeros((self.nb_edges))
         np.add.at(nb_inc, id_edge, edge_increase)
@@ -79,6 +81,12 @@ class TriMeshAdjacencies:
         self.hasBoundaries = np.any(np.sum(self.edges_faces_ones, axis=1) == 1)
         assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
+
+    def boundary_edges(self):
+        is_boundary_edge = np.array(
+            np.sum(self.adjacencies.edges_faces_ones, axis=1) == 1
+        ).squeeze(axis=1)
+        return self.edges[is_boundary_edge, :]
 
     def id_edge(self, idv):
 
@@ -143,6 +151,12 @@ class TriMesh:
     """Class that implements a triangulated mesh."""
 
     def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
+
+        assert np.issubdtype(faces.dtype, np.integer)
+        assert faces.ndim == 2
+        assert faces.shape[1] == 3
+        assert np.all(faces >= 0)
+
         self.faces = faces
         self.nb_vertices = np.max(faces) + 1
         self.nb_faces = faces.shape[0]
@@ -151,19 +165,22 @@ class TriMesh:
         self.face_normals = None
         self.vertex_normals = None
         self.clockwise = clockwise
-        self.set_vertices(vertices)
+        if vertices is not None:
+            self.set_vertices(vertices)
         if compute_adjacencies:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
         self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
-        assert self.adjacencies.is_manifold
+
         if self.vertices is not None:
 
             if self.adjacencies.is_closed:
                 self.check_orientation()
 
     def set_vertices(self, vertices):
+        assert vertices.ndim == 2
+        assert vertices.shape[1] == 3
         self.vertices = vertices
         self.face_normals = None
         self.vertex_normals = None
@@ -221,6 +238,7 @@ class TriMesh:
         """Compute the a boolean for each of edges that is true if and only if
         the edge is one the silhouette of the mesh.
         """
+        assert self.adjacencies.is_manifold
         return self.adjacencies.edge_on_silhouette(points_2d)
 
 
@@ -314,8 +332,8 @@ class ColoredTriMesh(TriMesh):
                 uv = (
                     np.column_stack(
                         (
-                            (mesh.visual.uv[:, 0]) * texture.shape[0],
-                            (1 - mesh.visual.uv[:, 1]) * texture.shape[1],
+                            (mesh.visual.uv[:, 0]) * texture.shape[1],
+                            (1 - mesh.visual.uv[:, 1]) * texture.shape[0],
                         )
                     )
                     - 0.5
@@ -371,8 +389,8 @@ class ColoredTriMesh(TriMesh):
 
         vt = np.column_stack(
             (
-                (self.uv[:, 0] + 0.5) / self.texture.shape[0],
-                1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[1]),
+                (self.uv[:, 0] + 0.5) / self.texture.shape[1],
+                1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[0]),
             )
         )
         new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
@@ -385,6 +403,8 @@ class ColoredTriMesh(TriMesh):
         uv = vt[mask_vt].copy()
 
         texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
+        if texture_uint8.shape[2] == 1:
+            texture_uint8 = texture_uint8.squeeze(axis=2)
         texture_pil = PIL.Image.fromarray(texture_uint8)
         material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
         visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
