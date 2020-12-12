@@ -48,3 +48,34 @@ def cross_backward(u, v, c_b):
     v_b = np.cross(c_b, u)
     u_b = np.cross(v, c_b)
     return u_b, v_b
+
+
+def jacabian_finite_difference(func, x, epsilon=1e-6):
+
+    v0 = func(x)
+    nx = x.copy()
+    J = np.zeros((v0.size, x.size))
+    for d in range(x.size):
+        nx.flat[d] = x.flat[d] + epsilon
+        d1 = func(nx)
+        nx.flat[d] = x.flat[d] - epsilon
+        d2 = func(nx)
+        nx.flat[d] = x.flat[d]
+        J[:, d] = (d1 - d2).flatten() / (2 * epsilon)
+    v02 = func(x)
+    assert v0 == v02
+    return J
+
+
+def check_jacabian_finite_difference(jac, func, x, epsilon=1e-7, tol=1e-4):
+
+    nx = x.copy()
+    for d in range(x.size):
+        nx.flat[d] = x.flat[d] + epsilon
+        d1 = func(nx)
+        nx.flat[d] = x.flat[d] - epsilon
+        d2 = func(nx)
+        nx.flat[d] = x.flat[d]
+        J_cold_fd = (d1 - d2).flatten() / (2 * epsilon)
+        max_diff = np.max(np.abs(jac[..., d] - J_cold_fd))
+        assert max_diff < tol
