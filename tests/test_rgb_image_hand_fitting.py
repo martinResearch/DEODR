@@ -24,7 +24,7 @@ def test_rgb_image_hand_fitting_numpy():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 2122.2359691357165) < 2
+    assert abs(energies[49] - 2113.7013184079137) < 2
 
 
 def test_rgb_image_hand_fitting_tensorflow():
@@ -36,7 +36,7 @@ def test_rgb_image_hand_fitting_tensorflow():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 2109.2460894774995) < 1
+    assert abs(energies[49] - 2107.0089187104204) < 1
 
 
 if __name__ == "__main__":
