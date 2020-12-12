@@ -408,21 +408,18 @@ short int floor_div(double a, double b, int x_min, int x_max)
 	// robust implementation of min ( x_max, max (x_min, floor(a / b)))
 
 	short int x;
-
-	double max_div = 100000;
 	
-	if (abs(b) * max_div > abs(a))
+	if (abs(b) * SHRT_MAX > abs(a) + abs(b))
 	{ 
-		double xf = floor(a / b);
-		if (xf < x_min)
+		x = floor(a / b);
+		if (x < x_min)
 		{
-			xf = x_min;
+			x = x_min;
 		}
-		if (xf > x_max)
+		if (x > x_max)
 		{
-			xf = x_max;
+			x = x_max;
 		}
-		x = (short int) xf;
 	}
 	else
 	{
@@ -451,8 +448,8 @@ short int ceil_div(double a, double b, int x_min, int x_max)
 	// robust implementation of min ( x_max, max (x_min, ceil(a / b)))
 
 	short int x;
-	double max_short_int = 10000000;
-	if (true)//(abs(b) * max_short_int > abs(a))
+
+	if (abs(b) * SHRT_MAX > abs(a) + abs(b))
 	{ 
 		x = (short int)ceil(a / b);
 		if (x < x_min)
