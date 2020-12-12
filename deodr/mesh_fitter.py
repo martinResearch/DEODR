@@ -8,7 +8,7 @@ import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
 from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D, TriMesh
-from .tools import normalize, normalize_backward, qrot, qrot_backward
+from .tools import normalize, normalize_backward, qrot, qrot_backward, check_jacabian_finite_difference
 
 
 class MeshDepthFitter:
@@ -29,7 +29,7 @@ class MeshDepthFitter:
         self.inertia = inertia
         self.damping = damping
         self.step_factor_vertices = 0.0005
-        self.step_max_vertices = 0.5
+        self.step_max_vertices = 1
         self.step_factor_quaternion = 0.00006
         self.step_max_quaternion = 0.1
         self.step_factor_translation = 0.00005
@@ -106,8 +106,7 @@ class MeshDepthFitter:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_cliped = self.scene.render_depth(
-            self.camera,
-            depth_scale=self.depthScale,
+            self.camera, depth_scale=self.depthScale,
         )
         depth = np.clip(self.depth_not_cliped, 0, self.scene.max_depth)
         return depth
@@ -417,20 +416,21 @@ class MeshRGBFitterWithPoseMultiFrame:
         default_color,
         default_light,
         cregu=2000,
-        inertia=0.96,
-        damping=0.05,
+        cdata=1,
+        inertia=0.97,
+        damping=0.15,
         update_lights=True,
         update_color=True,
     ):
         self.cregu = cregu
-
+        self.cdata = cdata
         self.inertia = inertia
         self.damping = damping
         self.step_factor_vertices = 0.0005
         self.step_max_vertices = 0.5
-        self.step_factor_quaternion = 0.00006
+        self.step_factor_quaternion = 0.00005
         self.step_max_quaternion = 0.05
-        self.step_factor_translation = 0.00005
+        self.step_factor_translation = 0.00004
         self.step_max_translation = 0.1
 
         self.default_color = default_color
@@ -571,17 +571,14 @@ class MeshRGBFitterWithPoseMultiFrame:
         )  # that will lead to a gradient that is in the tangeant space
         return
 
-    def step(self):
-        self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
-
-        self.nb_facesrames = len(self.hand_images)
-
+    def energy_data(self, vertices, return_images=True):
+        self.vertices = vertices
         image = [None] * self.nb_facesrames
         diff_image = [None] * self.nb_facesrames
         image_b = [None] * self.nb_facesrames
         energy_datas = [None] * self.nb_facesrames
         self.clear_gradients()
-        coef_data = 1 / self.nb_facesrames
+        coef_data = self.cdata / self.nb_facesrames
         for idframe in range(self.nb_facesrames):
             image[idframe] = self.render(idframe=idframe)
             diff_image[idframe] = np.sum(
@@ -591,15 +588,39 @@ class MeshRGBFitterWithPoseMultiFrame:
             energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
             self.render_backward(image_b)
         energy_data = np.sum(energy_datas)
+        if return_images:
+            return energy_data, image, diff_image
+        else:
+            return energy_data
+
+    def step(self, check_gradient=False):
+   
+        self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
+
+        self.nb_facesrames = len(self.hand_images)
+
+        energy_data, image, diff_image = self.energy_data(self.vertices)
         (
             energy_rigid,
             grad_rigidity,
             approx_hessian_rigidity,
         ) = self.rigid_energy.evaluate(self.vertices)
-        energy = energy_data + energy_rigid
-        print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
-        self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+        if check_gradient:
+            def func(x):
+                return self.rigid_energy.evaluate(x, return_grad=False, return_hessian=False)
+            check_jacabian_finite_difference(grad_rigidity.flatten(), func, self.vertices)
+
+            def func(x):
+                return self.energy_data(x, return_images=False)
+            grad_data = self.vertices_b.copy()
+            check_jacabian_finite_difference(grad_data.flatten(), func, self.vertices)
+
+        energy = energy_data + energy_rigid
+        print(f"iter {self.iter} Energy={energy} : EData={energy_data} E_rigid={energy_rigid}")
+
+        if self.iter < 500:
+            self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
         # update v
         grad = self.vertices_b + grad_rigidity
 
@@ -612,11 +633,13 @@ class MeshRGBFitterWithPoseMultiFrame:
         step_vertices = mult_and_clamp(
             -grad, self.step_factor_vertices, self.step_max_vertices
         )
+
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * inertia + (1 - inertia) * step_vertices
         )
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
+ 
         step_quaternion = mult_and_clamp(
             -self.transform_quaternion_b,
             self.step_factor_quaternion,

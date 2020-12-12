@@ -3,6 +3,5 @@
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.pythonPath": "python_venv\\Scripts\\python.exe",
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": ["--line-length",  "120"]
+    "python.formatting.provider": "black"
 }

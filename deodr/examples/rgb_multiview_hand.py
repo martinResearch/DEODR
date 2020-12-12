@@ -20,8 +20,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True):
+def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True, max_iter=400):
 
+    file_folder = os.path.dirname(__file__)
     hand_images = [
         imread(file).astype(np.double) / 255
         for file in glob.glob(os.path.join(deodr.data_path, "./hand_multiview/*.jpg"))
@@ -62,7 +63,7 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     # update_lights =  True, update_color= True,cregu=1000)
 
     hand_fitter.reset()
-    max_iter = 150
+
     hand_image = hand_images[0]
     background_color = np.median(
         np.row_stack(
@@ -82,12 +83,13 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     durations = []
     start = time.time()
 
-    iterfolder = "./iterations/rgb_multiview"
+    iterfolder = os.path.join(file_folder, "./iterations/depth")
     if not os.path.exists(iterfolder):
         os.makedirs(iterfolder)
 
     for niter in range(max_iter):
-        energy, image, diff_image = hand_fitter.step()
+
+        energy, image, diff_image = hand_fitter.step(check_gradient=False)
         energies.append(energy)
         durations.append(time.time() - start)
         if display or save_images:

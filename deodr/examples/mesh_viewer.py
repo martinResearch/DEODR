@@ -42,7 +42,8 @@ class Interactor:
         self.camera = camera
 
     def mouse_callback(self, event, x, y, flags, param):
-
+        if event == 0 and flags == 0:
+            return
         if event == cv2.EVENT_LBUTTONDOWN:
             self.left_is_down = True
             self.x_last = x
@@ -206,8 +207,11 @@ def mesh_viewer(
         height=height,
         distortion=distortion,
     )
+    use_antiliazing = True
+    use_light = True
 
-    scene = differentiable_renderer.Scene3D()
+    scene = differentiable_renderer.Scene3D(sigma=1)
+
     scene.set_light(
         light_directional=np.array(light_directional), light_ambient=light_ambient
     )
@@ -215,9 +219,10 @@ def mesh_viewer(
     background_image = np.ones((height, width, 3))
     scene.set_background(background_image)
 
-    mesh.texture = mesh.texture[
-        :, :, ::-1
-    ]  # convert texture to GBR to avoid future conversion when ploting in Opencv
+    if mesh.texture is not None:
+        mesh.texture = mesh.texture[
+            :, :, ::-1
+        ]  # convert texture to GBR to avoid future conversion when ploting in Opencv
 
     fps = 0
     fps_decay = 0.1
@@ -278,7 +283,31 @@ def mesh_viewer(
         cv2.imshow(windowname, image)
         stop = time.clock()
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
-        cv2.waitKey(1)
+        key = cv2.waitKey(1)
+        if key >= 0:
+            if key == ord("p"):
+                # toggle perspective correct mapping (texture or interpolation)
+                scene.perspective_correct = not (scene.perspective_correct)
+                print(f"perspective_correct = {scene.perspective_correct}")
+
+            if key == ord("l"):
+                # toggle directional light + ambient vs ambient = 1
+                use_light = not (use_light)
+                if use_light:
+                    scene.set_light(
+                        light_directional=np.array(light_directional),
+                        light_ambient=light_ambient,
+                    )
+                else:
+                    scene.set_light(light_directional=None, light_ambient=1.0)
+
+            if key == ord("a"):
+                # toggle edge overdraw anti-aliasing
+                use_antiliazing = not (use_antiliazing)
+                if use_antiliazing:
+                    scene.sigma = 1.0
+                else:
+                    scene.sigma = 0.0
 
 
 if __name__ == "__main__":
