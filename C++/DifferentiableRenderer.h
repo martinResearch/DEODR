@@ -153,7 +153,7 @@ void  inv_matrix_3x3_B(double* S, double* S_B, double* T, double* T_B)
 		inv_det_b += Tp[k] * T_B[k];
 		Tp_B[k] += inv_det * T_B[k];
 	}
-	double t = (S[0] * Tp[0] + S[1] * Tp[3] + S[2] * Tp[6]);
+	// double t = (S[0] * Tp[0] + S[1] * Tp[3] + S[2] * Tp[6]);
 	// double inv_det=1/t
 	double t_B = inv_det_b * (-inv_det * inv_det);//?
 
@@ -443,7 +443,7 @@ short int floor_div(double a, double b, int x_min, int x_max)
 			}
 		}
 	}
-	return short int (x);
+	return x;
 }
 
 short int ceil_div(double a, double b, int x_min, int x_max)
@@ -941,7 +941,14 @@ inline void render_part_interpolated_B(double* image, double* image_B, double* z
 	//A0y  =new double[sizeA];
 	A0y_B = new double[sizeA];
 
-	if (y_begin < 0)     y_begin = 0;  if (y_end > height - 1) y_end = height - 1;
+	if (y_begin < 0)
+	{
+		y_begin = 0;
+	}
+	if (y_end > height - 1)
+	{
+		y_end = height - 1;
+	}
 
 	for (short int y = y_begin; y <= y_end; y++)
 	{
@@ -1110,7 +1117,14 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int x
 
 	A = new double[sizeA];
 
-	if (y_begin < 0)     y_begin = 0;  if (y_end > height - 1) y_end = height - 1;
+	if (y_begin < 0)
+	{ 
+		y_begin = 0;
+	}
+	if (y_end > height - 1)
+	{
+		y_end = height - 1;
+	}
 
 	for (short int y = y_begin; y <= y_end; y++)
 	{
@@ -1210,7 +1224,14 @@ inline  void render_part_textured_gouraud_B(double* image, double* image_B, doub
 		throw "backward gradient propagation not supported yet with perspective_correct=True";		
 	}
 
-	if (y_begin < 0)     y_begin = 0;  if (y_end > height - 1) y_end = height - 1;
+	if (y_begin < 0)
+	{
+		y_begin = 0;
+	}
+	if (y_end > height - 1)
+	{ 
+		y_end = height - 1;
+	}
 
 	for (short int y = y_begin; y <= y_end; y++)
 	{
@@ -1333,13 +1354,6 @@ void get_edge_stencil_equations(double Vxy[][2], int height, int width, double s
 
 	for (int k = 0; k < 3; k++) { xy1_to_transp[k] = (1 / sigma)*xy1_to_edge[6 + k]; }
 
-	// compute edges equations j = dj_di * i + j0
-
-	double B_inc[2];
-	for (short int k = 0; k < 2; k++)
-		B_inc[k] = xy1_to_bary[3 * k];
-
-	double T_inc = xy1_to_transp[0];
 
 	// setup border inequalities e*[i,j,1]>0 -> inside the paralellogram 
 
@@ -2394,8 +2408,6 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 	double T_inc_B = 0;
 
 	mul_matrix(1, 2, 3, xy1_to_Z, Zvertex, xy1_to_bary);
-
-	double  xy1_to_L_B[3] = { 0 };
 
 	for (short int i = 0; i < 3 * sizeA; i++) xy1_to_A_B[i] = 0;
 
