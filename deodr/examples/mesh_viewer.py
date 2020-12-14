@@ -157,8 +157,8 @@ def mesh_viewer(
     display_fps=True,
     title=None,
     use_moderngl=False,
-    light_directional=(0, 0, 0),
-    light_ambient=1,
+    light_directional=(0, 0, -0.5),
+    light_ambient=0.5,
 ):
     if isinstance(file_or_mesh, str):
         if title is None:
@@ -245,7 +245,8 @@ def mesh_viewer(
         offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
         scene.mesh.compute_vertex_normals()
         offscreen_renderer.set_scene(scene)
-
+    else:
+        offscreen_renderer = None
     while cv2.getWindowProperty(windowname, 0) >= 0:
 
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
@@ -285,29 +286,59 @@ def mesh_viewer(
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
         key = cv2.waitKey(1)
         if key >= 0:
+            if key == ord("r"):
+                # change renderer between DEODR cpu rendering and moderngl
+                use_moderngl = not (use_moderngl)
+                print(f"use_moderngl = {use_moderngl}")
+
+                if offscreen_renderer is None:
+                    offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+                    scene.mesh.compute_vertex_normals()
+                    offscreen_renderer.set_scene(scene)
+
             if key == ord("p"):
-                # toggle perspective correct mapping (texture or interpolation)
-                scene.perspective_correct = not (scene.perspective_correct)
-                print(f"perspective_correct = {scene.perspective_correct}")
+                if use_moderngl:
+                    print("can only use perspective corect mapping  when using moderngl")
+                else:
+                    # toggle perspective correct mapping (texture or interpolation)
+                    scene.perspective_correct = not (scene.perspective_correct)
+                    print(f"perspective_correct = {scene.perspective_correct}")
 
             if key == ord("l"):
                 # toggle directional light + ambient vs ambient = 1
                 use_light = not (use_light)
+                print(f"use_light = {use_light}")
                 if use_light:
-                    scene.set_light(
-                        light_directional=np.array(light_directional),
-                        light_ambient=light_ambient,
-                    )
+                    if use_moderngl:
+                        offscreen_renderer.set_light(
+                            light_directional=np.array(light_directional),
+                            light_ambient=light_ambient,
+                        )
+                    else:
+                        scene.set_light(
+                            light_directional=np.array(light_directional),
+                            light_ambient=light_ambient,
+                        )
                 else:
-                    scene.set_light(light_directional=None, light_ambient=1.0)
+                    if use_moderngl:
+                        offscreen_renderer.set_light(
+                            light_directional=(0, 0, 0),
+                            light_ambient=1.0,
+                        )
+                    else:
+                        scene.set_light(light_directional=None, light_ambient=1.0)
 
             if key == ord("a"):
                 # toggle edge overdraw anti-aliasing
-                use_antiliazing = not (use_antiliazing)
-                if use_antiliazing:
-                    scene.sigma = 1.0
+                if use_moderngl:
+                    print("no anti-alizaing available when using moderngl")
                 else:
-                    scene.sigma = 0.0
+                    use_antiliazing = not (use_antiliazing)
+                    print(f"use_antialiazing = {use_antiliazing}")
+                    if use_antiliazing:
+                        scene.sigma = 1.0
+                    else:
+                        scene.sigma = 0.0
 
 
 if __name__ == "__main__":

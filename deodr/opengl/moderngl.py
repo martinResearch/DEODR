@@ -68,12 +68,12 @@ class OffscreenRenderer:
                 )
             )
 
-        self.shader_program["light_directional"].value = tuple(
-            deodr_scene.light_directional
-        )
-        self.shader_program["light_ambient"].value = deodr_scene.light_ambient
-
+        self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
         self.set_mesh(deodr_scene.mesh)
+
+    def set_light(self, light_directional, light_ambient):
+        self.shader_program["light_directional"].value = tuple(light_directional)
+        self.shader_program["light_ambient"].value = float(light_ambient)
 
     def set_mesh(self, mesh):
 
