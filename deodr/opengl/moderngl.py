@@ -154,7 +154,11 @@ class OffscreenRenderer:
         # of the xyz point cloud using unit8 opengl type
 
         # Framebuffers
-        if (self.fbo is None) or (self.fbo.height != camera.height) or (self.fbo.width != camera.width):
+        if (
+            (self.fbo is None)
+            or (self.fbo.height != camera.height)
+            or (self.fbo.width != camera.width)
+        ):
             self.fbo = ctx.framebuffer(
                 ctx.renderbuffer((camera.width, camera.height)),
                 ctx.depth_renderbuffer((camera.width, camera.height)),

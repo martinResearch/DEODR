@@ -261,7 +261,10 @@ def mesh_viewer(
         if use_moderngl:
             image = offscreen_renderer.render(camera)
         else:
-            if scene.background.shape[0] != height or scene.background.shape[0] != width:
+            if (
+                scene.background.shape[0] != height
+                or scene.background.shape[0] != width
+            ):
                 background_image = np.ones((height, width, 3))
                 scene.set_background(background_image)
             image = scene.render(interactor.camera)
@@ -298,7 +301,9 @@ def mesh_viewer(
 
             if key == ord("p"):
                 if use_moderngl:
-                    print("can only use perspective corect mapping  when using moderngl")
+                    print(
+                        "can only use perspective corect mapping  when using moderngl"
+                    )
                 else:
                     # toggle perspective correct mapping (texture or interpolation)
                     scene.perspective_correct = not (scene.perspective_correct)
@@ -322,8 +327,7 @@ def mesh_viewer(
                 else:
                     if use_moderngl:
                         offscreen_renderer.set_light(
-                            light_directional=(0, 0, 0),
-                            light_ambient=1.0,
+                            light_directional=(0, 0, 0), light_ambient=1.0,
                         )
                     else:
                         scene.set_light(light_directional=None, light_ambient=1.0)
