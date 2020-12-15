@@ -9,6 +9,8 @@ M. de la Gorce, N. Paragios and David Fleet. PAMI 2011
 
 Martin de La Gorce. 2019.
 """
+__version__ = "0.1.17"
+
 __all__ = [
     "Scene2D",
     "Scene3D",
@@ -20,14 +22,11 @@ __all__ = [
 ]
 
 import os
-
 from .differentiable_renderer import Camera, Scene2D, Scene3D
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .obj import read_obj
 from .triangulated_mesh import ColoredTriMesh, TriMesh
 
 root_path = os.path.dirname(__file__)
-with open(os.path.join(root_path, "version.txt")) as f:
-    __version__ = f.read().strip()
 
 data_path = os.path.join(root_path, "data")
