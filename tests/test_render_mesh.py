@@ -21,7 +21,7 @@ def test_render_mesh(update=False):
     if update:
         imageio.imwrite(image_file, image_uint8)
     image_prev = imageio.imread(image_file)
-    assert np.max(np.abs(image_prev - image_uint8)) == 0
+    assert np.max(image_prev.astype(np.int) - image_uint8.astype(np.int)) == 0
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 from .tools import scipy_sparse_matrix_to_tensorflow
-from ..triangulated_mesh import TriMesh, TriMeshAdjacencies
+from ..triangulated_mesh import TriMesh, TriMeshAdjacencies, ColoredTriMesh
 
 
 class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
@@ -11,8 +11,8 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
     Unlike the TriMesh class there are no vertices stored in this class.
     """
 
-    def __init__(self, faces):
-        super().__init__(faces)
+    def __init__(self, faces, nb_vertices=None):
+        super().__init__(faces=faces, nb_vertices=nb_vertices)
         self.faces_tf = tf.constant(faces)
         self._vertices_faces_tf = scipy_sparse_matrix_to_tensorflow(
             self._vertices_faces
@@ -41,34 +41,47 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
 class TriMeshTensorflow(TriMesh):
     """Tensorflow implementation of a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False):
-        super().__init__(faces, vertices, clockwise)
+    def __init__(self, faces, vertices=None, nb_vertices=None, clockwise=False):
+        super().__init__(
+            faces, vertices=vertices, nb_vertices=nb_vertices, clockwise=clockwise
+        )
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacenciesTensorflow(self.faces)
+        self.adjacencies = TriMeshAdjacenciesTensorflow(
+            self.faces, nb_vertices=self.nb_vertices
+        )
 
 
-class ColoredTriMeshTensorflow(TriMeshTensorflow):
+class ColoredTriMeshTensorflow(TriMeshTensorflow, ColoredTriMesh):
     """Tensorflow implementation of a colored triangulated mesh."""
 
     def __init__(
         self,
         faces,
         vertices=None,
+        nb_vertices=None,
         clockwise=False,
         faces_uv=None,
         uv=None,
         texture=None,
         colors=None,
+        nb_colors=None,
+        compute_adjacencies=True,
     ):
-        super(ColoredTriMeshTensorflow, self).__init__(
-            faces, vertices=vertices, clockwise=clockwise
+        ColoredTriMesh.__init__(
+            self,
+            faces,
+            vertices=vertices,
+            nb_vertices=nb_vertices,
+            clockwise=clockwise,
+            faces_uv=faces_uv,
+            uv=uv,
+            texture=texture,
+            colors=colors,
+            nb_colors=nb_colors,
+            compute_adjacencies=compute_adjacencies,
         )
-        self.faces_uv = faces_uv
-        self.uv = uv
-        self.texture = texture
-        self.colors = colors
-        self.textured = not (self.texture is None)
+
 
     def set_vertices_colors(self, colors):
         self.vertices_colors = colors
