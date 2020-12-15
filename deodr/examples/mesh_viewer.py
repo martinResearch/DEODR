@@ -297,7 +297,7 @@ def mesh_viewer(
                     scene.sigma = 0.0
 
             if key == ord("s"):
-                filename = os.path.abspath("scene.pickle")                
+                filename = os.path.abspath("scene.pickle")
                 # save scene and camera in pickle file
                 with open(filename, "wb") as file:
                     # dump information to the file

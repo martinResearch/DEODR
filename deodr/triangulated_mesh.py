@@ -172,7 +172,9 @@ class TriMesh:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise, nb_vertices=self.nb_vertices)
+        self.adjacencies = TriMeshAdjacencies(
+            self.faces, self.clockwise, nb_vertices=self.nb_vertices
+        )
 
         if self.vertices is not None:
 
@@ -418,5 +420,6 @@ class ColoredTriMesh(TriMesh):
     @staticmethod
     def load(filename):
         import trimesh
+
         mesh_trimesh = trimesh.load(filename)
         return ColoredTriMesh.from_trimesh(mesh_trimesh)
