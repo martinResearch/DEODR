@@ -2,6 +2,7 @@
 
 import os
 import time
+import pickle
 
 import cv2
 
@@ -162,9 +163,14 @@ def mesh_viewer(
     if type(obj_file_or_trimesh) == str:
         if title is None:
             title = obj_file_or_trimesh
-        mesh_trimesh = trimesh.load(obj_file_or_trimesh)
+        mesh = ColoredTriMesh.load(obj_file_or_trimesh)
     elif type(obj_file_or_trimesh) == trimesh.base.Trimesh:
         mesh_trimesh = obj_file_or_trimesh
+        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+        if title is None:
+            title = "unknown"
+    elif type(obj_file_or_trimesh) == ColoredTriMesh:
+        mesh = obj_file_or_trimesh
         if title is None:
             title = "unknown"
     else:
@@ -175,7 +181,6 @@ def mesh_viewer(
             )
         )
 
-    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
     if display_texture_map:
         ax = plt.subplot(111)
         if mesh.textured:
@@ -290,6 +295,21 @@ def mesh_viewer(
                     scene.sigma = 1.0
                 else:
                     scene.sigma = 0.0
+
+            if key == ord("s"):
+                filename = os.path.abspath("scene.pickle")
+                # save scene and camera in pickle file
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(scene, file)
+                print(f"saved scene in {filename}")
+
+                filename = os.path.abspath("camera.pickle")
+                print(f"save scene in {filename}")
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(camera, file)
+                print(f"saved camera in {filename}")
 
 
 def run():

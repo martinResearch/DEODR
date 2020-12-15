@@ -8,7 +8,13 @@ import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
 from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D, TriMesh
-from .tools import normalize, normalize_backward, qrot, qrot_backward, check_jacabian_finite_difference
+from .tools import (
+    normalize,
+    normalize_backward,
+    qrot,
+    qrot_backward,
+    check_jacabian_finite_difference,
+)
 
 
 class MeshDepthFitter:
@@ -594,7 +600,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             return energy_data
 
     def step(self, check_gradient=False):
-   
+
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
         self.nb_facesrames = len(self.hand_images)
@@ -607,20 +613,31 @@ class MeshRGBFitterWithPoseMultiFrame:
         ) = self.rigid_energy.evaluate(self.vertices)
 
         if check_gradient:
+
             def func(x):
-                return self.rigid_energy.evaluate(x, return_grad=False, return_hessian=False)
-            check_jacabian_finite_difference(grad_rigidity.flatten(), func, self.vertices)
+                return self.rigid_energy.evaluate(
+                    x, return_grad=False, return_hessian=False
+                )
+
+            check_jacabian_finite_difference(
+                grad_rigidity.flatten(), func, self.vertices
+            )
 
             def func(x):
                 return self.energy_data(x, return_images=False)
+
             grad_data = self.vertices_b.copy()
             check_jacabian_finite_difference(grad_data.flatten(), func, self.vertices)
 
         energy = energy_data + energy_rigid
-        print(f"iter {self.iter} Energy={energy} : EData={energy_data} E_rigid={energy_rigid}")
+        print(
+            f"iter {self.iter} Energy={energy} : EData={energy_data} E_rigid={energy_rigid}"
+        )
 
         if self.iter < 500:
-            self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+            self.vertices_b = (
+                self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+            )
         # update v
         grad = self.vertices_b + grad_rigidity
 
@@ -639,7 +656,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
- 
+
         step_quaternion = mult_and_clamp(
             -self.transform_quaternion_b,
             self.step_factor_quaternion,

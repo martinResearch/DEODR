@@ -367,12 +367,14 @@ inline void dot_prod_B(const double R_B, double V1_B[3], const double V2[3])
 }
 
 
+
 inline void Edge_equ3(double e[3], const double v1[2], const double v2[2])
 {   
 	// compute edges equations of type ax+by+c = 0
 	e[0] = (v2[1] - v1[1]);
 	e[1] = (v1[0] - v2[0]);
 	e[2] = - 0.5 * ( e[0] * (v1[0] + v2[0]) + e[1] * (v1[1] + v2[1]));
+
 }
 
 inline void sort3(const double v[3], double sv[3], short int i[3])
@@ -814,6 +816,7 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 {
 	// compute beginning and ending of the rasterized line	
 
+
 	short int temp_x;
 
 	double numerator;
@@ -834,12 +837,13 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 
 	numerator = -(left_eq[1] * y + left_eq[2]);
 
+
 	if (strict_edge)
 	{
 		// pixels falling exactly on an edge shared by two triangle will be drawn only once 
 		// when rasterizing the the triangle on the left of the edge.
-		temp_x = 1 + floor_div(numerator , left_eq[0], x_min-1, x_max);
 
+		temp_x = 1 + floor_div(numerator , left_eq[0], x_min-1, x_max);
 	}
 	else
 	{
@@ -851,8 +855,6 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 	numerator = -(right_eq[1] * y + right_eq[2]);
 	temp_x = floor_div(numerator , right_eq[0], x_min-1, x_max);
 	if (temp_x < x_end) x_end = temp_x;
-		
-
 
 }
 
@@ -2513,22 +2515,22 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end)
 {
 	// compute beginning and ending of the rasterized line while doing edge antialiasing		
-	short int temp_x;
 
 	x_begin = 0;
 	x_end = width - 1;
 	double numerator;
+	 
 	for (short int k = 0; k < 4; k++)
 	{
 		numerator = -(ineq[3 * k + 1] * y + ineq[3 * k + 2]);
 		if (ineq[3 * k] < 0)
 		{
-			temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
+			short int temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
 			if (temp_x < x_end) { x_end = temp_x; }
 		}
 		else
 		{
-			temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
+			short int temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
 			if (temp_x > x_begin) { x_begin = temp_x; }
 		}
 	}

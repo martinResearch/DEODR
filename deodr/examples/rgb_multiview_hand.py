@@ -20,7 +20,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True, max_iter=400):
+def run(
+    dl_library="pytorch",
+    plot_curves=False,
+    save_images=False,
+    display=True,
+    max_iter=400,
+):
 
     file_folder = os.path.dirname(__file__)
     hand_images = [
@@ -63,6 +69,8 @@ def run(dl_library="pytorch", plot_curves=False, save_images=False, display=True
     # update_lights =  True, update_color= True,cregu=1000)
 
     hand_fitter.reset()
+
+    max_iter = 300
 
     hand_image = hand_images[0]
     background_color = np.median(
