@@ -374,7 +374,7 @@ inline void Edge_equ3(double e[3], const double v1[2], const double v2[2])
 	e[0] = (v2[1] - v1[1]);
 	e[1] = (v1[0] - v2[0]);
 	e[2] = - 0.5 * ( e[0] * (v1[0] + v2[0]) + e[1] * (v1[1] + v2[1]));
->>>>>>> master
+
 }
 
 inline void sort3(const double v[3], double sv[3], short int i[3])
@@ -2520,36 +2520,6 @@ void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, 
 	x_end = width - 1;
 	double numerator;
 	for (short int k = 0; k < 4; k++)
-<<<<<<< HEAD
-	{		
-		if (ineq[3 * k] < 0)
-		{				
-			double temp_x = (ineq[3 * k + 1] * y + ineq[3 * k + 2]);
-			if (temp_x < -1)
-			{
-				temp_x = -1; //to avoid overflow when converting to (short int)
-			}
-			// if (temp_x > width )
-			// {
-			// 	temp_x = width;	//to avoid overflow when converting to (short int)
-			// }
-			short int temp_x_int = floor(temp_x);
-			if (temp_x < x_end) { x_end = temp_x_int; }
-		}
-		else
-		{			
-			double temp_x = 1 + (-ineq[3 * k + 1] * y - ineq[3 * k + 2]);
-			// if (temp_x < -1)
-			// {
-			// 	temp_x = -1; //to avoid overflow when converting to (short int)
-			// }
-			if (temp_x > width )
-			{
-				temp_x = width;	//to avoid overflow when converting to (short int)
-			}	
-			short int temp_x_int = floor(temp_x);
-			if (temp_x > x_begin) { x_begin = temp_x_int; }
-=======
 	{
 		numerator = -(ineq[3 * k + 1] * y + ineq[3 * k + 2]);
 		if (ineq[3 * k] < 0)
@@ -2561,7 +2531,6 @@ void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, 
 		{
 			temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
 			if (temp_x > x_begin) { x_begin = temp_x; }
->>>>>>> master
 		}
 	}
 }
