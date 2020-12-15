@@ -314,7 +314,6 @@ def mesh_viewer(
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    obj_file = os.path.join(deodr.data_path, "cube/rgb_cube.ply")
     mesh_viewer(obj_file, use_moderngl=False)
 
 

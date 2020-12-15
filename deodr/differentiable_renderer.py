@@ -336,6 +336,16 @@ class Camera:
     def get_center(self):
         return -self.extrinsic[:3, :3].T.dot(self.extrinsic[:, 3])
 
+    def __repr__(self):
+        return (
+            f"<Camera>\n"
+            f"width:\n{str(self.width)}\n"
+            f"height:\n{str(self.height)}\n"
+            f"extrinsic:\n{str(self.extrinsic)}\n"
+            f"intrinsic:\n{str(self.intrinsic)}\n"
+            f"distortion:\n{str(self.distortion)}\n"
+        )
+
 
 class PerspectiveCamera(Camera):
     """Camera with perspective projection."""
