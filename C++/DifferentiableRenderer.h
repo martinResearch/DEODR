@@ -2519,17 +2519,18 @@ void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, 
 	x_begin = 0;
 	x_end = width - 1;
 	double numerator;
+	 
 	for (short int k = 0; k < 4; k++)
 	{
 		numerator = -(ineq[3 * k + 1] * y + ineq[3 * k + 2]);
 		if (ineq[3 * k] < 0)
 		{
-			temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
+			short int temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
 			if (temp_x < x_end) { x_end = temp_x; }
 		}
 		else
 		{
-			temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
+			short int temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
 			if (temp_x > x_begin) { x_begin = temp_x; }
 		}
 	}
