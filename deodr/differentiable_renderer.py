@@ -56,7 +56,9 @@ def renderScene(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
 
-        assert (scene.background_image is not None) != (scene.background_color is not None)
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
 
         if scene.background_image is not None:
             assert scene.background_image.ndim == 3
@@ -143,7 +145,9 @@ def renderSceneB(
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
 
-        assert (scene.background_image is not None) != (scene.background_color is not None)
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
 
         if scene.background_image is not None:
             assert scene.background_image.ndim == 3
@@ -435,7 +439,7 @@ class Scene2DBase:
         strict_edge=True,
         perspective_correct=False,
     ):
-        
+
         self.faces = faces
         self.faces_uv = faces_uv
         self.ij = ij
@@ -451,7 +455,7 @@ class Scene2DBase:
         self.nb_colors = nb_colors
         self.texture = texture
         self.background_image = background_image
-        self.background_color= background_color
+        self.background_color = background_color
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
@@ -685,12 +689,17 @@ class Scene3D:
         self.mesh = mesh
 
     def set_background(self, background_image):
-        warnings.warn('This will be deprecated, please use set_background_image or set_background_color', UserWarning)
+        warnings.warn(
+            "This will be deprecated, please use set_background_image or set_background_color",
+            UserWarning,
+        )
         self.set_background_image(background_image)
 
     def set_background_image(self, background_image):
         if self.background_color is not None:
-            raise BaseException("you cannot provide both background image and background color")
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
         background_image = np.asanyarray(background_image)
         assert background_image.dtype == np.double
         assert background_image.ndim == 3
@@ -698,7 +707,9 @@ class Scene3D:
 
     def set_background_color(self, background_color):
         if self.background_image is not None:
-            raise BaseException("you cannot provide both background image and background color")
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
         background_color = np.asanyarray(background_color, dtype=np.float64)
         assert background_color.dtype == np.double
         assert background_color.ndim == 1
@@ -780,8 +791,10 @@ class Scene3D:
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals()
 
-        if (self.background_image is None) == (self.background_color is None) :
-            raise BaseException("You need to provide either a background image or background color")
+        if (self.background_image is None) == (self.background_color is None):
+            raise BaseException(
+                "You need to provide either a background image or background color"
+            )
 
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -1003,7 +1016,9 @@ class Scene3D:
 
         background_image = np.zeros((height, width, nb_colors))
         if "depth" in channels:
-            background_image[:, :, ranges["depth"][0] : ranges["depth"][1]] = depths.max()
+            background_image[
+                :, :, ranges["depth"][0] : ranges["depth"][1]
+            ] = depths.max()
 
         scene_2d = Scene2DBase(
             faces=soup_faces,

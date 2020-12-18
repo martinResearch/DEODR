@@ -1,7 +1,6 @@
 """Implementation of triangulated meshes."""
 
 import numpy as np
-import json
 
 from scipy import sparse
 
