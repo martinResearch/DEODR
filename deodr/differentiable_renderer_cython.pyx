@@ -57,10 +57,16 @@ def renderScene(scene,
 		assert(scene.edgeflags.shape[1]  ==  3)
 		assert(scene.textured.shape[0]  ==  nb_triangles)
 		assert(scene.shaded.shape[0]  ==  nb_triangles)
-		assert(scene.background.ndim  ==  3)
-		assert(scene.background.shape[0]  ==  height)
-		assert(scene.background.shape[1]  ==  width)
-		assert(scene.background.shape[2]  ==  nb_colors)
+		
+		assert ((scene.background_image is not None) != (scene.background_color is not None))
+
+		if scene.background_image is not None:
+			assert scene.background_image.ndim == 3
+			assert scene.background_image.shape[0] == height
+			assert scene.background_image.shape[1] == width
+			assert scene.background_image.shape[2] == nb_colors
+		else:
+			assert scene.background_color.shape[0] == nb_colors
 		
 		if scene.texture.size>0:
 			assert(scene.texture.ndim  ==  3)
@@ -83,8 +89,14 @@ def renderScene(scene,
 	cdef np.ndarray[np.uint8_t, mode = "c"] textured_c  =  np.ascontiguousarray(scene.textured.flatten(), dtype = np.uint8)
 	cdef np.ndarray[np.uint8_t, mode = "c"] shaded_c  =  np.ascontiguousarray(scene.shaded.flatten(), dtype = np.uint8)
 	cdef np.ndarray[np.double_t, mode = "c"] texture_c  =  np.ascontiguousarray(scene.texture.flatten(), dtype = np.double)
-	cdef np.ndarray[np.double_t, mode = "c"] background_c  =  np.ascontiguousarray(scene.background.flatten(), dtype = np.double)
-	
+	cdef np.ndarray[np.double_t, mode = "c"] background_image_c;
+	cdef np.ndarray[np.double_t, mode = "c"] background_color_c;
+
+	if scene.background_image is not None:
+		background_image_c =  np.ascontiguousarray(scene.background_image.flatten(), dtype = np.double)
+	else:
+		background_color_c =  np.ascontiguousarray(scene.background_color.flatten(), dtype = np.double)
+
 	scene_c.height = <int> scene.height
 	scene_c.width = <int> scene.width	
 	scene_c.nb_triangles = nb_triangles
@@ -103,7 +115,19 @@ def renderScene(scene,
 	scene_c.textured = <bool*> textured_c.data
 	scene_c.shaded = <bool*> shaded_c.data
 	scene_c.texture = <double*> texture_c.data
-	scene_c.background = <double*> background_c.data
+	
+	if scene.background_image is not None:	
+		scene_c.background_image = <double*> background_image_c.data
+		scene_c.background_color = NULL
+		if scene_c.background_image  ==  NULL:
+			raise BaseException('scene_c.background_image_c is NULL')
+
+	else:
+		scene_c.background_image = NULL
+		scene_c.background_color = <double*> background_color_c.data
+		if scene_c.background_color  ==  NULL:
+			raise BaseException('scene_c.background_color is NULL')
+
 	scene_c.texture_height = scene.texture.shape[0]
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
@@ -195,10 +219,16 @@ def renderSceneB(scene,
 		assert(scene.edgeflags.shape[1]  ==  3)
 		assert(scene.textured.shape[0]  ==  nb_triangles)
 		assert(scene.shaded.shape[0]  ==  nb_triangles)
-		assert(scene.background.ndim  ==  3)
-		assert(scene.background.shape[0]  ==  height)
-		assert(scene.background.shape[1]  ==  width)
-		assert(scene.background.shape[2]  ==  nb_colors)
+		
+		assert (scene.background_image is not None) != (scene.background_color is not None)
+
+		if scene.background_image is not None:
+			assert scene.background_image.ndim == 3
+			assert scene.background_image.shape[0] == height
+			assert scene.background_image.shape[1] == width
+			assert scene.background_image.shape[2] == nb_colors
+		else:
+			assert scene.background_color.shape[0] == nb_colors
 				
 		assert(scene.uv_b.ndim  ==  2)
 		assert(scene.ij_b.ndim  ==  2)
@@ -213,15 +243,8 @@ def renderSceneB(scene,
 		assert(scene.shade_b.shape[0]  ==  nb_vertices)	
 		assert(scene.colors_b.shape[0]  ==  nb_vertices)
 		assert(scene.colors_b.shape[1]  ==  nb_colors)
-		assert(scene.edgeflags.shape[0]  ==  nb_triangles)
-		assert(scene.edgeflags.shape[1]  ==  3)
-		assert(scene.textured.shape[0]  ==  nb_triangles)
-		assert(scene.shaded.shape[0]  ==  nb_triangles)
-		assert(scene.background.ndim  ==  3)
-		assert(scene.background.shape[0]  ==  height)
-		assert(scene.background.shape[1]  ==  width)
-		assert(scene.background.shape[2]  ==  nb_colors)
-			
+
+					
 		if scene.texture.size>0:
 			assert(scene.texture.ndim  ==  3)
 			assert(scene.texture_b.ndim  ==  3)	
@@ -250,8 +273,14 @@ def renderSceneB(scene,
 	cdef np.ndarray[np.uint8_t, mode = "c"] shaded_c =  np.ascontiguousarray(scene.shaded.flatten(), dtype = np.uint8)
 	cdef np.ndarray[np.double_t, mode = "c"] texture_c =  np.ascontiguousarray(scene.texture.flatten(), dtype = np.double)
 	cdef np.ndarray[np.double_t, mode = "c"] texture_b_c =  np.ascontiguousarray(scene.texture_b.flatten(), dtype = np.double)
-	cdef np.ndarray[np.double_t, mode = "c"] background_c =  np.ascontiguousarray(scene.background.flatten(), dtype = np.double)
-	
+
+	cdef np.ndarray[np.double_t, mode = "c"] background_image_c;
+	cdef np.ndarray[np.double_t, mode = "c"] background_color_c;
+
+	if scene.background_image is not None:
+		background_image_c =  np.ascontiguousarray(scene.background_image.flatten(), dtype = np.double)
+	else:
+		background_color_c =  np.ascontiguousarray(scene.background_color.flatten(), dtype = np.double)
 
 
 	scene_c.height = <int> scene.height
@@ -277,14 +306,24 @@ def renderSceneB(scene,
 	scene_c.shaded = <bool*> shaded_c.data
 	scene_c.texture = <double*> texture_c.data
 	scene_c.texture_b = <double*> texture_b_c.data
-	scene_c.background = <double*> background_c.data
+
+	if scene.background_image is not None:	
+		scene_c.background_image = <double*> background_image_c.data
+		scene_c.background_color = NULL
+		if scene_c.background_image  ==  NULL:
+			raise BaseException('scene_c.background_image_c is NULL')
+
+	else:
+		scene_c.background_image = NULL
+		scene_c.background_color = <double*> background_color_c.data
+		if scene_c.background_color  ==  NULL:
+			raise BaseException('scene_c.background_color is NULL')
+
 	scene_c.texture_height = scene.texture.shape[0]
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
 	scene_c.perspective_correct = scene.perspective_correct
 	
-	if scene_c.background  ==  NULL:
-		raise BaseException('scene_c.background is NULL')
 
 	cdef double* obs_ptr  =  NULL
 	cdef double* err_buffer_ptr  =  NULL
