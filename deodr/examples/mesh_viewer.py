@@ -214,8 +214,8 @@ def mesh_viewer(
         light_directional=np.array(light_directional), light_ambient=light_ambient
     )
     scene.set_mesh(mesh)
-    background_image = np.ones((height, width, 3))
-    scene.set_background(background_image)
+
+    scene.set_background_color([1, 1, 1])
 
     if mesh.texture is not None:
         mesh.texture = mesh.texture[

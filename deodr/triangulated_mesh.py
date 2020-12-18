@@ -14,9 +14,9 @@ class TriMeshAdjacencies:
 
     def __init__(self, faces, clockwise=False, nb_vertices=None):
         self.faces = faces
-        self.nb_faces = faces.shape[0]
+        self.nb_faces = int(faces.shape[0])
         if nb_vertices is None:
-            nb_vertices = np.max(faces.flat) + 1
+            nb_vertices = int(np.max(faces.flat)) + 1
         self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
@@ -159,8 +159,8 @@ class TriMesh:
         assert np.all(faces >= 0)
 
         self.faces = faces
-        self.nb_vertices = np.max(faces) + 1
-        self.nb_faces = faces.shape[0]
+        self.nb_vertices = int(np.max(faces)) + 1
+        self.nb_faces = int(faces.shape[0])
 
         self.vertices = None
         self.face_normals = None
