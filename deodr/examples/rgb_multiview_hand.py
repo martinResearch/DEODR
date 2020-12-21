@@ -70,6 +70,8 @@ def run(
 
     hand_fitter.reset()
 
+    max_iter = 300
+
     hand_image = hand_images[0]
     background_color = np.median(
         np.row_stack(

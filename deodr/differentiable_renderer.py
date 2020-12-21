@@ -1,5 +1,6 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
 import copy
+import warnings
 
 import numpy as np
 
@@ -19,7 +20,7 @@ def renderScene(
 
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
-        # when installed from a wheel. this also make inderactive debugginh easier
+        # when installed from a wheel. this also make interactive debugging easier
         # for the library user
 
         assert not (image is None)
@@ -54,10 +55,18 @@ def renderScene(
         assert scene.edgeflags.shape[1] == 3
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
+
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
+
+        if scene.background_image is not None:
+            assert scene.background_image.ndim == 3
+            assert scene.background_image.shape[0] == height
+            assert scene.background_image.shape[1] == width
+            assert scene.background_image.shape[2] == nb_colors
+        else:
+            assert scene.background_color.shape[0] == nb_colors
 
         if scene.texture.size > 0:
             assert scene.texture.ndim == 3
@@ -135,10 +144,18 @@ def renderSceneB(
         assert scene.edgeflags.shape[1] == 3
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
+
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
+
+        if scene.background_image is not None:
+            assert scene.background_image.ndim == 3
+            assert scene.background_image.shape[0] == height
+            assert scene.background_image.shape[1] == width
+            assert scene.background_image.shape[2] == nb_colors
+        else:
+            assert scene.background_color.shape[0] == nb_colors
 
         assert scene.uv_b.ndim == 2
         assert scene.ij_b.ndim == 2
@@ -153,14 +170,6 @@ def renderSceneB(
         assert scene.shade_b.shape[0] == nb_vertices
         assert scene.colors_b.shape[0] == nb_vertices
         assert scene.colors_b.shape[1] == nb_colors
-        assert scene.edgeflags.shape[0] == nb_triangles
-        assert scene.edgeflags.shape[1] == 3
-        assert scene.textured.shape[0] == nb_triangles
-        assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
 
         if scene.texture.size > 0:
             assert scene.texture.ndim == 3
@@ -336,6 +345,16 @@ class Camera:
     def get_center(self):
         return -self.extrinsic[:3, :3].T.dot(self.extrinsic[:, 3])
 
+    def __repr__(self):
+        return (
+            f"<Camera>\n"
+            f"width:\n{str(self.width)}\n"
+            f"height:\n{str(self.height)}\n"
+            f"extrinsic:\n{str(self.extrinsic)}\n"
+            f"intrinsic:\n{str(self.intrinsic)}\n"
+            f"distortion:\n{str(self.distortion)}\n"
+        )
+
 
 class PerspectiveCamera(Camera):
     """Camera with perspective projection."""
@@ -413,12 +432,14 @@ class Scene2DBase:
         width,
         nb_colors,
         texture,
-        background,
+        background_image,
+        background_color,
         clockwise=False,
         backface_culling=True,
         strict_edge=True,
         perspective_correct=False,
     ):
+
         self.faces = faces
         self.faces_uv = faces_uv
         self.ij = ij
@@ -433,7 +454,8 @@ class Scene2DBase:
         self.width = width
         self.nb_colors = nb_colors
         self.texture = texture
-        self.background = background
+        self.background_image = background_image
+        self.background_color = background_color
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
@@ -461,7 +483,8 @@ class Scene2D(Scene2DBase):
         width,
         nb_colors,
         texture,
-        background,
+        background_image,
+        background_color,
         clockwise=False,
         backface_culling=False,
         strict_edge=True,
@@ -481,7 +504,8 @@ class Scene2D(Scene2DBase):
         self.width = width
         self.nb_colors = nb_colors
         self.texture = texture
-        self.background = background
+        self.background_image = background_image
+        self.background_color = background_color
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
@@ -635,6 +659,8 @@ class Scene3D:
         self.light_ambient = None
         self.sigma = sigma
         self.perspective_correct = perspective_correct
+        self.background_image = None
+        self.background_color = None
 
     def clear_gradients(self):
         # fields to store gradients
@@ -663,8 +689,31 @@ class Scene3D:
         self.mesh = mesh
 
     def set_background(self, background_image):
+        warnings.warn(
+            "This will be deprecated, please use set_background_image or set_background_color",
+            UserWarning,
+        )
+        self.set_background_image(background_image)
+
+    def set_background_image(self, background_image):
+        if self.background_color is not None:
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
+        background_image = np.asanyarray(background_image)
         assert background_image.dtype == np.double
-        self.background = background_image
+        assert background_image.ndim == 3
+        self.background_image = background_image
+
+    def set_background_color(self, background_color):
+        if self.background_image is not None:
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
+        background_color = np.asanyarray(background_color, dtype=np.float64)
+        assert background_color.dtype == np.double
+        assert background_color.ndim == 1
+        self.background_color = background_color
 
     def compute_vertices_luminosity(self):
         if self.light_directional is not None:
@@ -717,6 +766,7 @@ class Scene3D:
         z_buffer = np.empty((self.height, self.width))
         self.ij = np.array(ij)
         self.colors = np.array(colors)
+
         renderScene(self, self.sigma, image, z_buffer)
 
         if self.store_backward_current is not None:
@@ -740,6 +790,11 @@ class Scene3D:
 
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals()
+
+        if (self.background_image is None) == (self.background_color is None):
+            raise BaseException(
+                "You need to provide either a background image or background color"
+            )
 
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -959,9 +1014,11 @@ class Scene3D:
         )  # eventually used when using texture
         texture = np.zeros((0, 0))
 
-        background = np.zeros((height, width, nb_colors))
+        background_image = np.zeros((height, width, nb_colors))
         if "depth" in channels:
-            background[:, :, ranges["depth"][0] : ranges["depth"][1]] = depths.max()
+            background_image[
+                :, :, ranges["depth"][0] : ranges["depth"][1]
+            ] = depths.max()
 
         scene_2d = Scene2DBase(
             faces=soup_faces,
@@ -978,7 +1035,7 @@ class Scene3D:
             width=width,
             nb_colors=nb_colors,
             texture=texture,
-            background=background,
+            background_image=background_image,
             backface_culling=backface_culling,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))

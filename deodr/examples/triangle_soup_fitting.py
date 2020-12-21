@@ -80,7 +80,8 @@ def create_example_scene(n_tri=30, width=200, height=200):
     scene["width"] = width
     scene["texture"] = material
     scene["nb_colors"] = 3
-    scene["background"] = np.tile(
+    scene["background_color"] = None
+    scene["background_image"] = np.tile(
         np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1)
     )
     scene["perspective_correct"] = False

@@ -1,5 +1,7 @@
 """Setup script for the DEODR project."""
 
+import os
+import re
 from setuptools import setup, find_packages
 
 from Cython.Build import cythonize
@@ -23,24 +25,18 @@ my_modules = cythonize(extensions, annotate=True, language="c++")
 
 libname = "deodr"
 
-
-def get_version(filename):
-    import os
-    import re
-
-    here = os.path.dirname(os.path.abspath(__file__))
-    f = open(os.path.join(here, filename))
-    version_file = f.read()
-    f.close()
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
-
-
+with open(os.path.join(os.path.dirname(__file__), "deodr", "__init__.py")) as fp:
+    for line in fp:
+        m = re.search(r'^\s*__version__\s*=\s*([\'"])([^\'"]+)\1\s*$', line)
+        if m:
+            version = m.group(2)
+            break
+    else:
+        raise RuntimeError("Unable to find own __version__ string")
+print(f"version = {version}")
 setup(
     name=libname,
-    version=get_version("deodr/__init__.py"),
+    version=version,
     author="Martin de La Gorce",
     author_email="martin.delagorce@gmail.com",
     description="A differentiable renderer with Pytorch,Tensorflow and Matlab interfaces.",

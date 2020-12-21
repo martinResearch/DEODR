@@ -12,11 +12,12 @@ class TriMeshAdjacencies:
     Unlike the TriMesh class there are no vertices stored in this class
     """
 
-    def __init__(self, faces, clockwise=False):
+    def __init__(self, faces, clockwise=False, nb_vertices=None):
         self.faces = faces
-        self.nb_faces = faces.shape[0]
-        self.nb_vertices = np.max(faces.flat) + 1
-
+        self.nb_faces = int(faces.shape[0])
+        if nb_vertices is None:
+            nb_vertices = int(np.max(faces.flat)) + 1
+        self.nb_vertices = nb_vertices
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
@@ -158,8 +159,8 @@ class TriMesh:
         assert np.all(faces >= 0)
 
         self.faces = faces
-        self.nb_vertices = np.max(faces) + 1
-        self.nb_faces = faces.shape[0]
+        self.nb_vertices = int(np.max(faces)) + 1
+        self.nb_faces = int(faces.shape[0])
 
         self.vertices = None
         self.face_normals = None
@@ -171,7 +172,9 @@ class TriMesh:
             self.compute_adjacencies()
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacencies(self.faces, self.clockwise)
+        self.adjacencies = TriMeshAdjacencies(
+            self.faces, self.clockwise, nb_vertices=self.nb_vertices
+        )
 
         if self.vertices is not None:
 
@@ -413,3 +416,10 @@ class ColoredTriMesh(TriMesh):
             vertices=new_vertices, faces=new_faces, visual=visual
         )
         return trimesh_mesh
+
+    @staticmethod
+    def load(filename):
+        import trimesh
+
+        mesh_trimesh = trimesh.load(filename)
+        return ColoredTriMesh.from_trimesh(mesh_trimesh)

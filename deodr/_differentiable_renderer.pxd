@@ -23,7 +23,8 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 		double* texture
 		int  texture_height
 		int  texture_width
-		double* background
+		double* background_image
+		double* background_color
 		double* uv_b
 		double* ij_b
 		double* shade_b

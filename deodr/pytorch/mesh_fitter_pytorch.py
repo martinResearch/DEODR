@@ -66,9 +66,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
     def set_max_depth(self, max_depth):
         self.scene.max_depth = max_depth
-        self.scene.set_background(
-            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
-        )
+        self.scene.set_background_color(np.array([max_depth], dtype=np.float))
 
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
@@ -220,9 +218,7 @@ class MeshDepthFitter:
 
     def set_max_depth(self, max_depth):
         self.scene.max_depth = max_depth
-        self.scene.set_background(
-            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
-        )
+        self.scene.set_background_color([max_depth])
 
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
@@ -388,9 +384,7 @@ class MeshRGBFitterWithPose:
         self.reset()
 
     def set_background_color(self, background_color):
-        self.scene.set_background(
-            np.tile(background_color[None, None, :], (self.height, self.width, 1))
-        )
+        self.scene.set_background_color(background_color)
 
     def set_mesh_transform_init(self, euler, translation):
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(

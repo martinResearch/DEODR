@@ -71,7 +71,8 @@ struct Scene {
 	double* texture;
 	int texture_height;
 	int texture_width;
-	double* background;
+	double* background_image;
+	double* background_color;
 	// fields to store adjoint
 	double* uv_b;
 	double* ij_b;
@@ -366,7 +367,6 @@ inline void dot_prod_B(const double R_B, double V1_B[3], const double V2[3])
 		V1_B[i] += R_B * V2[i];
 }
 
-
 inline void Edge_equ3(double e[3], const double v1[2], const double v2[2])
 {   
 	// compute edges equations of type ax+by+c = 0
@@ -631,7 +631,7 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	// computing x bounds
 	if (strict_edge)
 	{
-		x_min = (short)floor(x_sorted[0]) + 1;
+		x_min = (short)floor(x_sorted[0]);
 	}
 	else
 	{
@@ -814,6 +814,7 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 {
 	// compute beginning and ending of the rasterized line	
 
+
 	short int temp_x;
 
 	double numerator;
@@ -839,7 +840,6 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 		// pixels falling exactly on an edge shared by two triangle will be drawn only once 
 		// when rasterizing the the triangle on the left of the edge.
 		temp_x = 1 + floor_div(numerator , left_eq[0], x_min-1, x_max);
-
 	}
 	else
 	{
@@ -850,10 +850,10 @@ inline void get_xrange(int width, const double* left_eq, const double* right_eq,
 	
 	numerator = -(right_eq[1] * y + right_eq[2]);
 	temp_x = floor_div(numerator , right_eq[0], x_min-1, x_max);
-	if (temp_x < x_end) x_end = temp_x;
-		
-
-
+	if (temp_x < x_end) 
+	{
+		x_end = temp_x;
+	}
 }
 
 inline void render_part_interpolated(double* image, double* z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double* xy1_to_A, double* xy1_to_Z, double* left_eq, double* right_eq, int width, int height, int sizeA, bool perspective_correct)
@@ -2513,22 +2513,22 @@ template <class T> void rasterize_edge_interpolated_error_B(double Vxy[][2], dou
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end)
 {
 	// compute beginning and ending of the rasterized line while doing edge antialiasing		
-	short int temp_x;
 
 	x_begin = 0;
 	x_end = width - 1;
 	double numerator;
+	 
 	for (short int k = 0; k < 4; k++)
 	{
 		numerator = -(ineq[3 * k + 1] * y + ineq[3 * k + 2]);
 		if (ineq[3 * k] < 0)
 		{
-			temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
+			short int temp_x = floor_div(numerator , ineq[3 * k], x_begin-1,x_end+1);
 			if (temp_x < x_end) { x_end = temp_x; }
 		}
 		else
 		{
-			temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
+			short int temp_x = 1 + floor_div(numerator , ineq[3 * k],x_begin-1,x_end+1);
 			if (temp_x > x_begin) { x_begin = temp_x; }
 		}
 	}
@@ -2578,8 +2578,8 @@ void checkSceneValid(Scene scene, bool has_derivatives)
 		throw "scene.shaded == NULL";
 	if (scene.texture == NULL)
 		throw "scene.texture == NULL";
-	if (scene.background == NULL)
-		throw "scene.background == NULL";
+	if ((scene.background_image == NULL) && (scene.background_color == NULL))
+		throw "scene.background == NULL and scene.background_color == NULL";
 	if (has_derivatives)
 	{
 		if (scene.uv_b == NULL)
@@ -2618,7 +2618,20 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 	Texture_size[1] = scene.texture_height;
 	Texture_size[0] = scene.texture_width;
 
-	memcpy(image, scene.background, scene.height*scene.width*scene.nb_colors * sizeof(double));
+	if (scene.background_image != NULL)
+	{
+		memcpy(image, scene.background_image, scene.height*scene.width*scene.nb_colors * sizeof(double));
+	}
+	else
+	{	
+		for (int i =0; i<scene.height*scene.width;i++)
+		{
+			for (int k =0; k<scene.nb_colors;k++)
+			{
+				image[i*scene.nb_colors + k] = scene.background_color[k];
+			}
+		}
+	}
 	//for (int k=0;k<scene.height*scene.width;k++)
 	//z_buffer[k]=100000;
 	fill(z_buffer, z_buffer + scene.height*scene.width, numeric_limits<double>::infinity());

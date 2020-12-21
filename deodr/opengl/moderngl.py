@@ -57,7 +57,7 @@ class OffscreenRenderer:
 
     def set_scene(self, deodr_scene):
 
-        self.bg_color = deodr_scene.background[0, 0]
+        self.bg_color = deodr_scene.background_color
         if False and not (
             np.all(deodr_scene.background == self.bg_color[None, None, :])
         ):

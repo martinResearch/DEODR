@@ -3,6 +3,7 @@
 import argparse
 import os
 import time
+import pickle
 
 import cv2
 
@@ -216,8 +217,8 @@ def mesh_viewer(
         light_directional=np.array(light_directional), light_ambient=light_ambient
     )
     scene.set_mesh(mesh)
-    background_image = np.ones((height, width, 3))
-    scene.set_background(background_image)
+
+    scene.set_background_color([1, 1, 1])
 
     if mesh.texture is not None:
         mesh.texture = mesh.texture[
@@ -261,12 +262,6 @@ def mesh_viewer(
         if use_moderngl:
             image = offscreen_renderer.render(camera)
         else:
-            if (
-                scene.background.shape[0] != height
-                or scene.background.shape[0] != width
-            ):
-                background_image = np.ones((height, width, 3))
-                scene.set_background(background_image)
             image = scene.render(interactor.camera)
 
         if display_fps:
@@ -343,6 +338,26 @@ def mesh_viewer(
                         scene.sigma = 1.0
                     else:
                         scene.sigma = 0.0
+
+            if key == ord("s"):
+                filename = os.path.abspath("scene.pickle")
+                # save scene and camera in pickle file
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(scene, file)
+                print(f"saved scene in {filename}")
+
+                filename = os.path.abspath("camera.pickle")
+                print(f"save scene in {filename}")
+                with open(filename, "wb") as file:
+                    # dump information to the file
+                    pickle.dump(camera, file)
+                print(f"saved camera in {filename}")
+
+
+def run():
+    obj_file = os.path.join(deodr.data_path, "duck.obj")
+    mesh_viewer(obj_file, use_moderngl=False)
 
 
 if __name__ == "__main__":

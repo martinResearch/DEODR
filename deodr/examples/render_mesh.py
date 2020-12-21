@@ -44,8 +44,7 @@ def default_scene(obj_file, width=640, height=480, use_distortion=True):
     light_directional = 0.3 * np.array([1, -1, 0])
     scene.set_light(light_directional=light_directional, light_ambient=light_ambient)
     scene.set_mesh(mesh)
-    background_image = np.ones((height, width, 3)) * bg_color
-    scene.set_background(background_image)
+    scene.set_background_color(bg_color)
     return scene, camera
 
 

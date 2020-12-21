@@ -29,7 +29,7 @@ def test_texture_coordinates():
     height = 40
     width = 60
 
-    background = np.zeros((height, width, 3))
+    background_color = np.array([0, 0, 0])
 
     # using strict_edge == True so that the pixel that are exactly on the edge
     # are drawn
@@ -42,7 +42,8 @@ def test_texture_coordinates():
         height=height,
         width=width,
         nb_colors=3,
-        background=background,
+        background_image=None,
+        background_color=background_color,
         depths=depths,
         textured=textured,
         shade=shade,
