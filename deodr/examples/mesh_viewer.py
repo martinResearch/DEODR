@@ -1,5 +1,6 @@
 """Example of interactive 3D mesh visualization using deodr and opencv."""
 
+import argparse
 import os
 import time
 import pickle
@@ -150,33 +151,34 @@ class Interactor:
 
 
 def mesh_viewer(
-    obj_file_or_trimesh,
+    file_or_mesh,
     display_texture_map=True,
     width=640,
     height=480,
     display_fps=True,
     title=None,
     use_moderngl=False,
-    light_directional=(-0.5, 0, -0.5),
-    light_ambient=0.3,
+    light_directional=(0, 0, -0.5),
+    light_ambient=0.5,
 ):
-    if type(obj_file_or_trimesh) == str:
+    if isinstance(file_or_mesh, str):
         if title is None:
-            title = obj_file_or_trimesh
-        mesh = ColoredTriMesh.load(obj_file_or_trimesh)
-    elif type(obj_file_or_trimesh) == trimesh.base.Trimesh:
-        mesh_trimesh = obj_file_or_trimesh
+            title = file_or_mesh
+        mesh_trimesh = trimesh.load(file_or_mesh)
+        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+    elif isinstance(file_or_mesh, trimesh.base.Trimesh):
+        mesh_trimesh = file_or_mesh
         mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
         if title is None:
             title = "unknown"
-    elif type(obj_file_or_trimesh) == ColoredTriMesh:
-        mesh = obj_file_or_trimesh
+    elif isinstance(file_or_mesh, ColoredTriMesh):
+        mesh = file_or_mesh
         if title is None:
             title = "unknown"
     else:
         raise (
             BaseException(
-                f"unknown type {type(obj_file_or_trimesh)}for input obj_file_or_trimesh,"
+                f"unknown type {type(file_or_mesh)}for input obj_file_or_trimesh,"
                 " can be string or trimesh.base.Trimesh"
             )
         )
@@ -190,11 +192,12 @@ def mesh_viewer(
     object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
 
     camera_center = object_center + np.array([0, 0, 3]) * object_radius
-    focal = 2 * width
 
     rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     translation = -rotation.T.dot(camera_center)
     extrinsic = np.column_stack((rotation, translation))
+
+    focal = 2 * width
     intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
 
     distortion = [0, 0, 0, 0, 0]
@@ -233,7 +236,8 @@ def mesh_viewer(
         xy_translation_speed=3e-4,
     )
 
-    cv2.namedWindow(windowname)
+    cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(windowname, width, height)
     cv2.setMouseCallback(windowname, interactor.mouse_callback)
 
     if use_moderngl:
@@ -242,9 +246,18 @@ def mesh_viewer(
         offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
         scene.mesh.compute_vertex_normals()
         offscreen_renderer.set_scene(scene)
-
+    else:
+        offscreen_renderer = None
     while cv2.getWindowProperty(windowname, 0) >= 0:
+
         # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+        width, height = cv2.getWindowImageRect(windowname)[2:]
+        focal = 2 * width
+        intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
+        camera.intrinsic = intrinsic
+        camera.width = width
+        camera.height = height
+
         start = time.clock()
         if use_moderngl:
             image = offscreen_renderer.render(camera)
@@ -266,35 +279,65 @@ def mesh_viewer(
                 font_color,
                 thickness,
             )
-
         cv2.imshow(windowname, image)
         stop = time.clock()
         fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
         key = cv2.waitKey(1)
         if key >= 0:
+            if key == ord("r"):
+                # change renderer between DEODR cpu rendering and moderngl
+                use_moderngl = not (use_moderngl)
+                print(f"use_moderngl = {use_moderngl}")
+
+                if offscreen_renderer is None:
+                    offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+                    scene.mesh.compute_vertex_normals()
+                    offscreen_renderer.set_scene(scene)
+
             if key == ord("p"):
-                # toggle perspective correct mapping (texture or interpolation)
-                scene.perspective_correct = not (scene.perspective_correct)
-                print(f"perspective_correct = {scene.perspective_correct}")
+                if use_moderngl:
+                    print(
+                        "can only use perspective corect mapping  when using moderngl"
+                    )
+                else:
+                    # toggle perspective correct mapping (texture or interpolation)
+                    scene.perspective_correct = not (scene.perspective_correct)
+                    print(f"perspective_correct = {scene.perspective_correct}")
 
             if key == ord("l"):
                 # toggle directional light + ambient vs ambient = 1
                 use_light = not (use_light)
+                print(f"use_light = {use_light}")
                 if use_light:
-                    scene.set_light(
-                        light_directional=np.array(light_directional),
-                        light_ambient=light_ambient,
-                    )
+                    if use_moderngl:
+                        offscreen_renderer.set_light(
+                            light_directional=np.array(light_directional),
+                            light_ambient=light_ambient,
+                        )
+                    else:
+                        scene.set_light(
+                            light_directional=np.array(light_directional),
+                            light_ambient=light_ambient,
+                        )
                 else:
-                    scene.set_light(light_directional=None, light_ambient=1.0)
+                    if use_moderngl:
+                        offscreen_renderer.set_light(
+                            light_directional=(0, 0, 0), light_ambient=1.0,
+                        )
+                    else:
+                        scene.set_light(light_directional=None, light_ambient=1.0)
 
             if key == ord("a"):
                 # toggle edge overdraw anti-aliasing
-                use_antiliazing = not (use_antiliazing)
-                if use_antiliazing:
-                    scene.sigma = 1.0
+                if use_moderngl:
+                    print("no anti-alizaing available when using moderngl")
                 else:
-                    scene.sigma = 0.0
+                    use_antiliazing = not (use_antiliazing)
+                    print(f"use_antialiazing = {use_antiliazing}")
+                    if use_antiliazing:
+                        scene.sigma = 1.0
+                    else:
+                        scene.sigma = 0.0
 
             if key == ord("s"):
                 filename = os.path.abspath("scene.pickle")
@@ -318,4 +361,9 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(prog="mesh_viewer", usage="%(prog)s [options]")
+    duck_file = os.path.join(deodr.data_path, "duck.obj")
+    parser.add_argument("mesh_file", type=str, nargs="?", default=duck_file)
+    args = parser.parse_args()
+    mesh_file = args.mesh_file
+    mesh_viewer(mesh_file, use_moderngl=True)
