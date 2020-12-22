@@ -6,7 +6,7 @@ imageio==2.9.0
 trimesh==3.8.19
 opencv-python==4.4.0.46
 torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.5.0  -f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.8.2  -f https://download.pytorch.org/whl/torch_stable.html
 tensorflow==2.4.0
 moderngl==5.6.2
 pyrr==0.10.3
