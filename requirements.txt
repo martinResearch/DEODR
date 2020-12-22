@@ -1,12 +1,13 @@
-numpy==1.18.5
-scipy==1.5.2
-matplotlib==3.3.2
+numpy==1.19.3
+scipy==1.5.4
+matplotlib==3.3.3
 Cython==0.29.21
 imageio==2.9.0
 trimesh==3.8.19
 opencv-python==4.4.0.46
-torch==1.6.0
-tensorflow==2.3.1
+torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.4.1  -f https://download.pytorch.org/whl/torch_stable.html
+tensorflow==2.4.0
 moderngl==5.6.2
 pyrr==0.10.3
 pyrender==0.1.43
