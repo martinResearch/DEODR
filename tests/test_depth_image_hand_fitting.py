@@ -12,7 +12,7 @@ def test_depth_image_hand_fitting_pytorch():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 251.3164869808227) < 1e-5
+    assert abs(energies[49] - 251.32711116694884) < 1e-5
 
 
 def test_depth_image_hand_fitting_numpy():
