@@ -4,7 +4,7 @@ matplotlib==3.3.3
 Cython==0.29.21
 imageio==2.9.0
 trimesh==3.9.1
-opencv-python==4.4.0.46
+opencv-python==4.5.1.48
 torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.8.2  -f https://download.pytorch.org/whl/torch_stable.html
 tensorflow==2.4.0
