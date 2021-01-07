@@ -1,5 +1,5 @@
 numpy==1.19.5
-scipy==1.5.4
+scipy==1.6.0
 matplotlib==3.3.3
 Cython==0.29.21
 imageio==2.9.0
