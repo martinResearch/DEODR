@@ -438,8 +438,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces, vertices, nb_colors=3)
         object_center = vertices.mean(axis=0)
-        object_radius = np.max(np.std(vertices, axis=0))
-        self.camera_center = object_center + np.array([0, 0, 6]) * object_radius
+        self.object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([0, 0, 6]) * self.object_radius
 
         self.scene = Scene3D()
         self.scene.set_mesh(self.mesh)
@@ -463,6 +463,54 @@ class MeshRGBFitterWithPoseMultiFrame:
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
+        
+
+    def export_collada(self, filename):
+        import collada
+        import os
+        # exporting the geometry
+        mesh = collada.Collada()
+        effect = collada.material.Effect("effect0", [], "phong", diffuse=(1,0,0), specular=(0,1,0))
+        mat = collada.material.Material("material0", "mymaterial", effect)
+        mesh.effects.append(effect)
+        mesh.materials.append(mat)
+        vert_src = collada.source.FloatSource("cubeverts-array", np.array(self.mesh.vertices), ('X', 'Y', 'Z'))
+        #normal_src = collada.source.FloatSource("cubenormals-array", np.array(self.ve), ('X', 'Y', 'Z'))
+        geom = collada.geometry.Geometry(mesh, "geometry0", "mycube", [vert_src])
+        input_list = collada.source.InputList()
+        input_list.addInput(0, 'VERTEX', "#cubeverts-array")
+        #input_list.addInput(1, 'NORMAL', "#cubenormals-array")
+        triset = geom.createTriangleSet(self.mesh.faces, input_list, "materialref")
+        geom.primitives.append(triset)
+        mesh.geometries.append(geom)
+
+        matnode = collada.scene.MaterialNode("materialref", mat, inputs=[])
+        geomnode = collada.scene.GeometryNode(geom, [matnode])
+        node = collada.scene.Node("node0", children=[geomnode])
+ 
+        # exporting the camera
+        assert self.camera.distortion is None
+        camera = collada.camera.PerspectiveCamera(
+           id = "camera0",
+           znear = self.object_radius/1000,
+           zfar = self.object_radius*100, 
+           xfov=self.camera.xfov,
+           yfov=self.camera.yfov,
+           
+        )
+        mesh.cameras.append(camera)
+        m = self.camera.camera_to_world_mtx_4x4().dot( np.diag([1,-1,-1,1]))
+        mtrans = collada.scene.MatrixTransform(m.flatten())
+        node3 = collada.scene.CameraNode(camera)
+        node2 = collada.scene.Node("Camera", transforms=[mtrans], children=[node3])
+        
+        myscene = collada.scene.Scene("myscene", [node,node2])
+        mesh.scenes.append(myscene)
+        mesh.scene = myscene
+        # exporting the light
+        os.makedirs(os.path.dirname(filename),exist_ok=True)
+        mesh.write(filename)
+ 
 
     def reset(self):
         self.vertices = copy.copy(self.vertices_init)

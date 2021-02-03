@@ -226,6 +226,17 @@ class Camera:
         self.height = height
         self.width = width
 
+    @property
+    def xfov(self):
+        assert self.intrinsic[0,2] == self.width / 2
+        return np.degrees(2 * np.arctan(self.width / (2 * self.intrinsic[0,0])))
+
+    @property
+    def yfov(self):
+        assert self.intrinsic[1,2] == self.height / 2
+        return np.degrees(2 * np.arctan(self.height / (2 * self.intrinsic[1,1])))
+
+
     def world_to_camera(self, points_3d):
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
 

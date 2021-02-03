@@ -8,11 +8,13 @@ import os
 import time
 
 import cv2
+import x3d
 
 import deodr
 from deodr import read_obj
 
 from imageio import imread, imsave
+from deodr.meshlab_io import export_meshlab
 
 import matplotlib.pyplot as plt
 
@@ -34,6 +36,7 @@ def run(
     hand_image = (
         imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
     )
+
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
@@ -104,6 +107,8 @@ def run(
                 )
         cv2.waitKey(1)
 
+
+    export_meshlab("rgb_fitted_meshlab.mlp", hand_fitter.mesh, [hand_fitter.camera], [hand_image])
     # save convergence curve
     with open(
         os.path.join(
