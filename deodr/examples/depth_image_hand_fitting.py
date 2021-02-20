@@ -9,6 +9,7 @@ import time
 import cv2
 
 import deodr
+from deodr import ColoredTriMesh
 
 from imageio import imsave
 
@@ -44,12 +45,13 @@ def run(
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = deodr.read_obj(obj_file)
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=0).subdivise(1)
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
 
     hand_fitter = MeshDepthFitter(
-        vertices, faces, euler_init, translation_init, cregu=1000
+        mesh.vertices, mesh.faces, euler_init, translation_init, cregu=1000
     )
 
     hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])

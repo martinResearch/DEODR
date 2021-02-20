@@ -11,6 +11,7 @@ import cv2
 
 import deodr
 from deodr import read_obj
+from deodr import ColoredTriMesh
 
 from imageio import imread, imsave
 
@@ -37,6 +38,8 @@ def run(
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(1)
+
     default_color = np.array([0.4, 0.3, 0.25])
     default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
@@ -49,15 +52,15 @@ def run(
     vertices = vertices - translation_init[None, :]
 
     hand_fitter = MeshRGBFitterWithPose(
-        vertices,
-        faces,
+        mesh.vertices,
+        mesh.faces,
         default_color=default_color,
         default_light=default_light,
         update_lights=True,
         update_color=True,
         euler_init=euler_init,
         translation_init=translation_init,
-        cregu=1000,
+        cregu=1000      
     )
 
     hand_fitter.reset()

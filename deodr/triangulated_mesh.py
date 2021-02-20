@@ -3,6 +3,7 @@
 import numpy as np
 
 from scipy import sparse
+import trimesh
 
 from .tools import cross_backward, normalize, normalize_backward
 
@@ -13,6 +14,7 @@ class TriMeshAdjacencies:
     """
 
     def __init__(self, faces, clockwise=False, nb_vertices=None):
+        faces = np.array(faces)
         self.faces = faces
         self.nb_faces = int(faces.shape[0])
         if nb_vertices is None:
@@ -55,6 +57,14 @@ class TriMeshAdjacencies:
         )
         self.is_closed = self.is_manifold and np.all(unique_counts == 2)
 
+        self.edges_vertices_ones = sparse.coo_matrix(
+            (
+                np.ones((2 * len(id_edge))),
+                (np.tile(id_edge[:, None], (1, 2)).flatten(), edges.flatten()),
+            ),
+            shape=(self.nb_edges, self.nb_vertices),
+        )
+
         self.edges_faces_ones = sparse.coo_matrix(
             (np.ones((len(id_edge))), (id_edge, id_faces)),
             shape=(self.nb_edges, self.nb_faces),
@@ -66,21 +76,24 @@ class TriMeshAdjacencies:
                 np.full((self.nb_faces), 2),
             )
         )
-        self.Faces_Edges = sparse.coo_matrix(
+        self.faces_edges = sparse.coo_matrix(
             (id_edge, (id_faces, v)), shape=(self.nb_faces, 3)
         ).todense()
         self.adjacency_vertices = (
             (self._vertices_faces * self._vertices_faces.T) > 0
         ) - sparse.eye(self.nb_vertices)
+
+        self.degree_v_f = self._vertices_faces.dot(np.ones((self.nb_faces)))
+
         self.degree_v_e = self.adjacency_vertices.dot(
             np.ones((self.nb_vertices))
         )  # degree_v_e(i)=j means that the vertex i appears in j edges
-        self.Laplacian = (
+        self.laplacian = (
             sparse.diags([self.degree_v_e], [0], (self.nb_vertices, self.nb_vertices))
             - self.adjacency_vertices
         )
         self.hasBoundaries = np.any(np.sum(self.edges_faces_ones, axis=1) == 1)
-        assert np.all(self.Laplacian * np.ones((self.nb_vertices)) == 0)
+        assert np.all(self.laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
     def boundary_edges(self):
@@ -145,14 +158,14 @@ class TriMeshAdjacencies:
         else:
             face_visible = np.cross(u, v) < 0
         edge_bool = (self.edges_faces_ones * face_visible) == 1
-        return edge_bool[self.Faces_Edges]
+        return edge_bool[self.faces_edges]
 
 
 class TriMesh:
     """Class that implements a triangulated mesh."""
 
     def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
-
+        faces = np.array(faces)
         assert np.issubdtype(faces.dtype, np.integer)
         assert faces.ndim == 2
         assert faces.shape[1] == 3
@@ -297,6 +310,12 @@ class ColoredTriMesh(TriMesh):
         )
         ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True, color=[0, 1, 0])
 
+    def subdivise(self, n_iter):
+        """loop subdivision.
+
+        https://graphics.stanford.edu/~mdfisher/subdivision.html"""
+        return loop_subdivision(self, n_iter)
+
     @staticmethod
     def from_trimesh(mesh, compute_adjacencies=True):  # inspired from pyrender
         """Get the vertex colors, texture coordinates, and material properties
@@ -423,3 +442,75 @@ class ColoredTriMesh(TriMesh):
 
         mesh_trimesh = trimesh.load(filename)
         return ColoredTriMesh.from_trimesh(mesh_trimesh)
+
+
+def loop_subdivision(mesh, n_iter=1):
+    """loop subdivision.
+
+    https://graphics.stanford.edu/~mdfisher/subdivision.html"""
+    if n_iter == 0:
+        return mesh
+
+    if n_iter > 1:
+        mesh = loop_subdivision(mesh, n_iter - 1)
+
+    edge_mid_points = (
+        mesh.adjacencies.edges_faces_ones
+        * (mesh.adjacencies._vertices_faces.T * mesh.vertices)
+        / 8
+    ) + (1 / 8) * np.sum(mesh.vertices[mesh.adjacencies.edges, :], axis=1)
+
+    # edge_mid_points = 0.5 * np.sum(self.vertices[self.adjacencies.edges, :], axis=1)
+
+    beta = (3 / 8) * (1 / mesh.adjacencies.degree_v_e)
+    moved_points = (
+        beta[:, None] * (mesh.adjacencies.adjacency_vertices * mesh.vertices)
+        + (5 / 8) * mesh.vertices
+    )
+    # moved_points = self.vertices
+
+    new_vertices = np.vstack((moved_points, edge_mid_points))
+    faces1 = np.column_stack(
+        (
+            mesh.faces[:, 0],
+            mesh.adjacencies.faces_edges[:, 0] + mesh.nb_vertices,
+            mesh.adjacencies.faces_edges[:, 2] + mesh.nb_vertices,
+        )
+    )
+    faces2 = np.column_stack(
+        (
+            mesh.faces[:, 1],
+            mesh.adjacencies.faces_edges[:, 1] + mesh.nb_vertices,
+            mesh.adjacencies.faces_edges[:, 0] + mesh.nb_vertices,
+        )
+    )
+    faces3 = np.column_stack(
+        (
+            mesh.faces[:, 2],
+            mesh.adjacencies.faces_edges[:, 2] + mesh.nb_vertices,
+            mesh.adjacencies.faces_edges[:, 1] + mesh.nb_vertices,
+        )
+    )
+    faces4 = np.column_stack(
+        (
+            mesh.adjacencies.faces_edges[:, 0] + mesh.nb_vertices,
+            mesh.adjacencies.faces_edges[:, 1] + mesh.nb_vertices,
+            mesh.adjacencies.faces_edges[:, 2] + mesh.nb_vertices,
+        )
+    )
+    new_faces = np.row_stack((faces1, faces2, faces3, faces4))
+    if mesh.uv is not None:
+        raise BaseException("texture mesh not supported yet in subdivision")
+    if mesh.vertices_colors is not None:
+        edge_mid_points_colors = np.mean(
+            mesh.vertices_colors[mesh.adjacencies.edges, :], axis=1
+        )
+        new_colors = np.vstack((mesh.vertices_colors, edge_mid_points_colors))
+    else:
+        new_colors = None
+    return ColoredTriMesh(
+        vertices=new_vertices,
+        faces=new_faces,
+        colors=new_colors,
+        nb_colors=mesh.nb_colors,
+    )
