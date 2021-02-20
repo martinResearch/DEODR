@@ -19,7 +19,12 @@ import numpy as np
 
 
 def run(
-    dl_library="none", plot_curves=False, save_images=False, display=True, max_iter=150
+    dl_library="none",
+    plot_curves=False,
+    save_images=False,
+    display=True,
+    max_iter=300,
+    n_subdivision=0,
 ):
 
     file_folder = os.path.dirname(__file__)
@@ -45,7 +50,9 @@ def run(
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = deodr.read_obj(obj_file)
-    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=0).subdivise(1)
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=0).subdivise(
+        n_subdivision
+    )
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
@@ -128,12 +135,30 @@ def run(
 
 def main():
     display = True
+    n_subdivision = 0
+    run(
+        dl_library="none",
+        plot_curves=False,
+        save_images=False,
+        display=display,
+        n_subdivision=n_subdivision,
+    )
 
-    run(dl_library="none", plot_curves=False, save_images=False, display=display)
+    run(
+        dl_library="pytorch",
+        plot_curves=False,
+        save_images=False,
+        display=display,
+        n_subdivision=n_subdivision,
+    )
 
-    run(dl_library="pytorch", plot_curves=False, save_images=False, display=display)
-
-    run(dl_library="tensorflow", plot_curves=True, save_images=False, display=display)
+    run(
+        dl_library="tensorflow",
+        plot_curves=True,
+        save_images=False,
+        display=display,
+        n_subdivision=n_subdivision,
+    )
 
 
 if __name__ == "__main__":

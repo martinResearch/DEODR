@@ -21,7 +21,12 @@ import numpy as np
 
 
 def run(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True, max_iter=100
+    dl_library="pytorch",
+    plot_curves=True,
+    save_images=True,
+    display=True,
+    max_iter=100,
+    n_subdivision=0,
 ):
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
@@ -38,7 +43,9 @@ def run(
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
-    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(1)
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(
+        n_subdivision
+    )
 
     default_color = np.array([0.4, 0.3, 0.25])
     default_light = {
@@ -60,7 +67,7 @@ def run(
         update_color=True,
         euler_init=euler_init,
         translation_init=translation_init,
-        cregu=1000      
+        cregu=1000,
     )
 
     hand_fitter.reset()
@@ -160,20 +167,29 @@ def main():
 
     display = True
     save_images = False
+    n_subdivision = 1
 
     run(
         dl_library="pytorch",
         plot_curves=False,
         display=display,
         save_images=save_images,
+        n_subdivision=n_subdivision,
     )
 
-    run(dl_library="none", plot_curves=False, display=display, save_images=save_images)
+    run(
+        dl_library="none",
+        plot_curves=False,
+        display=display,
+        save_images=save_images,
+        n_subdivision=n_subdivision,
+    )
     run(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
+         n_subdivision=n_subdivision,
     )
 
 
