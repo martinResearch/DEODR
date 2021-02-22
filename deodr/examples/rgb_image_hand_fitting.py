@@ -54,9 +54,9 @@ def run(
     }
 
     euler_init = np.array([0, 0, 0])
-    translation_init = np.mean(vertices, axis=0)
+    translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
-    vertices = vertices - translation_init[None, :]
+    mesh.vertices = mesh.vertices - translation_init[None, :]
 
     hand_fitter = MeshRGBFitterWithPose(
         mesh.vertices,
