@@ -386,6 +386,15 @@ inline void Edge_equ3(double e[3], const double v1[2], const double v2[2], bool 
 	e[2] = - 0.5 * ( e[0] * (v1[0] + v2[0]) + e[1] * (v1[1] + v2[1]));
 }
 
+double signedArea(double ij[3][2],bool clockwise)
+{
+	double ux = ij[1][0] - ij[0][0];
+	double uy = ij[1][1] - ij[0][1];
+	double vx = ij[2][0] - ij[0][0];
+	double vy = ij[2][1] - ij[0][1];	
+	return 0.5*(ux * vy - vx * uy)*(clockwise?1:-1);
+}
+
 inline void sort3(const double v[3], double sv[3], short int i[3])
 {// v  : tree unsorted values
 	// sv : the three values in v but sorted
@@ -600,7 +609,7 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[], T I_B[], int* I_s
 	}
 }
 
-void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][3], bool strict_edge, bool clockwise, int &x_min, int &x_max, int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
+void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][3], bool strict_edge, int &x_min, int &x_max, int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
 {
 
 	// create a matrix that map barycentric coordinates to homogeneous image coordinates
@@ -621,6 +630,8 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	inv_matrix_3x3(bary_to_xy1, xy1_to_bary);
 
 	// compute edges equations of type x=ay+b
+	
+	bool clockwise = signedArea(Vxy, true)>0;
 
 	Edge_equ3(edge_eq[0], Vxy[0], Vxy[1], clockwise);
 	Edge_equ3(edge_eq[1], Vxy[1], Vxy[2], clockwise);
@@ -703,7 +714,7 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	
 }
 
-template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T* Avertex[], double z_buffer[], T image[], int height, int width, int sizeA, bool strict_edge, bool perspective_correct,  bool clockwise)
+template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T* Avertex[], double z_buffer[], T image[], int height, int width, int sizeA, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 
@@ -718,7 +729,7 @@ template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double 
 	//   compute triangle borders equations
 	//double Vxy[][2],double  bary_to_xy1[9],double  xy1_to_bary[9],double* edge_eq[3],y_begin,y_end,left_edge_id,right_edge_id)
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, clockwise, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 	xy1_to_A = new double[3 * sizeA];
@@ -755,7 +766,7 @@ template <class T> void rasterize_triangle_interpolated(double Vxy[][2], double 
 	delete[] xy1_to_A;
 }
 
-template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, bool strict_edge, bool perspective_correct, bool clockwise)
+template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], T* Avertex[], T* Avertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][3];
@@ -774,7 +785,7 @@ template <class T> void rasterize_triangle_interpolated_B(double Vxy[][2], doubl
 	//   compute triangle borders equations
 	//double Vxy[][2],double  bary_to_xy1[9],double  xy1_to_bary[9],double* edge_eq[3],y_begin,y_end,left_edge_id,right_edge_id)
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, clockwise, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 
@@ -999,7 +1010,7 @@ inline void render_part_interpolated_B(double* image, double* image_B, double* z
 	delete[]A0y_B;
 }
 
-template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], T image[], int height, int width, int sizeA, T* Texture, int* Texture_size, bool strict_edge, bool perspective_correct, bool clockwise)
+template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], T image[], int height, int width, int sizeA, T* Texture, int* Texture_size, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 
@@ -1014,7 +1025,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 	
 	//   compute triangle borders equations
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, clockwise, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 	if (perspective_correct)
@@ -1050,7 +1061,7 @@ template <class T> void rasterize_triangle_textured_gouraud(double Vxy[][2], dou
 		render_part_textured_gouraud(image, z_buffer, x_min, x_max, y_begin[k], y_end[k], strict_edge, xy1_to_UV, xy1_to_L, xy1_to_Z, edge_eq[left_edge_id[k]], edge_eq[right_edge_id[k]], width, height, sizeA, Texture, Texture_size, perspective_correct);
 }
 
-template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, bool strict_edge, bool perspective_correct, bool clockwise)
+template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], double Zvertex[3], double UVvertex[][2], double UVvertex_B[][2], double ShadeVertex[], double ShadeVertex_B[], double z_buffer[], T image[], T image_B[], int height, int width, int sizeA, T* Texture, T* Texture_B, int* Texture_size, bool strict_edge, bool perspective_correct)
 {
 	int     y_begin[2], y_end[2];
 	double  edge_eq[3][3];
@@ -1075,7 +1086,7 @@ template <class T> void rasterize_triangle_textured_gouraud_B(double Vxy[][2], d
 	
 	//   compute triangle borders equations
 
-	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, clockwise, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
+	get_triangle_stencil_equations(Vxy, bary_to_xy1, xy1_to_bary, edge_eq, strict_edge, x_min, x_max, y_begin, y_end, left_edge_id, right_edge_id);
 
 	// create matrices that map image coordinates to attributes A and depth z
 
@@ -2557,14 +2568,7 @@ struct sortcompare {
 	}
 };
 
-double signedArea(double ij[3][2],bool clockwise)
-{
-	double ux = ij[1][0] - ij[0][0];
-	double uy = ij[1][1] - ij[0][1];
-	double vx = ij[2][0] - ij[0][0];
-	double vy = ij[2][1] - ij[0][1];	
-	return 0.5*(ux * vy - vx * uy)*(clockwise?1:-1);
-}
+
 
 void checkSceneValid(Scene scene, bool has_derivatives)
 {
@@ -2711,14 +2715,14 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 					}
 				
-				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size, scene.strict_edge, scene.perspective_correct, scene.clockwise);
+				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size, scene.strict_edge, scene.perspective_correct);
 			}
 			if (!scene.textured[k])
 			{
 				double* colors[3];
 				for (int i = 0; i < 3; i++)
 					colors[i] = scene.colors + face[i] * scene.nb_colors;
-				rasterize_triangle_interpolated(ij, depths, colors, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct, scene.clockwise);
+				rasterize_triangle_interpolated(ij, depths, colors, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct);
 			}
 		}
 
@@ -2823,6 +2827,11 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 	sum_depth.resize(scene.nb_triangles);
 	vector<double> signedAreaV;
 	signedAreaV.resize(scene.nb_triangles);
+	
+	if (!scene.backface_culling)
+	{
+		throw "You have to use backface_culling true if you ant to compute gradients";		
+	}
 
 	for (int k = 0; k < scene.nb_triangles; k++)
 	{
@@ -2999,7 +3008,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 						uv_b[i][j] = scene.uv_b[face_uv[i] * 2 + j];
 					}
 
-				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, scene.strict_edge, scene.perspective_correct, scene.clockwise);
+				rasterize_triangle_textured_gouraud_B(ij, ij_b, depths, uv, uv_b, shade, shade_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.texture, scene.texture_b, Texture_size, scene.strict_edge, scene.perspective_correct);
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 2; j++)
 					{
@@ -3020,7 +3029,7 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 					colors_b[i] = scene.colors_b + face[i] * scene.nb_colors;
 				}
 
-				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct, scene.clockwise);
+				rasterize_triangle_interpolated_B(ij, ij_b, depths, colors, colors_b, z_buffer, image, image_b, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct);
 			}
 
 			for (int i = 0; i < 3; i++)

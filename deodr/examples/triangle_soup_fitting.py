@@ -90,6 +90,7 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
         np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1)
     )
     scene["perspective_correct"] = False
+    scene["backface_culling"] = True
     return Scene2D(**scene)
 
 

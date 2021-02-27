@@ -547,6 +547,11 @@ class Scene2D(Scene2DBase):
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
+
+        if not self.backface_culling:
+            raise BaseException(
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
+            ) 
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
         if make_copies:
@@ -579,6 +584,10 @@ class Scene2D(Scene2DBase):
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
+        if not self.backface_culling:
+            raise BaseException(
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
+            ) 
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
         if (

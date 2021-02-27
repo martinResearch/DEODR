@@ -80,7 +80,8 @@ def main():
         texture,
         background_image=None,
         background_color=background_color,
-        clockwise=True
+        clockwise=True, 
+        backface_culling=True
     )
 
     image_gt, _ = scene_gt.render(sigma=1)
@@ -112,7 +113,8 @@ def main():
         texture,
         background_image=None,
         background_color=background_color,
-        clockwise=True
+        clockwise=True, 
+        backface_culling=True
     )
     # cv2.namedWindow('animation',cv2.WINDOW_NORMAL)
     # cv2.resizeWindow('animation', 600,600)
