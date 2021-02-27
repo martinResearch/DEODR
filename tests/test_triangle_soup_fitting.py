@@ -4,7 +4,11 @@ from deodr.examples.triangle_soup_fitting import run
 
 
 def test_soup():
-    final_loss = run(nb_max_iter=50, display=False)
+    final_loss = run(nb_max_iter=50, display=False, clockwise=False)
+    assert abs(final_loss[False] - 1331.141082325624) < 10
+    assert abs(final_loss[True] - 1457.4429407318612) < 20
+
+    final_loss = run(nb_max_iter=50, display=False, clockwise=True)
     assert abs(final_loss[False] - 1331.141082325624) < 10
     assert abs(final_loss[True] - 1457.4429407318612) < 20
 
