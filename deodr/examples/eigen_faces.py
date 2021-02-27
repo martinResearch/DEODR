@@ -13,6 +13,7 @@ from scipy.spatial import Delaunay
 import sklearn.datasets
 from sklearn import decomposition
 
+
 def main():
     faces = sklearn.datasets.fetch_olivetti_faces()
 
@@ -26,7 +27,6 @@ def main():
     # print(faces)
 
     # faces_pca.inverse_transform(coefs[[0]])
-
 
     # create a regular grid and a triangulation  of the 2D image
     N = 5
@@ -80,8 +80,8 @@ def main():
         texture,
         background_image=None,
         background_color=background_color,
-        clockwise=True, 
-        backface_culling=True
+        clockwise=True,
+        backface_culling=True,
     )
 
     image_gt, _ = scene_gt.render(sigma=1)
@@ -94,7 +94,6 @@ def main():
 
     # plt.show()
     np.max(texture - image_gt)
-
 
     scene = Scene2D(
         triangles,
@@ -113,19 +112,20 @@ def main():
         texture,
         background_image=None,
         background_color=background_color,
-        clockwise=True, 
-        backface_culling=True
+        clockwise=True,
+        backface_culling=True,
     )
     # cv2.namedWindow('animation',cv2.WINDOW_NORMAL)
     # cv2.resizeWindow('animation', 600,600)
 
     rescale_factor = 10
 
-
     def fun(points_deformed, pca_coefs):
         ij = points_deformed * 64 - 0.5
         # face=faces_pca.inverse_transform(coefs[:,None])
-        face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape((64, 64))
+        face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape(
+            (64, 64)
+        )
         scene.ij = ij
         scene.texture = face[:, :, None]
         print("render")
@@ -150,7 +150,7 @@ def main():
             interpolation=cv2.INTER_NEAREST,
         )
         diff_image_zoomed = cv2.resize(
-            (np.abs(diff_image) * 255*10).astype(np.uint8),
+            (np.abs(diff_image) * 255 * 10).astype(np.uint8),
             None,
             fx=rescale_factor,
             fy=rescale_factor,
@@ -163,7 +163,6 @@ def main():
             isClosed=True,
             color=(0, 0, 0),
             lineType=cv2.LINE_AA,
-           
         )
 
         cv2.polylines(
@@ -171,10 +170,11 @@ def main():
             (points_deformed[tri.simplices] * 64 * rescale_factor).astype(np.int32),
             isClosed=True,
             color=(0, 0, 0),
-            lineType=cv2.LINE_AA,        
+            lineType=cv2.LINE_AA,
         )
         cv2.imshow(
-            "animation", np.column_stack((image_gt_zoomed, image_zoomed, diff_image_zoomed))
+            "animation",
+            np.column_stack((image_gt_zoomed, image_zoomed, diff_image_zoomed)),
         )
         cv2.waitKey(1)
 
@@ -185,16 +185,13 @@ def main():
         grads = {"points_deformed": points_deformed_grad, "pca_coefs": coefs_grad}
         return err, grads
 
-
     nb_iter = 100
 
     pca_coefs = np.zeros((faces_pca.n_components))
     points_deformed = points.copy()
 
-
     variables = {"points_deformed": points_deformed, "pca_coefs": pca_coefs}
     lambdas = {"points_deformed": 0.0001, "pca_coefs": 0.5}
-
 
     for niter in range(nb_iter):
 
@@ -207,6 +204,6 @@ def main():
 
     cv2.waitKey()
 
+
 if __name__ == "__main__":
     main()
-

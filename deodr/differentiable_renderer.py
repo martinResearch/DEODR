@@ -264,7 +264,13 @@ class Camera:
             if store_backward is not None:
                 store_backward["project_points"] = (p_camera, depths, projected)
         else:
-            k1, k2, p1, p2, k3, = self.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             x2 = x ** 2
@@ -307,7 +313,13 @@ class Camera:
             p_camera, depths, projected, r2, radial_distortion = store_backward[
                 "project_points"
             ]
-            k1, k2, p1, p2, k3, = self.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             distorted_b = projected_image_coordinates_b.dot(
@@ -551,7 +563,7 @@ class Scene2D(Scene2DBase):
         if not self.backface_culling:
             raise BaseException(
                 "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
-            ) 
+            )
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
         if make_copies:
@@ -587,7 +599,7 @@ class Scene2D(Scene2DBase):
         if not self.backface_culling:
             raise BaseException(
                 "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
-            ) 
+            )
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
         if (
