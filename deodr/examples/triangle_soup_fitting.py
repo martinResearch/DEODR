@@ -75,11 +75,11 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
         )
     scene["faces"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
     scene["faces_uv"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
-  
-    if clockwise:        
-        scene["faces"]  = np.fliplr(scene["faces"])
-        scene["faces_uv"]   = np.fliplr(scene["faces_uv"])
-        
+
+    if clockwise:
+        scene["faces"] = np.fliplr(scene["faces"])
+        scene["faces_uv"] = np.fliplr(scene["faces_uv"])
+
     scene["clockwise"] = clockwise
     scene["height"] = height
     scene["width"] = width
@@ -93,7 +93,7 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
     return Scene2D(**scene)
 
 
-def run(nb_max_iter=500, display=True,clockwise=False):
+def run(nb_max_iter=500, display=True, clockwise=False):
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
