@@ -36,7 +36,7 @@ def run(
     elif dl_library == "none":
         from deodr.mesh_fitter import MeshDepthFitter
     else:
-        raise BaseException(f"unkown deep learning library {dl_library}")
+        raise BaseException(f"unknown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
         np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)

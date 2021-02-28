@@ -262,7 +262,7 @@ class MeshDepthFitter:
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_with_grad_transformed = (
             qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
         )
@@ -286,7 +286,7 @@ class MeshDepthFitter:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices.numpy())
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -456,7 +456,7 @@ class MeshRGBFitterWithPose:
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_with_grad_transformed = (
             qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
         )

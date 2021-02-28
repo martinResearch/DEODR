@@ -15,7 +15,7 @@ def test_texture_coordinates():
     # this contrasts with opengl when the texture at position (0.5/texture_width , 0.5/texture_width) is texture[0, 0]
 
     uv = np.array([[0, 0], [1, 0], [0, 1]])
-    ij = np.array([[1, 1], [1, 15], [15, 1]])    
+    ij = np.array([[1, 1], [1, 15], [15, 1]])
     depths = np.array([1, 1, 1])
     shade = np.array([0, 0, 0])
     shade = np.array([1, 1, 1])
@@ -24,15 +24,13 @@ def test_texture_coordinates():
     colors = np.eye(3)
     edgeflags = np.zeros((1, 3), dtype=np.bool)
 
-    for clockwise in [False,True]:
+    for clockwise in [False, True]:
         if clockwise:
             faces = np.array([[0, 2, 1]], dtype=np.uint32)
             faces_uv = np.array([[0, 2, 1]], dtype=np.uint32)
         else:
             faces = np.array([[0, 1, 2]], dtype=np.uint32)
             faces_uv = np.array([[0, 1, 2]], dtype=np.uint32)
-        
-
 
         height = 40
         width = 60
@@ -60,10 +58,10 @@ def test_texture_coordinates():
             edgeflags=edgeflags,
             strict_edge=False,
             perspective_correct=True,
-            clockwise=clockwise
+            clockwise=clockwise,
         )
 
-        image, depth = scene2D.render(sigma=0)
+        image, _ = scene2D.render(sigma=0)
         assert np.allclose(image[0, :, :], [0, 0, 0])
         assert np.allclose(image[:, 0, :], [0, 0, 0])
         assert np.allclose(image[1, 1, :], [1, 0, 0])
