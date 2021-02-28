@@ -122,7 +122,7 @@ for iter = 1:options.nb_max_iter
             fprintf('Energy=%f : Edata=%f Eregu=%f\n',E,Edata,Eregu);
             losses(iter) = E;
         otherwise
-            error('unkown method')
+            error('unknown method')
     end
     durations(iter) = toc(start);
 end

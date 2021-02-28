@@ -13,7 +13,7 @@ from .tools import (
     normalize_backward,
     qrot,
     qrot_backward,
-    check_jacabian_finite_difference,
+    check_jacobian_finite_differences,
 )
 
 
@@ -28,8 +28,7 @@ class MeshDepthFitter:
         translation_init,
         cregu=2000,
         inertia=0.96,
-        damping=0.05,
-        camera=None,
+        damping=0.05
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -109,16 +108,16 @@ class MeshDepthFitter:
             qrot(q_normalized, self.vertices) + self.transform_translation
         )
         self.mesh.set_vertices(vertices_transformed)
-        self.depth_not_cliped = self.scene.render_depth(
+        self.depth_not_clipped = self.scene.render_depth(
             self.camera, depth_scale=self.depthScale,
         )
-        depth = np.clip(self.depth_not_cliped, 0, self.scene.max_depth)
+        depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
         return depth
 
     def render_backward(self, depth_b):
         self.scene.clear_gradients()
-        depth_b[self.depth_not_cliped < 0] = 0
-        depth_b[self.depth_not_cliped > self.scene.max_depth] = 0
+        depth_b[self.depth_not_clipped < 0] = 0
+        depth_b[self.depth_not_clipped > self.scene.max_depth] = 0
         self.scene.render_depth_backward(depth_b)
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
@@ -148,7 +147,7 @@ class MeshDepthFitter:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices)
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -336,7 +335,7 @@ class MeshRGBFitterWithPose:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices)
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -600,7 +599,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices)
 
         if check_gradient:
@@ -610,7 +609,7 @@ class MeshRGBFitterWithPoseMultiFrame:
                     x, return_grad=False, return_hessian=False
                 )
 
-            check_jacabian_finite_difference(
+            check_jacobian_finite_differences(
                 grad_rigidity.flatten(), func, self.vertices
             )
 
@@ -618,7 +617,7 @@ class MeshRGBFitterWithPoseMultiFrame:
                 return self.energy_data(x, return_images=False)
 
             grad_data = self.vertices_b.copy()
-            check_jacabian_finite_difference(grad_data.flatten(), func, self.vertices)
+            check_jacobian_finite_differences(grad_data.flatten(), func, self.vertices)
 
         energy = energy_data + energy_rigid
         print(

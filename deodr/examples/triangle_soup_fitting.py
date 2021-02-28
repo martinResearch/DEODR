@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def create_example_scene(n_tri=30, width=200, height=200):
+def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
 
     material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
     height_material = material.shape[0]
@@ -76,6 +76,11 @@ def create_example_scene(n_tri=30, width=200, height=200):
     scene["faces"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
     scene["faces_uv"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
 
+    if clockwise:
+        scene["faces"] = np.fliplr(scene["faces"])
+        scene["faces_uv"] = np.fliplr(scene["faces_uv"])
+
+    scene["clockwise"] = clockwise
     scene["height"] = height
     scene["width"] = width
     scene["texture"] = material
@@ -85,14 +90,15 @@ def create_example_scene(n_tri=30, width=200, height=200):
         np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1)
     )
     scene["perspective_correct"] = False
+    scene["backface_culling"] = True
     return Scene2D(**scene)
 
 
-def run(nb_max_iter=500, display=True):
+def run(nb_max_iter=500, display=True, clockwise=False):
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
-    scene_gt = create_example_scene()
+    scene_gt = create_example_scene(clockwise=clockwise)
     antialiase_error = False
     sigma = 1
 

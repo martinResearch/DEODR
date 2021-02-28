@@ -1,4 +1,4 @@
-"""Implementation of an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+"""Implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
 import copy
 
@@ -7,7 +7,7 @@ import scipy.sparse
 
 
 class LaplacianRigidEnergy:
-    """Class that implements an as-rigi-as-possible energy based on the difference of laplacian with a reference shape."""
+    """Class that implements an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
     def __init__(self, mesh, vertices, cregu):
         self.cT = scipy.sparse.kron(

@@ -3,14 +3,13 @@
 import numpy as np
 
 from scipy import sparse
-import trimesh
 
 from .tools import cross_backward, normalize, normalize_backward
 
 
 class TriMeshAdjacencies:
-    """Class that stores adjacency matrices and methods that use this adjacencies.
-    Unlike the TriMesh class there are no vertices stored in this class
+    """Class that stores sparse adjacency matrices and methods that use these matrices.
+    Unlike the TriMesh class there are no vertices stored in this class.
     """
 
     def __init__(self, faces, clockwise=False, nb_vertices=None):
@@ -362,9 +361,9 @@ class ColoredTriMesh(TriMesh):
                 )
 
         # merge identical 3D vertices even if their uv are different to keep surface
-        # manifold. trimesh seem to split vertices that have different uvs (using
+        # manifold. Trimesh seems to split vertices that have different uvs (using
         # unmerge_faces texture.py), making the surface not watertight, while there
-        # were only seems in the texture
+        # were only seems in the texture.
 
         vertices, return_index, inv_ids = np.unique(
             mesh.vertices, axis=0, return_index=True, return_inverse=True
@@ -445,7 +444,7 @@ class ColoredTriMesh(TriMesh):
 
 
 def loop_subdivision(mesh, n_iter=1):
-    """loop subdivision.
+    """Loop subdivision.
 
     https://graphics.stanford.edu/~mdfisher/subdivision.html"""
     if n_iter == 0:
@@ -500,7 +499,7 @@ def loop_subdivision(mesh, n_iter=1):
     )
     new_faces = np.row_stack((faces1, faces2, faces3, faces4))
     if mesh.uv is not None:
-        raise BaseException("texture mesh not supported yet in subdivision")
+        raise BaseException("Textured mesh not supported yet in subdivision.")
     if mesh.vertices_colors is not None:
         edge_mid_points_colors = np.mean(
             mesh.vertices_colors[mesh.adjacencies.edges, :], axis=1

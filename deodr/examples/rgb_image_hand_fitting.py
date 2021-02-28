@@ -35,7 +35,7 @@ def run(
     elif dl_library == "none":
         from deodr.mesh_fitter import MeshRGBFitterWithPose
     else:
-        raise BaseException(f"unkown deep learning library {dl_library}")
+        raise BaseException(f"unknown deep learning library {dl_library}")
 
     hand_image = (
         imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255

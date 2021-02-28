@@ -367,12 +367,32 @@ inline void dot_prod_B(const double R_B, double V1_B[3], const double V2[3])
 		V1_B[i] += R_B * V2[i];
 }
 
-inline void Edge_equ3(double e[3], const double v1[2], const double v2[2])
+inline void Edge_equ3(double e[3], const double v1[2], const double v2[2], bool clockwise)
 {   
 	// compute edges equations of type ax+by+c = 0
-	e[0] = (v2[1] - v1[1]);
-	e[1] = (v1[0] - v2[0]);
+	
+	if (clockwise)
+	{			
+		e[0] = (v1[1] - v2[1]);
+		e[1] = (v2[0] - v1[0]);
+	}
+	else
+	{
+		e[0] = (v2[1] - v1[1]);
+		e[1] = (v1[0] - v2[0]);
+	}
+	
+
 	e[2] = - 0.5 * ( e[0] * (v1[0] + v2[0]) + e[1] * (v1[1] + v2[1]));
+}
+
+double signedArea(double ij[3][2],bool clockwise)
+{
+	double ux = ij[1][0] - ij[0][0];
+	double uy = ij[1][1] - ij[0][1];
+	double vx = ij[2][0] - ij[0][0];
+	double vy = ij[2][1] - ij[0][1];	
+	return 0.5*(ux * vy - vx * uy)*(clockwise?1:-1);
 }
 
 inline void sort3(const double v[3], double sv[3], short int i[3])
@@ -411,7 +431,7 @@ short int floor_div(double a, double b, int x_min, int x_max)
 	
 	if (abs(b) * SHRT_MAX > abs(a) + abs(b))
 	{ 
-		x = floor(a / b);
+		x = (short int) floor(a / b);
 		if (x < x_min)
 		{
 			x = x_min;
@@ -589,7 +609,7 @@ template <class T> void bilinear_sample_B(T* A, T* A_B, T I[], T I_B[], int* I_s
 	}
 }
 
-void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][3], bool strict_edge,  int &x_min, int &x_max, int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
+void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], double  xy1_to_bary[9], double edge_eq[][3], bool strict_edge, int &x_min, int &x_max, int* y_begin, int* y_end, int* left_edge_id, int* right_edge_id)
 {
 
 	// create a matrix that map barycentric coordinates to homogeneous image coordinates
@@ -610,10 +630,12 @@ void get_triangle_stencil_equations(double Vxy[][2], double  bary_to_xy1[9], dou
 	inv_matrix_3x3(bary_to_xy1, xy1_to_bary);
 
 	// compute edges equations of type x=ay+b
+	
+	bool clockwise = signedArea(Vxy, true)>0;
 
-	Edge_equ3(edge_eq[0], Vxy[0], Vxy[1]);
-	Edge_equ3(edge_eq[1], Vxy[1], Vxy[2]);
-	Edge_equ3(edge_eq[2], Vxy[2], Vxy[0]);
+	Edge_equ3(edge_eq[0], Vxy[0], Vxy[1], clockwise);
+	Edge_equ3(edge_eq[1], Vxy[1], Vxy[2], clockwise);
+	Edge_equ3(edge_eq[2], Vxy[2], Vxy[0], clockwise);
 
 	// sort vertices w.r.t y direction 
 	double     x_unsorted[3];
@@ -1122,10 +1144,10 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int x
 	{
 		y_end = height - 1;
 	}
-
+	
 	for (short int y = y_begin; y <= y_end; y++)
 	{
-
+		
 		// Line rasterization setup for interpolated values 
 
 		t[0] = 0; t[1] = y; t[2] = 1;
@@ -1173,9 +1195,10 @@ inline  void render_part_textured_gouraud(double* image, double* z_buffer, int x
 
 		}
 		else
-		{
+		{			
 			for (short int x = x_begin; x <= x_end; x++)
 			{
+				
 				Z = Z0y + xy1_to_Z[0] * x;
 				if (Z < z_buffer[indx])
 				{
@@ -2545,14 +2568,7 @@ struct sortcompare {
 	}
 };
 
-double signedArea(double ij[3][2],bool clockwise)
-{
-	double ux = ij[1][0] - ij[0][0];
-	double uy = ij[1][1] - ij[0][1];
-	double vx = ij[2][0] - ij[0][0];
-	double vy = ij[2][1] - ij[0][1];	
-	return 0.5*(ux * vy - vx * uy)*(clockwise?1:-1);
-}
+
 
 void checkSceneValid(Scene scene, bool has_derivatives)
 {
@@ -2698,6 +2714,7 @@ void renderScene(Scene scene, double* image, double* z_buffer, double sigma, boo
 					{
 						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
 					}
+				
 				rasterize_triangle_textured_gouraud(ij, depths, uv, shade, z_buffer, image, scene.height, scene.width, scene.nb_colors, scene.texture, Texture_size, scene.strict_edge, scene.perspective_correct);
 			}
 			if (!scene.textured[k])
@@ -2810,6 +2827,11 @@ void renderScene_B(Scene scene, double* image, double* z_buffer, double* image_b
 	sum_depth.resize(scene.nb_triangles);
 	vector<double> signedAreaV;
 	signedAreaV.resize(scene.nb_triangles);
+	
+	if (!scene.backface_culling)
+	{
+		throw "You have to use backface_culling true if you ant to compute gradients";		
+	}
 
 	for (int k = 0; k < scene.nb_triangles; k++)
 	{
