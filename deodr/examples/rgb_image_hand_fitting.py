@@ -11,6 +11,7 @@ import cv2
 
 import deodr
 from deodr import read_obj
+from deodr import ColoredTriMesh
 
 from imageio import imread, imsave
 
@@ -20,7 +21,12 @@ import numpy as np
 
 
 def run(
-    dl_library="pytorch", plot_curves=True, save_images=True, display=True, max_iter=100
+    dl_library="pytorch",
+    plot_curves=True,
+    save_images=True,
+    display=True,
+    max_iter=100,
+    n_subdivision=0,
 ):
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
@@ -37,6 +43,10 @@ def run(
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(
+        n_subdivision
+    )
+
     default_color = np.array([0.4, 0.3, 0.25])
     default_light = {
         "directional": -np.array([0.1, 0.5, 0.4]),
@@ -44,13 +54,13 @@ def run(
     }
 
     euler_init = np.array([0, 0, 0])
-    translation_init = np.mean(vertices, axis=0)
+    translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
-    vertices = vertices - translation_init[None, :]
+    mesh.vertices = mesh.vertices - translation_init[None, :]
 
     hand_fitter = MeshRGBFitterWithPose(
-        vertices,
-        faces,
+        mesh.vertices,
+        mesh.faces,
         default_color=default_color,
         default_light=default_light,
         update_lights=True,
@@ -157,20 +167,29 @@ def main():
 
     display = True
     save_images = False
+    n_subdivision = 1
 
     run(
         dl_library="pytorch",
         plot_curves=False,
         display=display,
         save_images=save_images,
+        n_subdivision=n_subdivision,
     )
 
-    run(dl_library="none", plot_curves=False, display=display, save_images=save_images)
+    run(
+        dl_library="none",
+        plot_curves=False,
+        display=display,
+        save_images=save_images,
+        n_subdivision=n_subdivision,
+    )
     run(
         dl_library="tensorflow",
         plot_curves=True,
         display=display,
         save_images=save_images,
+         n_subdivision=n_subdivision,
     )
 
 
