@@ -28,7 +28,7 @@ class MeshDepthFitter:
         translation_init,
         cregu=2000,
         inertia=0.96,
-        damping=0.05
+        damping=0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -109,7 +109,8 @@ class MeshDepthFitter:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_clipped = self.scene.render_depth(
-            self.camera, depth_scale=self.depthScale,
+            self.camera,
+            depth_scale=self.depthScale,
         )
         depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
         return depth
@@ -595,12 +596,24 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         self.nb_facesrames = len(self.hand_images)
 
+        # energy term base on the images
         energy_data, image, diff_image = self.energy_data(self.vertices)
+
+        # energy term to enforce mesh rigidity
         (
             energy_rigid,
             grad_rigidity,
             _,
         ) = self.rigid_energy.evaluate(self.vertices)
+
+        # energy term to avoid self-collisions
+        import trimesh
+
+        offseted_vertices = self.vertices + self.mesh.vertex_normals * 0       
+        dilated_mesh = trimesh.Trimesh(vertices = offseted_vertices, faces= self.mesh.faces)
+        _, distances, _ = trimesh.proximity.closest_point( self.mesh.to_trimesh(), offseted_vertices)
+        dilated_mesh.visual=trimesh.visual.color.ColorVisuals(mesh=None, face_colors=None, vertex_colors=distances
+        dilated_mesh.show()
 
         if check_gradient:
 

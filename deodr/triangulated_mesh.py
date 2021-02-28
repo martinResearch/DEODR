@@ -394,45 +394,50 @@ class ColoredTriMesh(TriMesh):
 
     def to_trimesh(self):
         # lazy modules loading
-        import PIL
         import trimesh
 
         # largely inspired from trimesh's load_obj function
 
         if self.vertices_colors is not None:
-            raise BaseException(
-                "convertion to timesh with per vertex color not support yet"
+            visual = trimesh.visual.color.ColorVisuals(
+                mesh=None, face_colors=None, vertex_colors=self.vertices_colors
+            )
+            trimesh_mesh = trimesh.Trimesh(
+                vertices=self.vertices, faces=self.faces, visual=visual
             )
 
-        v = self.vertices
-        faces = self.faces
-        faces_tex = self.faces_uv
+        else:
+            import PIL
 
-        vt = np.column_stack(
-            (
-                (self.uv[:, 0] + 0.5) / self.texture.shape[1],
-                1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[0]),
+            v = self.vertices
+            faces = self.faces
+            faces_tex = self.faces_uv
+
+            vt = np.column_stack(
+                (
+                    (self.uv[:, 0] + 0.5) / self.texture.shape[1],
+                    1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[0]),
+                )
             )
-        )
-        new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
-            faces, faces_tex
-        )
-        assert np.allclose(v[faces], v[mask_v][new_faces])
-        assert new_faces.max() < len(v[mask_v])
+            new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
+                faces, faces_tex
+            )
+            assert np.allclose(v[faces], v[mask_v][new_faces])
+            assert new_faces.max() < len(v[mask_v])
 
-        new_vertices = v[mask_v].copy()
-        uv = vt[mask_vt].copy()
+            new_vertices = v[mask_v].copy()
+            uv = vt[mask_vt].copy()
 
-        texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
-        if texture_uint8.shape[2] == 1:
-            texture_uint8 = texture_uint8.squeeze(axis=2)
-        texture_pil = PIL.Image.fromarray(texture_uint8)
-        material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
-        visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
+            texture_uint8 = np.clip(self.texture * 255, 0, 255).astype(np.uint8)
+            if texture_uint8.shape[2] == 1:
+                texture_uint8 = texture_uint8.squeeze(axis=2)
+            texture_pil = PIL.Image.fromarray(texture_uint8)
+            material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
+            visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
 
-        trimesh_mesh = trimesh.Trimesh(
-            vertices=new_vertices, faces=new_faces, visual=visual
-        )
+            trimesh_mesh = trimesh.Trimesh(
+                vertices=new_vertices, faces=new_faces, visual=visual
+            )
         return trimesh_mesh
 
     @staticmethod
