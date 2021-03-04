@@ -4,7 +4,6 @@ import argparse
 import os
 import time
 import pickle
-from typing import OrderedDict
 
 import cv2
 
@@ -50,6 +49,22 @@ class Interactor:
             self.mode = "object_centered_trackball"
         print(f"trackball mode = {self.mode}")
 
+    def rotate(
+        self,
+        rot_vec,
+    ):
+        rotation = Rotation.from_rotvec(np.array(rot_vec))
+        if self.mode == "camera_centered":
+            self.camera.extrinsic = rotation.as_matrix().dot(self.camera.extrinsic)
+        else:
+            n_rotation = rotation.as_matrix().dot(self.camera.extrinsic[:, :3])
+            nt = (
+                self.camera.extrinsic[:, :3].dot(self.object_center)
+                + self.camera.extrinsic[:, 3]
+                - n_rotation.dot(self.object_center)
+            )
+            self.camera.extrinsic = np.column_stack((n_rotation, nt))
+
     def mouse_callback(self, event, x, y, flags, param):
         if event == 0 and flags == 0:
             return
@@ -81,75 +96,49 @@ class Interactor:
         if self.left_is_down and not (self.ctrl_is_down):
 
             if self.mode == "camera_centered":
-                rotation = Rotation.from_rotvec(
-                    np.array(
-                        [
-                            -0.3 * self.rotation_speed * (y - self.y_last),
-                            0.3 * self.rotation_speed * (x - self.x_last),
-                            0,
-                        ]
-                    )
-                )
-                self.camera.extrinsic = rotation.as_matrix().dot(self.camera.extrinsic)
+                rot_vec = [
+                    -0.3 * self.rotation_speed * (y - self.y_last),
+                    0.3 * self.rotation_speed * (x - self.x_last),
+                    0,
+                ]
+                self.rotate(rot_vec)
+
                 # assert np.allclose(center_in_camera, self.camera.world_to_camera(self.object_center))
                 self.x_last = x
                 self.y_last = y
 
             elif self.mode == "object_centered_trackball":
 
-                rotation = Rotation.from_rotvec(
-                    np.array(
-                        [
-                            self.rotation_speed * (y - self.y_last),
-                            -self.rotation_speed * (x - self.x_last),
-                            0,
-                        ]
-                    )
+                self.rotate(
+                    [
+                        self.rotation_speed * (y - self.y_last),
+                        -self.rotation_speed * (x - self.x_last),
+                        0,
+                    ]
                 )
-                n_rotation = rotation.as_matrix().dot(self.camera.extrinsic[:, :3])
-                nt = (
-                    self.camera.extrinsic[:, :3].dot(self.object_center)
-                    + self.camera.extrinsic[:, 3]
-                    - n_rotation.dot(self.object_center)
-                )
-                self.camera.extrinsic = np.column_stack((n_rotation, nt))
+
                 self.x_last = x
                 self.y_last = y
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
 
         if self.right_is_down and not (self.ctrl_is_down):
-            if self.mode == "camera_centered":
-                self.camera.extrinsic[2, 3] += self.z_translation_speed * (
-                    self.y_last - y
-                )
-                self.x_last = x
-                self.y_last = y
-            elif self.mode == "object_centered_trackball":
+            if self.mode in ["camera_centered", "object_centered_trackball"]:
                 if np.abs(self.y_last - y) >= np.abs(self.x_last - x):
                     self.camera.extrinsic[2, 3] += self.z_translation_speed * (
                         self.y_last - y
                     )
                 else:
-                    rotation = Rotation.from_rotvec(
-                        np.array(
-                            [
-                                0,
-                                0,
-                                -self.rotation_speed * (self.x_last - x),
-                            ]
-                        )
+                    self.rotate(
+                        [
+                            0,
+                            0,
+                            -self.rotation_speed * (self.x_last - x),
+                        ]
                     )
-
-                    n_rotation = rotation.as_matrix().dot(self.camera.extrinsic[:, :3])
-                    nt = (
-                        self.camera.extrinsic[:, :3].dot(self.object_center)
-                        + self.camera.extrinsic[:, 3]
-                        - n_rotation.dot(self.object_center)
-                    )
-                    self.camera.extrinsic = np.column_stack((n_rotation, nt))
                 self.x_last = x
                 self.y_last = y
+
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
 
@@ -336,7 +325,7 @@ class Viewer:
         cv2.resizeWindow(self.windowname, self.width, self.height)
         cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)
         if loop:
-            while cv2.getWindowProperty(self.windowname, 0) >= 0:               
+            while cv2.getWindowProperty(self.windowname, 0) >= 0:
                 self.refresh()
 
     def update_fps(self):
