@@ -176,40 +176,37 @@ class Interactor:
         if self.mode == "object_centered_trackball":
 
             help_str += (
-                "mouse left + vertical motion = rotate object along camera x axis\n"
+                "mouse left + vertical motion: rotate object along camera x axis\n"
             )
             help_str += (
-                "mouse left + horizontal motion = rotate object along camera y axis\n"
+                "mouse left + horizontal motion: rotate object along camera y axis\n"
             )
             help_str += (
-                "mouse right + vertical motion = translate object along camera z axis\n"
+                "mouse right + vertical motion: translate object along camera z axis\n"
             )
             help_str += (
-                "mouse right + horizontal motion = rotate object along camera z axis\n"
+                "mouse right + horizontal motion: rotate object along camera z axis\n"
             )
-            help_str += "CTRL + mouse left + vertical motion = translate object along camera y axis\n"
-            help_str += "CTRL + mouse left + horizontal motion = translate object along camera x axis\n"
+            help_str += "CTRL + mouse left + vertical motion: translate object along camera y axis\n"
+            help_str += "CTRL + mouse left + horizontal motion: translate object along camera x axis\n"
 
             help_str += (
-                "SHIFT + mouse left + vertical motion = changes the field of view\n"
+                "SHIFT + mouse left + vertical motion: change the camera field of view\n"
             )
         else:
-            help_str += "mouse right + vertical motion = move in/out\n"
+            help_str += "mouse right + vertical motion: translate camera along its z axis\n"
             help_str += (
-                "mouse right + horizontal motion = rotate camera along camera z axis\n"
+                "mouse right + horizontal motion: rotate camera along its z axis\n"
             )
             help_str += (
-                "mouse left + vertical motion = rotate camera along camera x axis\n"
+                "mouse left + vertical motion: rotate camera along its x axis\n"
             )
             help_str += (
-                "mouse left + horizontal motion = rotate camera along camera y axis\n"
+                "mouse left + horizontal motion: rotate camera along its y axis\n"
             )
-            help_str += "CTRL + mouse left + vertical motion = translate camera along camera y axis\n"
-            help_str += "CTRL + mouse left + horizontal motion = translate camera along camera x axis\n"
-            help_str += (
-                "SHIFT + mouse left + vertical motion = changes the camera field of view\n"
-            )
-     
+            help_str += "CTRL + mouse left + vertical motion: translate camera along its y axis\n"
+            help_str += "CTRL + mouse left + horizontal motion: translate camera along its x axis\n"
+            help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
 
         print(help_str)
 
