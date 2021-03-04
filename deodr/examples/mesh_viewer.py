@@ -92,6 +92,7 @@ class Interactor:
             self.middle_is_down = False
 
         self.ctrl_is_down = flags & cv2.EVENT_FLAG_CTRLKEY
+        self.shift_is_down = flags & cv2.EVENT_FLAG_SHIFTKEY
 
         if self.left_is_down and not (self.ctrl_is_down):
 
@@ -121,6 +122,14 @@ class Interactor:
                 self.y_last = y
             else:
                 raise (BaseException(f"unknown camera mode {self.mode}"))
+
+        if self.right_is_down and self.shift_is_down:
+            delta_y = self.y_last - y
+            ratio = np.power(2, delta_y / 20)
+            self.camera.intrinsic[0, 0] = self.camera.intrinsic[0, 0] * ratio
+            self.camera.intrinsic[1, 1] = self.camera.intrinsic[1, 1] * ratio
+            self.x_last = x
+            self.y_last = y
 
         if self.right_is_down and not (self.ctrl_is_down):
             if self.mode in ["camera_centered", "object_centered_trackball"]:
@@ -165,18 +174,25 @@ class Interactor:
         help_str = ""
         help_str += "Mouse:\n"
         if self.mode == "object_centered_trackball":
-            help_str += "mouse right + vertical motion = move in/out\n"
-            help_str += (
-                "mouse right + horizontal motion = rotate object along camera z axis\n"
-            )
+
             help_str += (
                 "mouse left + vertical motion = rotate object along camera x axis\n"
             )
             help_str += (
                 "mouse left + horizontal motion = rotate object along camera y axis\n"
             )
+            help_str += (
+                "mouse right + vertical motion = translate object along camera z axis\n"
+            )
+            help_str += (
+                "mouse right + horizontal motion = rotate object along camera z axis\n"
+            )
             help_str += "CTRL + mouse left + vertical motion = translate object along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion = translate object along camera x axis\n"
+
+            help_str += (
+                "SHIFT + mouse left + vertical motion = changes the field of view\n"
+            )
         else:
             help_str += "mouse right + vertical motion = move in/out\n"
             help_str += (
@@ -190,6 +206,10 @@ class Interactor:
             )
             help_str += "CTRL + mouse left + vertical motion = translate camera along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion = translate camera along camera x axis\n"
+            help_str += (
+                "SHIFT + mouse left + vertical motion = changes the camera field of view\n"
+            )
+     
 
         print(help_str)
 
@@ -210,6 +230,7 @@ class Viewer:
         use_antialiasing=True,
         use_light=True,
         fps_exp_average_decay=0.1,
+        horizontal_fov=60,
     ):
         self.title = title
         self.scene = differentiable_renderer.Scene3D(sigma=1)
@@ -224,6 +245,8 @@ class Viewer:
         self.use_light = use_light
         self.fps_exp_average_decay = fps_exp_average_decay
         self.last_time = None
+        self.horizontal_fov = horizontal_fov
+
         if display_texture_map:
             self.display_texture_map()
 
@@ -295,7 +318,7 @@ class Viewer:
         rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         translation = -rotation.T.dot(camera_center)
         extrinsic = np.column_stack((rotation, translation))
-        focal = 2 * self.width
+        focal = 0.5 * self.width / np.tan(0.5 * self.horizontal_fov * np.pi / 180)
         intrinsic = np.array(
             [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
         )
@@ -361,9 +384,14 @@ class Viewer:
             self.process_key(key)
 
     def resize_camera(self):
-        focal = 2 * self.width
+        ratio = self.width / self.camera.width
+
         intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
+            [
+                [self.camera.intrinsic[0, 0] * ratio, 0, self.width / 2],
+                [0, self.camera.intrinsic[1, 1] * ratio, self.height / 2],
+                [0, 0, 1],
+            ]
         )
         self.camera.intrinsic = intrinsic
         self.camera.width = self.width
