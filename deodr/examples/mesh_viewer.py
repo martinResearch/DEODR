@@ -226,6 +226,8 @@ class Viewer:
         use_light=True,
         fps_exp_average_decay=0.1,
         horizontal_fov=60,
+        video_pattern="deodr_viewer_recording{id}.avi",
+        video_format="MJPG",
     ):
         self.title = title
         self.scene = differentiable_renderer.Scene3D(sigma=1)
@@ -243,6 +245,8 @@ class Viewer:
         self.horizontal_fov = horizontal_fov
         self.video_writer = None
         self.recording = False
+        self.video_pattern = video_pattern
+        self.video_format = video_format
 
         if display_texture_map:
             self.display_texture_map()
@@ -371,6 +375,7 @@ class Viewer:
             image = (self.scene.render(self.interactor.camera) * 255).astype(np.uint8)
 
         bgr_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         if self.recording:
             self.video_writer.write(bgr_image.astype(np.uint8))
 
@@ -512,12 +517,15 @@ class Viewer:
         """Start and stop video recording."""
         if not self.recording:
             id = 0
-            while os.path.exists(f"deodr_viewer_recording{id}.avi"):
+            while os.path.exists(self.video_pattern.format(**dict(id=id))):
                 id += 1
-            filename = f"deodr_viewer_recording{id}.avi"
+            filename = self.video_pattern.format(**dict(id=id))
 
             self.video_writer = cv2.VideoWriter(
-                filename, cv2.VideoWriter_fourcc(*"MJPG"), 30, (self.width, self.height)
+                filename,
+                cv2.VideoWriter_fourcc(*self.video_format),
+                30,
+                (self.width, self.height),
             )
             self.recording = True
         else:
