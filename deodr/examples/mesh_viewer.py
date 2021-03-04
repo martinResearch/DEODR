@@ -1,4 +1,4 @@
-"""Example of interactive 3D mesh visualization using deodr and opencv."""
+"""Example of interactive 3D mesh visualization using DEODR and OpenCV."""
 
 import argparse
 import os
@@ -42,6 +42,13 @@ class Interactor:
         self.xy_translation_speed = xy_translation_speed
         self.camera = camera
 
+    def toggle_mode(self):
+        if self.mode == "object_centered_trackball":
+            self.mode = "camera_centered"
+        else:
+            self.mode = "object_centered_trackball"
+        print(f"trackball mode = {self.mode}")
+
     def mouse_callback(self, event, x, y, flags, param):
         if event == 0 and flags == 0:
             return
@@ -73,23 +80,21 @@ class Interactor:
         if self.left_is_down and not (self.ctrl_is_down):
 
             if self.mode == "camera_centered":
-
-                center_in_camera = self.camera.world_to_camera(self.object_center)
                 rotation = Rotation.from_rotvec(
                     np.array(
                         [
-                            -self.rotation_speed * (y - self.y_last),
-                            self.rotation_speed * (x - self.x_last),
+                            -0.3 * self.rotation_speed * (y - self.y_last),
+                            0.3 * self.rotation_speed * (x - self.x_last),
                             0,
                         ]
                     )
                 )
-                self.camera.extrinsic = rotation.as_dcm().dot(self.camera.extrinsic)
+                self.camera.extrinsic = rotation.as_matrix().dot(self.camera.extrinsic)
                 # assert np.allclose(center_in_camera, self.camera.world_to_camera(self.object_center))
                 self.x_last = x
                 self.y_last = y
 
-            if self.mode == "object_centered_trackball":
+            elif self.mode == "object_centered_trackball":
 
                 rotation = Rotation.from_rotvec(
                     np.array(
@@ -100,7 +105,7 @@ class Interactor:
                         ]
                     )
                 )
-                n_rotation = rotation.as_dcm().dot(self.camera.extrinsic[:, :3])
+                n_rotation = rotation.as_matrix().dot(self.camera.extrinsic[:, :3])
                 nt = (
                     self.camera.extrinsic[:, :3].dot(self.object_center)
                     + self.camera.extrinsic[:, 3]
@@ -119,10 +124,29 @@ class Interactor:
                 )
                 self.x_last = x
                 self.y_last = y
-            if self.mode == "object_centered_trackball":
-                self.camera.extrinsic[2, 3] += self.z_translation_speed * (
-                    self.y_last - y
-                )
+            elif self.mode == "object_centered_trackball":
+                if np.abs(self.y_last - y) >= np.abs(self.x_last - x):
+                    self.camera.extrinsic[2, 3] += self.z_translation_speed * (
+                        self.y_last - y
+                    )
+                else:
+                    rotation = Rotation.from_rotvec(
+                        np.array(
+                            [
+                                0,
+                                0,
+                                -self.rotation_speed * (self.x_last - x),
+                            ]
+                        )
+                    )
+
+                    n_rotation = rotation.as_matrix().dot(self.camera.extrinsic[:, :3])
+                    nt = (
+                        self.camera.extrinsic[:, :3].dot(self.object_center)
+                        + self.camera.extrinsic[:, 3]
+                        - n_rotation.dot(self.object_center)
+                    )
+                    self.camera.extrinsic = np.column_stack((n_rotation, nt))
                 self.x_last = x
                 self.y_last = y
             else:
@@ -144,220 +168,329 @@ class Interactor:
             )
             self.camera.extrinsic[0, 3] += tx
             self.camera.extrinsic[1, 3] += ty
-            center_in_camera = self.camera.world_to_camera(self.object_center)
             self.x_last = x
             self.y_last = y
-            assert np.max(np.abs(center_in_camera[:2])) < 1e-3
 
-
-def mesh_viewer(
-    file_or_mesh,
-    display_texture_map=True,
-    width=640,
-    height=480,
-    display_fps=True,
-    title=None,
-    use_moderngl=False,
-    light_directional=(0, 0, -0.5),
-    light_ambient=0.5,
-):
-    if isinstance(file_or_mesh, str):
-        if title is None:
-            title = file_or_mesh
-        mesh_trimesh = trimesh.load(file_or_mesh)
-        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
-    elif isinstance(file_or_mesh, trimesh.base.Trimesh):
-        mesh_trimesh = file_or_mesh
-        mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
-        if title is None:
-            title = "unknown"
-    elif isinstance(file_or_mesh, ColoredTriMesh):
-        mesh = file_or_mesh
-        if title is None:
-            title = "unknown"
-    else:
-        raise (
-            BaseException(
-                f"unknown type {type(file_or_mesh)}for input obj_file_or_trimesh,"
-                " can be string or trimesh.base.Trimesh"
+    def print_help(self):
+        help_str = ""
+        if self.mode == "object_centered_trackball":
+            help_str += "Trackball:\n"
+            help_str += "mouse right + vertical motion = move in/out\n"
+            help_str += (
+                "mouse right + horizontal motion = rotate object along camera z axis\n"
             )
+            help_str += (
+                "mouse left + vertical motion = rotate object along camera x axis\n"
+            )
+            help_str += (
+                "mouse left + horizontal motion = rotate object along camera y axis\n"
+            )
+            help_str += "CTRL + mouse left + vertical motion = translate object along camera y axis\n"
+            help_str += "CTRL + mouse left + horizontal motion = translate object along camera x axis\n"
+        else:
+            help_str += "Trackball:\n"
+            help_str += "mouse right + vertical motion = move in/out\n"
+            help_str += (
+                "mouse right + horizontal motion = rotate camera along camera z axis\n"
+            )
+            help_str += (
+                "mouse left + vertical motion = rotate camera along camera x axis\n"
+            )
+            help_str += (
+                "mouse left + horizontal motion = rotate camera along camera y axis\n"
+            )
+            help_str += "CTRL + mouse left + vertical motion = translate camera along camera y axis\n"
+            help_str += "CTRL + mouse left + horizontal motion = translate camera along camera x axis\n"
+
+        print(help_str)
+
+
+class Viewer:
+    def __init__(
+        self,
+        file_or_mesh,
+        display_texture_map=True,
+        width=640,
+        height=480,
+        display_fps=True,
+        title=None,
+        use_moderngl=False,
+        light_directional=(0, 0, -0.5),
+        light_ambient=0.5,
+        background_color=(1, 1, 1),
+        use_antialiasing=True,
+        use_light=True,
+        print_help=True,
+    ):
+        self.title = title
+        self.scene = differentiable_renderer.Scene3D(sigma=1)
+        self.set_mesh(file_or_mesh)
+        self.windowname = f"DEODR mesh viewer:{self.title}"
+
+        self.width = width
+        self.height = height
+        self.display_fps = display_fps
+        self.use_moderngl = use_moderngl
+        self.use_antialiasing = use_antialiasing
+        self.use_light = use_light
+
+        if display_texture_map:
+            self.display_texture_map()
+
+        self.set_background_color(background_color)
+        self.set_light(light_directional, light_ambient)
+        self.recenter_camera()
+
+        if use_moderngl:
+            self.setup_moderngl()
+        else:
+            self.offscreen_renderer = None
+
+        if print_help:
+            self.print_help()
+
+    def set_light(self, light_directional, light_ambient):
+        self.light_directional = np.array(light_directional)
+        self.light_ambient = light_ambient
+        self.scene.set_light(
+            light_directional=self.light_directional, light_ambient=light_ambient
         )
 
-    if display_texture_map:
-        ax = plt.subplot(111)
-        if mesh.textured:
-            mesh.plot_uv_map(ax)
-
-    object_center = 0.5 * (mesh.vertices.max(axis=0) + mesh.vertices.min(axis=0))
-    object_radius = np.max(mesh.vertices.max(axis=0) - mesh.vertices.min(axis=0))
-
-    camera_center = object_center + np.array([0, 0, 3]) * object_radius
-
-    rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    translation = -rotation.T.dot(camera_center)
-    extrinsic = np.column_stack((rotation, translation))
-
-    focal = 2 * width
-    intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
-
-    distortion = [0, 0, 0, 0, 0]
-    camera = differentiable_renderer.Camera(
-        extrinsic=extrinsic,
-        intrinsic=intrinsic,
-        width=width,
-        height=height,
-        distortion=distortion,
-    )
-    use_antiliazing = True
-    use_light = True
-
-    scene = differentiable_renderer.Scene3D(sigma=1)
-
-    scene.set_light(
-        light_directional=np.array(light_directional), light_ambient=light_ambient
-    )
-    scene.set_mesh(mesh)
-
-    scene.set_background_color([1, 1, 1])
-
-    if mesh.texture is not None:
-        mesh.texture = mesh.texture[
-            :, :, ::-1
-        ]  # convert texture to GBR to avoid future conversion when ploting in Opencv
-
-    fps = 0
-    fps_decay = 0.1
-    windowname = f"DEODR mesh viewer:{title}"
-
-    interactor = Interactor(
-        camera=camera,
-        object_center=object_center,
-        z_translation_speed=0.01 * object_radius,
-        xy_translation_speed=3e-4,
-    )
-
-    cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(windowname, width, height)
-    cv2.setMouseCallback(windowname, interactor.mouse_callback)
-
-    if use_moderngl:
+    def setup_moderngl(self):
         import deodr.opengl.moderngl
 
-        offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
-        scene.mesh.compute_vertex_normals()
-        offscreen_renderer.set_scene(scene)
-    else:
-        offscreen_renderer = None
-    while cv2.getWindowProperty(windowname, 0) >= 0:
+        self.offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        self.scene.mesh.compute_vertex_normals()
+        self.offscreen_renderer.set_scene(self.scene)
 
-        # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
-        width, height = cv2.getWindowImageRect(windowname)[2:]
-        focal = 2 * width
-        intrinsic = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]])
-        camera.intrinsic = intrinsic
-        camera.width = width
-        camera.height = height
+    def set_background_color(self, background_color):
+        self.scene.set_background_color(background_color)
 
-        start = time.clock()
-        if use_moderngl:
-            image = offscreen_renderer.render(camera)
+    def display_texture_map(self):
+        if self.mesh.textured:
+            ax = plt.subplot(111)
+            self.mesh.plot_uv_map(ax)
+
+    def set_mesh(self, file_or_mesh):
+        if isinstance(file_or_mesh, str):
+            if self.title is None:
+                self.title = file_or_mesh
+            mesh_trimesh = trimesh.load(file_or_mesh)
+            self.mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+        elif isinstance(file_or_mesh, trimesh.base.Trimesh):
+            mesh_trimesh = file_or_mesh
+            self.mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+            if self.title is None:
+                self.title = "unknown"
+        elif isinstance(file_or_mesh, ColoredTriMesh):
+            self.mesh = file_or_mesh
+            if self.title is None:
+                self.title = "unknown"
         else:
-            image = scene.render(interactor.camera)
-
-        if display_fps:
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            bottom_left_corner_of_text = (20, height - 20)
-            font_scale = 1
-            font_color = (0, 0, 255)
-            thickness = 2
-            cv2.putText(
-                image,
-                "fps:%0.1f" % fps,
-                bottom_left_corner_of_text,
-                font,
-                font_scale,
-                font_color,
-                thickness,
+            raise (
+                TypeError(
+                    f"unknown type {type(file_or_mesh)} for input obj_file_or_trimesh,"
+                    " can be string or trimesh.base.Trimesh"
+                )
             )
-        cv2.imshow(windowname, image)
-        stop = time.clock()
-        fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
-        key = cv2.waitKey(1)
-        if key >= 0:
-            if key == ord("r"):
-                # change renderer between DEODR cpu rendering and moderngl
-                use_moderngl = not (use_moderngl)
-                print(f"use_moderngl = {use_moderngl}")
+        self.object_center = 0.5 * (
+            self.mesh.vertices.max(axis=0) + self.mesh.vertices.min(axis=0)
+        )
+        self.object_radius = np.max(
+            self.mesh.vertices.max(axis=0) - self.mesh.vertices.min(axis=0)
+        )
+        self.scene.set_mesh(self.mesh)
 
-                if offscreen_renderer is None:
-                    offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
-                    scene.mesh.compute_vertex_normals()
-                    offscreen_renderer.set_scene(scene)
+    def recenter_camera(self):
+        camera_center = self.object_center + np.array([0, 0, 3]) * self.object_radius
+        rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+        translation = -rotation.T.dot(camera_center)
+        extrinsic = np.column_stack((rotation, translation))
+        focal = 2 * self.width
+        intrinsic = np.array(
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
+        )
 
-            if key == ord("p"):
-                if use_moderngl:
-                    print(
-                        "can only use perspective corect mapping  when using moderngl"
-                    )
-                else:
-                    # toggle perspective correct mapping (texture or interpolation)
-                    scene.perspective_correct = not (scene.perspective_correct)
-                    print(f"perspective_correct = {scene.perspective_correct}")
+        distortion = [0, 0, 0, 0, 0]
+        self.camera = differentiable_renderer.Camera(
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            width=self.width,
+            height=self.height,
+            distortion=distortion,
+        )
 
-            if key == ord("l"):
-                # toggle directional light + ambient vs ambient = 1
-                use_light = not (use_light)
-                print(f"use_light = {use_light}")
-                if use_light:
-                    if use_moderngl:
-                        offscreen_renderer.set_light(
-                            light_directional=np.array(light_directional),
-                            light_ambient=light_ambient,
-                        )
-                    else:
-                        scene.set_light(
-                            light_directional=np.array(light_directional),
-                            light_ambient=light_ambient,
-                        )
-                else:
-                    if use_moderngl:
-                        offscreen_renderer.set_light(
-                            light_directional=(0, 0, 0), light_ambient=1.0,
-                        )
-                    else:
-                        scene.set_light(light_directional=None, light_ambient=1.0)
+        self.interactor = Interactor(
+            camera=self.camera,
+            object_center=self.object_center,
+            z_translation_speed=0.01 * self.object_radius,
+            xy_translation_speed=3e-4,
+        )
 
-            if key == ord("a"):
-                # toggle edge overdraw anti-aliasing
-                if use_moderngl:
-                    print("no anti-alizaing available when using moderngl")
-                else:
-                    use_antiliazing = not (use_antiliazing)
-                    print(f"use_antialiazing = {use_antiliazing}")
-                    if use_antiliazing:
-                        scene.sigma = 1.0
-                    else:
-                        scene.sigma = 0.0
+    def start(self):
+        fps = 0
+        fps_decay = 0.1
+        cv2.namedWindow(self.windowname, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self.windowname, self.width, self.height)
+        cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)
+        while cv2.getWindowProperty(self.windowname, 0) >= 0:
+            # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
+            self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
+            self.resize_camera()
+            start = time.perf_counter()
 
-            if key == ord("s"):
-                filename = os.path.abspath("scene.pickle")
-                # save scene and camera in pickle file
-                with open(filename, "wb") as file:
-                    # dump information to the file
-                    pickle.dump(scene, file)
-                print(f"saved scene in {filename}")
+            if self.use_moderngl:
+                image = self.offscreen_renderer.render(self.camera)
+            else:
+                image = self.scene.render(self.interactor.camera).astype(np.float32)
 
-                filename = os.path.abspath("camera.pickle")
-                print(f"save scene in {filename}")
-                with open(filename, "wb") as file:
-                    # dump information to the file
-                    pickle.dump(camera, file)
-                print(f"saved camera in {filename}")
+            if self.display_fps:
+                self.print_fps(image, fps)
+
+            cv2.imshow(self.windowname, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            stop = time.perf_counter()
+            fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
+            key = cv2.waitKey(1)
+            if key > 0:
+                self.process_key(key)
+
+    def resize_camera(self):
+        focal = 2 * self.width
+        intrinsic = np.array(
+            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
+        )
+        self.camera.intrinsic = intrinsic
+        self.camera.width = self.width
+        self.camera.height = self.height
+
+    def print_fps(self, image, fps):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        bottom_left_corner_of_text = (20, image.shape[0] - 20)
+        font_scale = 1
+        font_color = (0, 0, 255)
+        thickness = 2
+        cv2.putText(
+            image,
+            "fps:%0.1f" % fps,
+            bottom_left_corner_of_text,
+            font,
+            font_scale,
+            font_color,
+            thickness,
+        )
+
+    def print_help(self):
+        help_str = ""
+        help_str += "-----------------\n"
+        help_str += "DEODR Mesh Viewer\n"
+        help_str += "-----------------\n"
+        help_str += "Keys:\n"
+        help_str += "h: print this help\n"
+        help_str += "r: toggle renderer between DEODR cpu rendering and moderngl\n"
+        help_str += "p: toggle between linear texture mapping and perspective correct texture mapping\n"
+        help_str += "l: toggle between uniform lighting vs directional + ambient\n"
+        help_str += "a: toggle edge overdraw anti-aliasing (DEODR renderin only)\n"
+        help_str += "s: save scene and camera in a pickle file\n"
+        help_str += "t: change camera trackball mode\n"
+        print(help_str)
+        self.interactor.print_help()
+
+    def toggle_renderer(self):
+        # Switch renderer between DEODR cpu rendering and moderngl
+        self.use_moderngl = not (self.use_moderngl)
+        print(f"use_moderngl = { self.use_moderngl}")
+
+        if self.use_moderngl and self.offscreen_renderer is None:
+            self.setup_moderngl()
+
+    def toggle_perspective_texture_mapping(self):
+        # Switch between linear texture mapping and perspective correct texture mapping
+        if self.use_moderngl:
+            print("can only use perspective correct mapping  when using moderngl")
+        else:
+            # toggle perspective correct mapping (texture or interpolation)
+            self.scene.perspective_correct = not (self.scene.perspective_correct)
+            print(f"perspective_correct = {self.scene.perspective_correct}")
+
+    def toggle_lights(self):
+        # toggle directional light + ambient vs ambient = 1
+        self.use_light = not (self.use_light)
+        print(f"use_light = { self.use_light}")
+
+        if self.use_light:
+            if self.use_moderngl:
+                self.offscreen_renderer.set_light(
+                    light_directional=np.array(self.light_directional),
+                    light_ambient=self.light_ambient,
+                )
+            else:
+                self.scene.set_light(
+                    light_directional=np.array(self.light_directional),
+                    light_ambient=self.light_ambient,
+                )
+        else:
+            if self.use_moderngl:
+                self.offscreen_renderer.set_light(
+                    light_directional=(0, 0, 0),
+                    light_ambient=1.0,
+                )
+            else:
+                self.scene.set_light(light_directional=None, light_ambient=1.0)
+
+    def toggle_edge_overdraw_antialiasing(self):
+        # toggle edge overdraw anti-aliasing
+        if self.use_moderngl:
+            print("no anti-aliasing available when using moderngl")
+        else:
+            self.use_antialiasing = not (self.use_antialiasing)
+            print(f"use_antialiasing = {self.use_antialiasing}")
+            if self.use_antialiasing:
+                self.scene.sigma = 1.0
+            else:
+                self.scene.sigma = 0.0
+
+    def pickle_scene_and_cameras(self):
+        filename = os.path.abspath("scene.pickle")
+        # save scene and camera in pickle file
+        with open(filename, "wb") as file:
+            # dump information to the file
+            pickle.dump(self.scene, file)
+        print(f"saved scene in {filename}")
+
+        filename = os.path.abspath("camera.pickle")
+        print(f"save scene in {filename}")
+        with open(filename, "wb") as file:
+            # dump information to the file
+            pickle.dump(self.camera, file)
+        print(f"saved camera in {filename}")
+
+    def process_key(self, key):
+        if key == ord("r"):
+            self.toggle_renderer()
+
+        if key == ord("p"):
+            self.toggle_perspective_texture_mapping()
+
+        if key == ord("l"):
+            self.toggle_lights()
+
+        if key == ord("a"):
+            self.toggle_edge_overdraw_antialiasing()
+
+        if key == ord("s"):
+            self.pickle_scene_and_cameras()
+
+        if key == ord("h"):
+            self.print_help()
+
+        if key == ord("t"):
+            self.interactor.toggle_mode()
+            self.interactor.print_help()
 
 
 def run():
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    mesh_viewer(obj_file, use_moderngl=False)
+    Viewer(obj_file, use_moderngl=False).start()
 
 
 if __name__ == "__main__":
@@ -366,4 +499,4 @@ if __name__ == "__main__":
     parser.add_argument("mesh_file", type=str, nargs="?", default=duck_file)
     args = parser.parse_args()
     mesh_file = args.mesh_file
-    mesh_viewer(mesh_file, use_moderngl=True)
+    Viewer(mesh_file, use_moderngl=True).start()
