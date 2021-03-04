@@ -190,17 +190,15 @@ class Interactor:
             help_str += "CTRL + mouse left + vertical motion: translate object along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate object along camera x axis\n"
 
-            help_str += (
-                "SHIFT + mouse left + vertical motion: change the camera field of view\n"
-            )
+            help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
         else:
-            help_str += "mouse right + vertical motion: translate camera along its z axis\n"
+            help_str += (
+                "mouse right + vertical motion: translate camera along its z axis\n"
+            )
             help_str += (
                 "mouse right + horizontal motion: rotate camera along its z axis\n"
             )
-            help_str += (
-                "mouse left + vertical motion: rotate camera along its x axis\n"
-            )
+            help_str += "mouse left + vertical motion: rotate camera along its x axis\n"
             help_str += (
                 "mouse left + horizontal motion: rotate camera along its y axis\n"
             )
@@ -243,6 +241,8 @@ class Viewer:
         self.fps_exp_average_decay = fps_exp_average_decay
         self.last_time = None
         self.horizontal_fov = horizontal_fov
+        self.video_writer = None
+        self.recording = False
 
         if display_texture_map:
             self.display_texture_map()
@@ -368,13 +368,25 @@ class Viewer:
         if self.use_moderngl:
             image = self.offscreen_renderer.render(self.camera)
         else:
-            image = self.scene.render(self.interactor.camera).astype(np.float32)
+            image = (self.scene.render(self.interactor.camera) * 255).astype(np.uint8)
+
+        bgr_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        if self.recording:
+            self.video_writer.write(bgr_image.astype(np.uint8))
 
         self.update_fps()
+        if self.recording:
+            cv2.circle(
+                bgr_image,
+                (image.shape[1] - 20, image.shape[0] - 20),
+                8,
+                (0, 0, 255),
+                cv2.FILLED,
+            )
         if self.display_fps:
-            self.print_fps(image, self.fps)
+            self.print_fps(bgr_image, self.fps)
 
-        cv2.imshow(self.windowname, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        cv2.imshow(self.windowname, bgr_image)
 
         key = cv2.waitKey(1)
         if key > 0:
@@ -439,7 +451,7 @@ class Viewer:
             print(f"perspective_correct = {self.scene.perspective_correct}")
 
     def toggle_lights(self):
-        """Toggle between uniform lighting vs directional + ambient"""
+        """Toggle between uniform lighting vs directional + ambient."""
         self.use_light = not (self.use_light)
         print(f"use_light = { self.use_light}")
 
@@ -464,7 +476,7 @@ class Viewer:
                 self.scene.set_light(light_directional=None, light_ambient=1.0)
 
     def toggle_edge_overdraw_antialiasing(self):
-        """Toggle edge overdraw anti-aliasing (DEODR renderin only)."""
+        """Toggle edge overdraw anti-aliasing (DEODR rendering only)."""
         if self.use_moderngl:
             print("no anti-aliasing available when using moderngl")
         else:
@@ -496,6 +508,22 @@ class Viewer:
         self.interactor.toggle_mode()
         self.interactor.print_help()
 
+    def toggle_video_recording(self):
+        """Start and stop video recording."""
+        if not self.recording:
+            id = 0
+            while os.path.exists(f"deodr_viewer_recording{id}.avi"):
+                id += 1
+            filename = f"deodr_viewer_recording{id}.avi"
+
+            self.video_writer = cv2.VideoWriter(
+                filename, cv2.VideoWriter_fourcc(*"MJPG"), 30, (self.width, self.height)
+            )
+            self.recording = True
+        else:
+            self.video_writer.release()
+            self.recording = False
+
     def register_keys(self):
         self.keys_map = {}
         self.register_key("h", self.print_help)
@@ -503,7 +531,8 @@ class Viewer:
         self.register_key("p", self.toggle_perspective_texture_mapping)
         self.register_key("l", self.toggle_lights)
         self.register_key("a", self.toggle_edge_overdraw_antialiasing)
-        self.register_key("s", self.pickle_scene_and_cameras)
+        self.register_key("d", self.pickle_scene_and_cameras)
+        self.register_key("s", self.toggle_video_recording)
         self.register_key("t", self.toggle_interactor_mode)
 
     def register_key(self, key, func):
