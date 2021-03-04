@@ -4,6 +4,7 @@ import argparse
 import os
 import time
 import pickle
+from typing import OrderedDict
 
 import cv2
 
@@ -173,8 +174,8 @@ class Interactor:
 
     def print_help(self):
         help_str = ""
+        help_str += "Mouse:\n"
         if self.mode == "object_centered_trackball":
-            help_str += "Trackball:\n"
             help_str += "mouse right + vertical motion = move in/out\n"
             help_str += (
                 "mouse right + horizontal motion = rotate object along camera z axis\n"
@@ -188,7 +189,6 @@ class Interactor:
             help_str += "CTRL + mouse left + vertical motion = translate object along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion = translate object along camera x axis\n"
         else:
-            help_str += "Trackball:\n"
             help_str += "mouse right + vertical motion = move in/out\n"
             help_str += (
                 "mouse right + horizontal motion = rotate camera along camera z axis\n"
@@ -220,7 +220,7 @@ class Viewer:
         background_color=(1, 1, 1),
         use_antialiasing=True,
         use_light=True,
-        print_help=True,
+        fps_exp_average_decay=0.1,
     ):
         self.title = title
         self.scene = differentiable_renderer.Scene3D(sigma=1)
@@ -233,7 +233,8 @@ class Viewer:
         self.use_moderngl = use_moderngl
         self.use_antialiasing = use_antialiasing
         self.use_light = use_light
-
+        self.fps_exp_average_decay = fps_exp_average_decay
+        self.last_time = None
         if display_texture_map:
             self.display_texture_map()
 
@@ -246,8 +247,7 @@ class Viewer:
         else:
             self.offscreen_renderer = None
 
-        if print_help:
-            self.print_help()
+        self.register_keys()
 
     def set_light(self, light_directional, light_ambient):
         self.light_directional = np.array(light_directional)
@@ -327,32 +327,49 @@ class Viewer:
             xy_translation_speed=3e-4,
         )
 
-    def start(self):
-        fps = 0
-        fps_decay = 0.1
+    def start(self, print_help=True, loop=True):
+        """Open the window and start the loop if loop true."""
+        if print_help:
+            self.print_help()
+        self.fps = 0
         cv2.namedWindow(self.windowname, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowname, self.width, self.height)
         cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)
-        while cv2.getWindowProperty(self.windowname, 0) >= 0:
-            # mesh.set_vertices(mesh.vertices+np.random.randn(*mesh.vertices.shape)*0.001)
-            self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
-            self.resize_camera()
-            start = time.perf_counter()
+        if loop:
+            while cv2.getWindowProperty(self.windowname, 0) >= 0:               
+                self.refresh()
 
-            if self.use_moderngl:
-                image = self.offscreen_renderer.render(self.camera)
-            else:
-                image = self.scene.render(self.interactor.camera).astype(np.float32)
+    def update_fps(self):
+        new_time = time.perf_counter()
+        if self.last_time is None:
+            self.fps = 0
+        elif self.fps == 0:
+            self.fps = 1 / (new_time - self.last_time)
+        else:
+            new_fps = 1 / (new_time - self.last_time)
+            self.fps = (
+                1 - self.fps_exp_average_decay
+            ) * self.fps + self.fps_exp_average_decay * new_fps
+        self.last_time = new_time
 
-            if self.display_fps:
-                self.print_fps(image, fps)
+    def refresh(self):
+        self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
+        self.resize_camera()
 
-            cv2.imshow(self.windowname, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-            stop = time.perf_counter()
-            fps = (1 - fps_decay) * fps + fps_decay * (1 / (stop - start))
-            key = cv2.waitKey(1)
-            if key > 0:
-                self.process_key(key)
+        if self.use_moderngl:
+            image = self.offscreen_renderer.render(self.camera)
+        else:
+            image = self.scene.render(self.interactor.camera).astype(np.float32)
+
+        self.update_fps()
+        if self.display_fps:
+            self.print_fps(image, self.fps)
+
+        cv2.imshow(self.windowname, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        key = cv2.waitKey(1)
+        if key > 0:
+            self.process_key(key)
 
     def resize_camera(self):
         focal = 2 * self.width
@@ -380,23 +397,19 @@ class Viewer:
         )
 
     def print_help(self):
+        """Print the help message."""
         help_str = ""
         help_str += "-----------------\n"
         help_str += "DEODR Mesh Viewer\n"
         help_str += "-----------------\n"
         help_str += "Keys:\n"
-        help_str += "h: print this help\n"
-        help_str += "r: toggle renderer between DEODR cpu rendering and moderngl\n"
-        help_str += "p: toggle between linear texture mapping and perspective correct texture mapping\n"
-        help_str += "l: toggle between uniform lighting vs directional + ambient\n"
-        help_str += "a: toggle edge overdraw anti-aliasing (DEODR renderin only)\n"
-        help_str += "s: save scene and camera in a pickle file\n"
-        help_str += "t: change camera trackball mode\n"
+        for key, func in self.keys_map.items():
+            help_str += f"{key}: {func.__doc__}\n"
         print(help_str)
         self.interactor.print_help()
 
     def toggle_renderer(self):
-        # Switch renderer between DEODR cpu rendering and moderngl
+        """Toggle the renderer between DEODR cpu rendering and moderngl."""
         self.use_moderngl = not (self.use_moderngl)
         print(f"use_moderngl = { self.use_moderngl}")
 
@@ -404,16 +417,15 @@ class Viewer:
             self.setup_moderngl()
 
     def toggle_perspective_texture_mapping(self):
-        # Switch between linear texture mapping and perspective correct texture mapping
+        """Toggle between linear texture mapping and perspective correct texture mapping."""
         if self.use_moderngl:
             print("can only use perspective correct mapping  when using moderngl")
         else:
-            # toggle perspective correct mapping (texture or interpolation)
             self.scene.perspective_correct = not (self.scene.perspective_correct)
             print(f"perspective_correct = {self.scene.perspective_correct}")
 
     def toggle_lights(self):
-        # toggle directional light + ambient vs ambient = 1
+        """Toggle between uniform lighting vs directional + ambient"""
         self.use_light = not (self.use_light)
         print(f"use_light = { self.use_light}")
 
@@ -438,7 +450,7 @@ class Viewer:
                 self.scene.set_light(light_directional=None, light_ambient=1.0)
 
     def toggle_edge_overdraw_antialiasing(self):
-        # toggle edge overdraw anti-aliasing
+        """Toggle edge overdraw anti-aliasing (DEODR renderin only)."""
         if self.use_moderngl:
             print("no anti-aliasing available when using moderngl")
         else:
@@ -450,6 +462,7 @@ class Viewer:
                 self.scene.sigma = 0.0
 
     def pickle_scene_and_cameras(self):
+        """Save scene and camera in a pickle file."""
         filename = os.path.abspath("scene.pickle")
         # save scene and camera in pickle file
         with open(filename, "wb") as file:
@@ -464,28 +477,30 @@ class Viewer:
             pickle.dump(self.camera, file)
         print(f"saved camera in {filename}")
 
+    def toggle_interactor_mode(self):
+        """Change the camera interactor mode."""
+        self.interactor.toggle_mode()
+        self.interactor.print_help()
+
+    def register_keys(self):
+        self.keys_map = {}
+        self.register_key("h", self.print_help)
+        self.register_key("r", self.toggle_renderer)
+        self.register_key("p", self.toggle_perspective_texture_mapping)
+        self.register_key("l", self.toggle_lights)
+        self.register_key("a", self.toggle_edge_overdraw_antialiasing)
+        self.register_key("s", self.pickle_scene_and_cameras)
+        self.register_key("t", self.toggle_interactor_mode)
+
+    def register_key(self, key, func):
+        self.keys_map[key] = func
+
     def process_key(self, key):
-        if key == ord("r"):
-            self.toggle_renderer()
-
-        if key == ord("p"):
-            self.toggle_perspective_texture_mapping()
-
-        if key == ord("l"):
-            self.toggle_lights()
-
-        if key == ord("a"):
-            self.toggle_edge_overdraw_antialiasing()
-
-        if key == ord("s"):
-            self.pickle_scene_and_cameras()
-
-        if key == ord("h"):
-            self.print_help()
-
-        if key == ord("t"):
-            self.interactor.toggle_mode()
-            self.interactor.print_help()
+        chr_key = chr(key)
+        if chr_key in self.keys_map:
+            self.keys_map[chr(key)]()
+        else:
+            print(f"no function registered for key {chr_key}")
 
 
 def run():
