@@ -562,7 +562,7 @@ class Scene2D(Scene2DBase):
 
         if not self.backface_culling:
             raise BaseException(
-                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge anti-aliasing."
             )
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
@@ -598,7 +598,7 @@ class Scene2D(Scene2DBase):
             )
         if not self.backface_culling:
             raise BaseException(
-                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge antialiazing."
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge anti-aliasing."
             )
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
