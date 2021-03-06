@@ -78,11 +78,11 @@ class MeshDepthFitter:
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 2
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None, distortion=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 2
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
@@ -135,9 +135,9 @@ class MeshDepthFitter:
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
         depth = self.render()
 
-        diff_image = np.sum((depth - self.hand_image[:, :, None]) ** 2, axis=2)
+        diff_image = np.sum((depth - self.mesh_image[:, :, None]) ** 2, axis=2)
         energy_data = np.sum(diff_image)
-        depth_b = 2 * (depth - self.hand_image[:, :, None])
+        depth_b = 2 * (depth - self.mesh_image[:, :, None])
         self.render_backward(depth_b)
 
         self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
@@ -258,19 +258,19 @@ class MeshRGBFitterWithPose:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.hand_color = copy.copy(self.default_color)
+        self.mesh_color = copy.copy(self.default_color)
         self.light_directional = copy.copy(self.default_light["directional"])
         self.light_ambient = copy.copy(self.default_light["ambient"])
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
-        self.speed_hand_color = np.zeros(self.hand_color.shape)
+        self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 3
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None, distortion=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 3
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -301,7 +301,7 @@ class MeshRGBFitterWithPose:
             light_directional=self.light_directional, light_ambient=self.light_ambient
         )
         self.mesh.set_vertices_colors(
-            np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
+            np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
         )
         image = self.scene.render(self.camera)
         return image
@@ -309,7 +309,7 @@ class MeshRGBFitterWithPose:
     def render_backward(self, image_b):
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
-        self.hand_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
+        self.mesh_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b = self.scene.light_directional_b
         self.light_ambient_b = self.scene.light_ambient_b
         vertices_transformed_b = self.scene.mesh.vertices_b
@@ -328,8 +328,8 @@ class MeshRGBFitterWithPose:
 
         image = self.render()
 
-        diff_image = np.sum((image - self.hand_image) ** 2, axis=2)
-        image_b = 2 * (image - self.hand_image)
+        diff_image = np.sum((image - self.mesh_image) ** 2, axis=2)
+        image_b = 2 * (image - self.mesh_image)
         energy_data = np.sum(diff_image)
 
         (
@@ -394,12 +394,12 @@ class MeshRGBFitterWithPose:
             self.speed_light_ambient * inertia + (1 - inertia) * step
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
-        # update hand color
-        step = -self.hand_color_b * 0.00001
-        self.speed_hand_color = (1 - self.damping) * (
-            self.speed_hand_color * inertia + (1 - inertia) * step
+        # update mesh color
+        step = -self.mesh_color_b * 0.00001
+        self.speed_mesh_color = (1 - self.damping) * (
+            self.speed_mesh_color * inertia + (1 - inertia) * step
         )
-        self.hand_color = self.hand_color + self.speed_hand_color
+        self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
         return energy, image, diff_image
@@ -469,19 +469,19 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.hand_color = copy.copy(self.default_color)
+        self.mesh_color = copy.copy(self.default_color)
         self.light_directional = copy.copy(self.default_light["directional"])
         self.light_ambient = copy.copy(self.default_light["ambient"])
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
-        self.speed_hand_color = np.zeros(self.hand_color.shape)
+        self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_images(self, hand_images, focal=None):
-        self.width = hand_images[0].shape[1]
-        self.height = hand_images[0].shape[0]
-        assert hand_images[0].ndim == 3
-        self.hand_images = hand_images
+    def set_images(self, mesh_images, focal=None):
+        self.width = mesh_images[0].shape[1]
+        self.height = mesh_images[0].shape[0]
+        assert mesh_images[0].ndim == 3
+        self.mesh_images = mesh_images
         if focal is None:
             focal = 2 * self.width
 
@@ -499,11 +499,11 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.iter = 0
 
-    def set_image(self, hand_image, focal=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 3
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 3
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -534,7 +534,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             light_directional=self.light_directional, light_ambient=self.light_ambient
         )
         self.mesh.set_vertices_colors(
-            np.tile(self.hand_color, (self.mesh.nb_vertices, 1))
+            np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
         )
         image = self.scene.render(self.camera)
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
@@ -546,14 +546,14 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.vertices_b = np.zeros(self.vertices.shape)
         self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
         self.transform_translation_b = np.zeros(self.transform_translation.shape)
-        self.hand_color_b = np.zeros(self.hand_color.shape)
+        self.mesh_color_b = np.zeros(self.mesh_color.shape)
         self.store_backward = {}
 
     def render_backward(self, image_b):
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
-        self.hand_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
+        self.mesh_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b += self.scene.light_directional_b
         self.light_ambient_b += self.scene.light_ambient_b
         vertices_transformed_b = self.scene.mesh.vertices_b
@@ -578,9 +578,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         for idframe in range(self.nb_facesrames):
             image[idframe] = self.render(idframe=idframe)
             diff_image[idframe] = np.sum(
-                (image[idframe] - self.hand_images[idframe]) ** 2, axis=2
+                (image[idframe] - self.mesh_images[idframe]) ** 2, axis=2
             )
-            image_b = coef_data * 2 * (image[idframe] - self.hand_images[idframe])
+            image_b = coef_data * 2 * (image[idframe] - self.mesh_images[idframe])
             energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
             self.render_backward(image_b)
         energy_data = np.sum(energy_datas)
@@ -593,7 +593,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
-        self.nb_facesrames = len(self.hand_images)
+        self.nb_facesrames = len(self.mesh_images)
 
         energy_data, image, diff_image = self.energy_data(self.vertices)
         (
@@ -681,12 +681,12 @@ class MeshRGBFitterWithPoseMultiFrame:
             self.speed_light_ambient * inertia + (1 - inertia) * step
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
-        # update hand color
-        step = -self.hand_color_b * 0.00001
-        self.speed_hand_color = (1 - self.damping) * (
-            self.speed_hand_color * inertia + (1 - inertia) * step
+        # update mesh color
+        step = -self.mesh_color_b * 0.00001
+        self.speed_mesh_color = (1 - self.damping) * (
+            self.speed_mesh_color * inertia + (1 - inertia) * step
         )
-        self.hand_color = self.hand_color + self.speed_hand_color
+        self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
         return energy, image, diff_image
