@@ -28,7 +28,7 @@ class MeshDepthFitter:
         translation_init,
         cregu=2000,
         inertia=0.96,
-        damping=0.05
+        damping=0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -109,7 +109,8 @@ class MeshDepthFitter:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_clipped = self.scene.render_depth(
-            self.camera, depth_scale=self.depthScale,
+            self.camera,
+            depth_scale=self.depthScale,
         )
         depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
         return depth
@@ -266,11 +267,13 @@ class MeshRGBFitterWithPose:
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_hand_color = np.zeros(self.hand_color.shape)
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 3
-        self.hand_image = hand_image
+    def set_image(self, image, focal=None, distortion=None):
+        assert image.dtype == np.float
+        assert image.max() <= 1
+        self.width = image.shape[1]
+        self.height = image.shape[0]
+        assert image.ndim == 3
+        self.target_image = image
         if focal is None:
             focal = 2 * self.width
 
@@ -288,6 +291,9 @@ class MeshRGBFitterWithPose:
             height=self.height,
         )
         self.iter = 0
+
+    def set_camera(self, camera):
+        self.camera = camera
 
     def render(self):
         q_normalized = normalize(
@@ -328,8 +334,8 @@ class MeshRGBFitterWithPose:
 
         image = self.render()
 
-        diff_image = np.sum((image - self.hand_image) ** 2, axis=2)
-        image_b = 2 * (image - self.hand_image)
+        diff_image = np.sum((image - self.target_image) ** 2, axis=2)
+        image_b = 2 * (image - self.target_image)
         energy_data = np.sum(diff_image)
 
         (

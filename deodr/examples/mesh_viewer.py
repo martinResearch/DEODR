@@ -228,12 +228,16 @@ class Viewer:
         horizontal_fov=60,
         video_pattern="deodr_viewer_recording{id}.avi",
         video_format="MJPG",
+        resizable=True,
+        windowname=None
     ):
         self.title = title
         self.scene = differentiable_renderer.Scene3D(sigma=1)
         self.set_mesh(file_or_mesh)
-        self.windowname = f"DEODR mesh viewer:{self.title}"
-
+        if windowname is None:
+            self.windowname = f"DEODR mesh viewer:{self.title}"
+        else:
+            self.windowname = windowname
         self.width = width
         self.height = height
         self.display_fps = display_fps
@@ -247,6 +251,7 @@ class Viewer:
         self.recording = False
         self.video_pattern = video_pattern
         self.video_format = video_format
+        self.resizable = resizable
 
         if display_texture_map:
             self.display_texture_map()
@@ -345,8 +350,11 @@ class Viewer:
         if print_help:
             self.print_help()
         self.fps = 0
-        cv2.namedWindow(self.windowname, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.windowname, self.width, self.height)
+        if self.resizable:
+            cv2.namedWindow(self.windowname, cv2.WINDOW_NORMAL)
+        else:
+            cv2.namedWindow(self.windowname)
+        cv2.resizeWindow(self.windowname, self.width, self.height)        
         cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)
         if loop:
             while cv2.getWindowProperty(self.windowname, 0) >= 0:
@@ -365,15 +373,18 @@ class Viewer:
             ) * self.fps + self.fps_exp_average_decay * new_fps
         self.last_time = new_time
 
-    def refresh(self):
-        self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
-        self.resize_camera()
-
+    def get_image(self):
         if self.use_moderngl:
             image = self.offscreen_renderer.render(self.camera)
         else:
             image = (self.scene.render(self.interactor.camera) * 255).astype(np.uint8)
+        return image
 
+    def refresh(self):
+        self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
+        self.resize_camera()
+
+        image = self.get_image()
         bgr_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.recording:

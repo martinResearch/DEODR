@@ -292,6 +292,8 @@ class ColoredTriMesh(TriMesh):
                 self.nb_colors = texture.shape[2]
 
     def set_vertices_colors(self, colors):
+        assert colors.ndim == 2
+        assert colors.shape == (self.nb_vertices, 3)
         self.vertices_colors = colors
 
     def plot_uv_map(self, ax):

@@ -814,7 +814,7 @@ class Scene3D:
 
         if (self.background_image is None) == (self.background_color is None):
             raise BaseException(
-                "You need to provide either a background image or background color"
+                "You need to provide either a background image or background color."
             )
 
         points_2d, depths = camera.project_points(

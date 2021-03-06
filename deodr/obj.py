@@ -22,11 +22,11 @@ def read_obj(filename):
         while line.endswith("\\"):
             # Remove backslash and concatenate with next line
             line = line[:-1] + fid.readline()
-        if line.startswith("v"):
+        if line.startswith("v "):
             coord = line.split()
             coord.pop(0)
             node_counter += 1
-            vertices.append(np.array([float(c) for c in coord]))
+            vertices.append(np.array([float(c) for c in coord[:3]]))
 
         elif line.startswith("f "):
             fields = line.split()
