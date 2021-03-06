@@ -71,11 +71,11 @@ class MeshDepthFitterEnergy(torch.nn.Module):
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 2
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None, distortion=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 2
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -105,7 +105,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         )
         depth = torch.clamp(depth, 0, self.scene.max_depth)
         diff_image = torch.sum(
-            (depth - torch.tensor(self.hand_image[:, :, None])) ** 2, dim=2
+            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
         )
         self.depth = depth
         self.diff_image = diff_image
@@ -223,11 +223,11 @@ class MeshDepthFitter:
     def set_depth_scale(self, depth_scale):
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 2
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None, distortion=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 2
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -274,7 +274,7 @@ class MeshDepthFitter:
         depth = torch.clamp(depth, 0, self.scene.max_depth)
 
         diff_image = torch.sum(
-            (depth - torch.tensor(self.hand_image[:, :, None])) ** 2, dim=2
+            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
         )
         loss = torch.sum(diff_image)
 
@@ -400,19 +400,19 @@ class MeshRGBFitterWithPose:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.hand_color = copy.copy(self.default_color)
+        self.mesh_color = copy.copy(self.default_color)
         self.light_directional = copy.copy(self.default_light["directional"])
         self.light_ambient = copy.copy(self.default_light["ambient"])
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
-        self.speed_hand_color = np.zeros(self.hand_color.shape)
+        self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 3
-        self.hand_image = hand_image
+    def set_image(self, mesh_image, focal=None, distortion=None):
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 3
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -450,8 +450,8 @@ class MeshRGBFitterWithPose:
         light_ambient_with_grad = torch.tensor(
             self.light_ambient, dtype=torch.float64, requires_grad=True
         )
-        hand_color_with_grad = torch.tensor(
-            self.hand_color, dtype=torch.float64, requires_grad=True
+        mesh_color_with_grad = torch.tensor(
+            self.mesh_color, dtype=torch.float64, requires_grad=True
         )
 
         q_normalized = (
@@ -467,12 +467,12 @@ class MeshRGBFitterWithPose:
             light_ambient=light_ambient_with_grad,
         )
         self.mesh.set_vertices_colors(
-            hand_color_with_grad.repeat([self.mesh.nb_vertices, 1])
+            mesh_color_with_grad.repeat([self.mesh.nb_vertices, 1])
         )
 
         image = self.scene.render(self.camera)
 
-        diff_image = torch.sum((image - torch.tensor(self.hand_image)) ** 2, dim=2)
+        diff_image = torch.sum((image - torch.tensor(self.mesh_image)) ** 2, dim=2)
         loss = torch.sum(diff_image)
 
         loss.backward()
@@ -540,12 +540,12 @@ class MeshRGBFitterWithPose:
             self.speed_light_ambient * inertia + (1 - inertia) * step
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
-        # update hand color
-        step = -hand_color_with_grad.grad.numpy() * 0.00001
-        self.speed_hand_color = (1 - self.damping) * (
-            self.speed_hand_color * inertia + (1 - inertia) * step
+        # update mesh color
+        step = -mesh_color_with_grad.grad.numpy() * 0.00001
+        self.speed_mesh_color = (1 - self.damping) * (
+            self.speed_mesh_color * inertia + (1 - inertia) * step
         )
-        self.hand_color = self.hand_color + self.speed_hand_color
+        self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
         return energy, image.detach().numpy(), diff_image.detach().numpy()
