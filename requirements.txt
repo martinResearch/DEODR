@@ -4,7 +4,7 @@ scikit-learn
 matplotlib==3.3.4
 Cython==0.29.22
 imageio==2.9.0
-trimesh==3.9.8
+trimesh==3.9.10
 opencv-python==4.5.1.48
 torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.8.2  -f https://download.pytorch.org/whl/torch_stable.html
