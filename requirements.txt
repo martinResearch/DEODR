@@ -1,7 +1,7 @@
 numpy==1.19.5
 scipy==1.5.4
 scikit-learn
-matplotlib==3.3.4
+matplotlib==3.4.0
 Cython==0.29.22
 imageio==2.9.0
 trimesh==3.9.8
