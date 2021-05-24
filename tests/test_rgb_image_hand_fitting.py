@@ -37,7 +37,7 @@ def test_rgb_image_hand_fitting_tensorflow():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 2107.0089187104204) < 1
+    assert abs(energies[49] - 2115.9320061795634) < 1
 
 
 if __name__ == "__main__":
