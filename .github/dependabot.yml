@@ -1,0 +1,48 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: trimesh
+    versions:
+    - 3.9.10
+    - 3.9.11
+    - 3.9.12
+    - 3.9.13
+    - 3.9.14
+    - 3.9.3
+    - 3.9.5
+    - 3.9.9
+  - dependency-name: matplotlib
+    versions:
+    - 3.4.0
+  - dependency-name: scipy
+    versions:
+    - 1.6.0
+    - 1.6.1
+    - 1.6.2
+  - dependency-name: flake8
+    versions:
+    - 3.9.0
+  - dependency-name: radon
+    versions:
+    - 4.4.0
+  - dependency-name: torch
+    versions:
+    - 1.8.0
+  - dependency-name: torchvision
+    versions:
+    - 0.9.0
+  - dependency-name: numpy
+    versions:
+    - 1.20.0
+    - 1.20.1
+  - dependency-name: pyrender
+    versions:
+    - 0.1.44
+  - dependency-name: moderngl
+    versions:
+    - 5.6.3
