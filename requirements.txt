@@ -2,12 +2,12 @@ numpy==1.19.5
 scipy==1.5.4
 scikit-learn
 matplotlib==3.3.4
-Cython==0.29.22
+Cython==0.29.23
 imageio==2.9.0
-trimesh==3.9.8
-opencv-python==4.5.1.48
-torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.8.2  -f https://download.pytorch.org/whl/torch_stable.html
+trimesh==3.9.19
+opencv-python==4.5.2.52
+torch==1.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.9.1  -f https://download.pytorch.org/whl/torch_stable.html
 tensorflow==2.5.0
 moderngl==5.6.4
 pyrr==0.10.3
@@ -15,6 +15,6 @@ pyrender==0.1.45
 pytest-xvfb==2.0.0
 flake8==3.8.4
 flake8-quotes==3.2.0
-radon==4.3.2
+radon==4.5.2
 
 
