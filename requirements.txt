@@ -10,7 +10,6 @@ torch==1.7.1 -f https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.8.2  -f https://download.pytorch.org/whl/torch_stable.html
 tensorflow==2.4.0
 moderngl==5.6.4
-pyrr==0.10.3
 pyrender==0.1.45
 pytest-xvfb==2.0.0
 flake8==3.8.4

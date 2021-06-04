@@ -7,8 +7,6 @@ import moderngl
 
 import numpy as np
 
-from pyrr import Matrix44
-
 from . import shaders as opengl_shaders
 
 
@@ -123,20 +121,22 @@ class OffscreenRenderer:
     def set_camera(self, camera):
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
 
-        intrinsic = Matrix44(
-            np.diag([1, -1, -1, 1]).dot(
-                opencv_to_opengl_perspective(camera, self.znear, self.zfar)
-            )
+        intrinsic = np.diag([1, -1, -1, 1]).dot(
+            opencv_to_opengl_perspective(camera, self.znear, self.zfar)
         )
-
-        #
 
         self.shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         self.shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:
             k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
         else:
-            k1, k2, p1, p2, k3, = camera.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = camera.distortion
         self.shader_program["k1"].value = k1
         self.shader_program["k2"].value = k2
         self.shader_program["k3"].value = k3
