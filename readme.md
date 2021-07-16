@@ -136,6 +136,17 @@ Our code provides two methods to handle discontinuities at the occlusion boundar
 The choice of the method is done through the Boolean parameter *antialiaseError*. Both approaches lead to a differentiable error function after summation of the residuals over the pixels and both lead to similar gradients. The difference is subtle and is only noticeable at the borders after convergence on synthetic antialiased data. The first methods can potentially provide more flexibility for the design of the error function as one can for example use a non-local image loss by comparing image moments instead of comparing pixel per pixel.
 
 **Note:** In order to keep the code minimal and well documented, I decided not to provide here the Matlab code to model the articulated hand and the code to update the texture image from observation used in [1]. The hand fitting example provided here does not relies on a underlying skeleton but on a regularization term that penalizes non-rigid deformations. Some Matlab code for Linear Blend Skinning can be found [here](http://uk.mathworks.com/matlabcentral/fileexchange/43039-linear-blend-skinning/). Using a Matlab implementation of the skinning equations would allow the use of the Matlab automatic differentiation toolbox provided [here](https://github.com/martinResearch/MatlabAutoDiff) to compute the Jacobian of the vertices positions with respect to the hand pose parameters.
+
+# Conventions
+
+- Pixel coordinates: 
+ Pixel centers are at integer coordinates with upper left at (0, 0), upper right at (width - 1, 0), lower left at (0, height - 1) and lower right at  (width - 1, height - 1)
+
+
+- Texel (texture pixel) center are at integer coordinates : 
+The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled as float position (0.0,0.0) is texture[0, 0]
+
+
 # TO DO
 
 * add support for multiple meshes in the scene

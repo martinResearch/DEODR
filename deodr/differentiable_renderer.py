@@ -502,6 +502,14 @@ class Scene2D(Scene2DBase):
         strict_edge=True,
         perspective_correct=False,
     ):
+        """
+        Conventions:
+        Pixel centers are at integer coordinates with
+            upper left at (0, 0)
+            upper right at (width - 1, 0)
+            lower left at (0, height - 1)
+            lower right at  (width - 1, height - 1)
+        """
         self.faces = faces
         self.faces_uv = faces_uv
         self.ij = ij
