@@ -71,12 +71,15 @@ add the decompressed folder in your matlab path
 ## Iterative Mesh fitting in Python 
  
 Example of fitting a hand mesh to a depth sensor image [*deodr/examples/depth_image_hand_fitting.py*](deodr/examples/depth_image_hand_fitting.py)
+
  ![animation](./images/python_depth_hand.gif)
 
 Example of fitting a hand mesh to a RGB sensor image [*deodr/examples/rgb_image_hand_fitting.py*](deodr/examples/rgb_image_hand_fitting.py)
+
  ![animation](./images/python_rgb_hand.gif)
 
 Example of fitting a hand mesh to several RGB sensor images [*deodr/examples/rgb_multiview_hand.py*](deodr/examples/rgb_multiview_hand.py)
+
  ![animation](./images/multiview.gif)
 
 
@@ -139,12 +142,15 @@ The choice of the method is done through the Boolean parameter *antialiaseError*
 
 # Conventions
 
-- Pixel coordinates: 
- Pixel centers are at integer coordinates with upper left at (0, 0), upper right at (width - 1, 0), lower left at (0, height - 1) and lower right at  (width - 1, height - 1)
+ * Pixel coordinates: 
+
+   Pixel centers are at integer coordinates with upper left at (0, 0), upper right at (width - 1, 0), lower left at (0, height - 1) and lower right at  (width - 1, height - 1)
 
 
-- Texel (texture pixel) center are at integer coordinates : 
-The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled as float position (0.0,0.0) is texture[0, 0]
+* Texel (texture pixel) center are at integer coordinates:
+
+  The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled at float position (0.0,0.0) is texture[0, 0].
+  The value of the texture bilinearly sampled at float position (0.5,0.5) is equal to the average (texture[0, 0] + texture[0, 1] + texture[1, 0] + texture[1, 1])/4
 
 
 # TO DO
