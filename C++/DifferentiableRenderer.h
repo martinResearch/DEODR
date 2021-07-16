@@ -2786,7 +2786,7 @@ void renderScene(Scene scene, double *image, double *z_buffer, double sigma, boo
 			double ij[3][2];
 			for (int i = 0; i < 3; i++)
 				for (int j = 0; j < 2; j++)
-					ij[i][j] = scene.ij[face[i] * 2 + j];
+					ij[i][j] = scene.ij[face[i] * 2 + j] - scene.upper_left_pixel_center[j];
 
 			double depths[3];
 			for (int i = 0; i < 3; i++)
@@ -2854,7 +2854,7 @@ void renderScene(Scene scene, double *image, double *z_buffer, double sigma, boo
 						sub = list_sub[n];
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
-								ij[i][j] = scene.ij[face[sub[i]] * 2 + j];
+								ij[i][j] = scene.ij[face[sub[i]] * 2 + j] - scene.upper_left_pixel_center[j];
 
 						double depths[2];
 						for (int i = 0; i < 2; i++)
@@ -2969,7 +2969,7 @@ void renderScene_B(Scene scene, double *image, double *z_buffer, double *image_b
 						sub = list_sub[n];
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
-								ij[i][j] = scene.ij[face[sub[i]] * 2 + j];
+								ij[i][j] = scene.ij[face[sub[i]] * 2 + j] - scene.upper_left_pixel_center[j];
 						double ij_b[2][2];
 						sub = list_sub[n];
 						for (int i = 0; i < 2; i++)
@@ -3062,7 +3062,7 @@ void renderScene_B(Scene scene, double *image, double *z_buffer, double *image_b
 			double ij_b[3][2];
 			for (int i = 0; i < 3; i++)
 				for (int j = 0; j < 2; j++)
-					ij[i][j] = scene.ij[face[i] * 2 + j];
+					ij[i][j] = scene.ij[face[i] * 2 + j] - scene.upper_left_pixel_center[j];;
 			for (int i = 0; i < 3; i++)
 				for (int j = 0; j < 2; j++)
 					ij_b[i][j] = scene.ij_b[face[i] * 2 + j];
