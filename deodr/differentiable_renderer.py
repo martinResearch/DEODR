@@ -450,6 +450,7 @@ class Scene2DBase:
         backface_culling=True,
         strict_edge=True,
         perspective_correct=False,
+        integer_pixel_centers=True,
     ):
 
         self.faces = faces
@@ -472,6 +473,7 @@ class Scene2DBase:
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
         self.perspective_correct = perspective_correct
+        self.integer_pixel_centers = integer_pixel_centers
 
 
 class Scene2D(Scene2DBase):
@@ -501,14 +503,20 @@ class Scene2D(Scene2DBase):
         backface_culling=False,
         strict_edge=True,
         perspective_correct=False,
+        integer_pixel_centers=True,
     ):
         """
         Conventions:
-        Pixel centers are at integer coordinates with
+        If integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
             upper left at (0, 0)
             upper right at (width - 1, 0)
             lower left at (0, height - 1)
             lower right at  (width - 1, height - 1)
+        if integer_pixel_centers is False, then pixel centers are at half integer coordinates with
+            upper left at (0.5, 0.5)
+            upper right at (width - 0.5, 0.5)
+            lower left at (0.5, height - 0.5)
+            lower right at  (width -0.5, height - 0.5)
         """
         self.faces = faces
         self.faces_uv = faces_uv
@@ -530,6 +538,7 @@ class Scene2D(Scene2DBase):
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
         self.perspective_correct = perspective_correct
+        self.integer_pixel_centers = integer_pixel_centers
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -682,7 +691,7 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1, perspective_correct=False):
+    def __init__(self, sigma=1, perspective_correct=False, integer_pixel_centers=True):
         self.mesh = None
         self.light_directional = None
         self.light_ambient = None
@@ -690,6 +699,7 @@ class Scene3D:
         self.perspective_correct = perspective_correct
         self.background_image = None
         self.background_color = None
+        self.integer_pixel_centers = integer_pixel_centers
 
     def clear_gradients(self):
         # fields to store gradients

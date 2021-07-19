@@ -142,15 +142,25 @@ The choice of the method is done through the Boolean parameter *antialiaseError*
 
 # Conventions
 
- * Pixel coordinates: 
+## Pixel coordinates: 
+ 
+If integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
+* upper left at (0, 0)
+* upper right at (width - 1, 0)
+* lower left at (0, height - 1)
+* lower right at  (width - 1, height - 1)
 
-   Pixel centers are at integer coordinates with upper left at (0, 0), upper right at (width - 1, 0), lower left at (0, height - 1) and lower right at  (width - 1, height - 1)
+If integer_pixel_centers is False, then pixel centers are at half integer coordinates with
+* upper left at (0.5, 0.5)
+* upper right at (width - 0.5, 0.5)
+* lower left at (0.5, height - 0.5)
+* lower right at  (width -0.5, height - 0.5)
+  
+## Texel coordinates: 
 
-
-* Texel (texture pixel) center are at integer coordinates:
-
-  The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled at float position (0.0,0.0) is texture[0, 0].
-  The value of the texture bilinearly sampled at float position (0.5,0.5) is equal to the average (texture[0, 0] + texture[0, 1] + texture[1, 0] + texture[1, 1])/4
+Unlike in OpenGL Texel (texture pixel) center are at integer coordinates and origin in in the upper left corner of the texture image.
+The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled at float position (0.0,0.0) is texture[0, 0].
+The value of the texture bilinearly sampled at float position (0.5,0.5) is equal to the average (texture[0, 0] + texture[0, 1] + texture[1, 0] + texture[1, 1])/4
 
 
 # TO DO
