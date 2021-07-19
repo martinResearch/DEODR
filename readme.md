@@ -150,12 +150,14 @@ If integer_pixel_centers is True (default) then pixel centers are at integer coo
 * lower left at (0, height - 1)
 * lower right at  (width - 1, height - 1)
 
-If integer_pixel_centers is False, then pixel centers are at half integer coordinates with
+If integer_pixel_centers is False, then pixel centers are at half-integer coordinates with
 * upper left at (0.5, 0.5)
 * upper right at (width - 0.5, 0.5)
 * lower left at (0.5, height - 0.5)
 * lower right at  (width -0.5, height - 0.5)
   
+According to [this page](https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/), OpengGL has always used upper left pixel center at (0.5, 0.5) while Direct3D was using pixel center at (0,0) before version 10 and switched to (0.5,0.5) at version 10.
+
 ## Texel coordinates: 
 
 Unlike in OpenGL Texel (texture pixel) center are at integer coordinates and origin in in the upper left corner of the texture image.
