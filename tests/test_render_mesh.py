@@ -15,10 +15,6 @@ def test_render_mesh_moderngl():
     example_moderngl(display=False)
 
 
-def test_example_channels():
-    example_channels(save_image=False)
-
-
 def test_render_mesh(update=False):
     image = example_rgb(display=False, save_image=False, width=320, height=240)
     image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
@@ -32,4 +28,3 @@ def test_render_mesh(update=False):
 if __name__ == "__main__":
     test_render_mesh()
     test_render_mesh_moderngl()
-    test_example_channels()
