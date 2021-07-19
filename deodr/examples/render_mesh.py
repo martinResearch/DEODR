@@ -39,7 +39,7 @@ def default_scene(obj_file, width=640, height=480, use_distortion=True):
         camera.distortion = np.array([-0.5, 0.5, 0, 0, 0])
 
     bg_color = np.array((0.8, 0.8, 0.8))
-    scene = differentiable_renderer.Scene3D()
+    scene = differentiable_renderer.Scene3D(integer_pixel_centers=False)
     light_ambient = 0
     light_directional = 0.3 * np.array([1, -1, 0])
     scene.set_light(light_directional=light_directional, light_ambient=light_ambient)
@@ -150,13 +150,10 @@ def example_moderngl(display=True, width=640, height=480):
 
         ax = plt.subplot(1, 3, 3)
         ax.set_title("difference")
-        ax.imshow(10 * diff / 255)
+        ax.imshow(np.clip(10 * diff / 255, 0, 1))
         plt.show()
 
-    max_diff = np.max(diff)
-
-    print(f"max_diff between deodr and moderngl rendering = {max_diff} due to phong shading not implemented")
-    assert max_diff < 18
+    assert np.sum(np.any(np.abs(diff) > 15, axis=2)) <= 3
 
 
 if __name__ == "__main__":

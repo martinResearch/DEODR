@@ -12,14 +12,22 @@ from pyrr import Matrix44
 from . import shaders as opengl_shaders
 
 
-def opencv_to_opengl_perspective(camera, znear, zfar):
+def opencv_to_opengl_perspective(camera, znear, zfar, integer_pixel_centers):
     # https://blog.noctua-software.com/opencv-opengl-projection-matrix.html
     fx = camera.intrinsic[0, 0]
     fy = camera.intrinsic[1, 1]
     cx = camera.intrinsic[0, 2]
     cy = camera.intrinsic[1, 2]
-    cx2 = cx + 0.5  # half a pixel offset to be consistent with deodr convention
-    cy2 = cy + 0.5  # half a pixel offset to be consistent with deodr convention
+
+    if integer_pixel_centers:
+        # If integer_pixel_centers is False, then deodr rendering is cnot onsistent with opengl without an 0.5 offset here
+        cx2 = cx + 0.5
+        cy2 = cy + 0.5
+    else:
+        # If integer_pixel_centers is False, then deodr rendering is consistent with opengl without need for an offset here
+        cx2 = cx
+        cy2 = cy
+
     width = camera.width
     height = camera.height
     np.testing.assert_array_equal(
@@ -70,6 +78,7 @@ class OffscreenRenderer:
 
         self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
         self.set_mesh(deodr_scene.mesh)
+        self.integer_pixel_centers = deodr_scene.integer_pixel_centers
 
     def set_light(self, light_directional, light_ambient):
         self.shader_program["light_directional"].value = tuple(light_directional)
@@ -125,7 +134,12 @@ class OffscreenRenderer:
 
         intrinsic = Matrix44(
             np.diag([1, -1, -1, 1]).dot(
-                opencv_to_opengl_perspective(camera, self.znear, self.zfar)
+                opencv_to_opengl_perspective(
+                    camera,
+                    self.znear,
+                    self.zfar,
+                    integer_pixel_centers=self.integer_pixel_centers,
+                )
             )
         )
 
@@ -136,7 +150,13 @@ class OffscreenRenderer:
         if camera.distortion is None:
             k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
         else:
-            k1, k2, p1, p2, k3, = camera.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = camera.distortion
         self.shader_program["k1"].value = k1
         self.shader_program["k2"].value = k2
         self.shader_program["k3"].value = k3
