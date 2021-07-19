@@ -1,8 +1,6 @@
-numpy==1.19.5
-scipy==1.5.4
+-r requirements_build.txt
 scikit-learn
 matplotlib==3.3.4
-Cython==0.29.23
 imageio==2.9.0
 trimesh==3.9.19
 opencv-python==4.5.2.52
