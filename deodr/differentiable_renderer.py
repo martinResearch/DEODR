@@ -450,7 +450,7 @@ class Scene2DBase:
         backface_culling=True,
         strict_edge=True,
         perspective_correct=False,
-        integer_pixel_centers=False,
+        integer_pixel_centers=True,
     ):
 
         self.faces = faces
@@ -507,12 +507,12 @@ class Scene2D(Scene2DBase):
     ):
         """
         Conventions:
-        If half_integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
+        If integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
             upper left at (0, 0)
             upper right at (width - 1, 0)
             lower left at (0, height - 1)
             lower right at  (width - 1, height - 1)
-        if half_integer_pixel_centers is False, then pixel centers are at half integer coordinates with
+        if integer_pixel_centers is False, then pixel centers are at half integer coordinates with
             upper left at (0.5, 0.5)
             upper right at (width - 0.5, 0.5)
             lower left at (0.5, height - 0.5)
@@ -691,7 +691,7 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1, perspective_correct=False, half_integer_pixel_centers=True):
+    def __init__(self, sigma=1, perspective_correct=False, integer_pixel_centers=True):
         self.mesh = None
         self.light_directional = None
         self.light_ambient = None
@@ -699,7 +699,7 @@ class Scene3D:
         self.perspective_correct = perspective_correct
         self.background_image = None
         self.background_color = None
-        self.half_integer_pixel_centers = half_integer_pixel_centers
+        self.integer_pixel_centers = integer_pixel_centers
 
     def clear_gradients(self):
         # fields to store gradients

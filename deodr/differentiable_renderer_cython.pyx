@@ -132,6 +132,7 @@ def renderScene(scene,
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
 	scene_c.perspective_correct = scene.perspective_correct
+	scene_c.integer_pixel_centers = scene.integer_pixel_centers
 
 
 	cdef double* obs_ptr = NULL
@@ -323,6 +324,7 @@ def renderSceneB(scene,
 	scene_c.texture_width = scene.texture.shape[1]
 	scene_c.strict_edge = scene.strict_edge
 	scene_c.perspective_correct = scene.perspective_correct
+	scene_c.integer_pixel_centers = scene.integer_pixel_centers
 	
 
 	cdef double* obs_ptr  =  NULL
