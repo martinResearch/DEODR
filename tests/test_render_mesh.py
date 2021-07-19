@@ -2,8 +2,11 @@
 
 import os
 
+from matplotlib import pyplot as plt
+
 import deodr
 from deodr.examples.render_mesh import example_moderngl, example_rgb
+from deodr.differentiable_renderer import Scene2D
 
 import imageio
 
@@ -22,7 +25,6 @@ def test_render_mesh(update=False):
         imageio.imwrite(image_file, image_uint8)
     image_prev = imageio.imread(image_file)
     assert np.max(np.abs(image_prev - image_uint8)) == 0
-
 
 if __name__ == "__main__":
     test_render_mesh()

@@ -155,7 +155,7 @@ def example_moderngl(display=True, width=640, height=480):
 
     max_diff = np.max(diff)
 
-    print(f"max_diff between deodr and moderngl rendering = {max_diff}")
+    print(f"max_diff between deodr and moderngl rendering = {max_diff} due to phong shading not implemented")
     assert max_diff < 18
 
 
