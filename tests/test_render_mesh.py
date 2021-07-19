@@ -3,7 +3,7 @@
 import os
 
 import deodr
-from deodr.examples.render_mesh import example_moderngl, example_rgb
+from deodr.examples.render_mesh import example_moderngl, example_channels, example_rgb
 
 
 import imageio
@@ -13,6 +13,10 @@ import numpy as np
 
 def test_render_mesh_moderngl():
     example_moderngl(display=False)
+
+
+def test_example_channels():
+    example_channels(save_image=False)
 
 
 def test_render_mesh(update=False):
@@ -28,3 +32,4 @@ def test_render_mesh(update=False):
 if __name__ == "__main__":
     test_render_mesh()
     test_render_mesh_moderngl()
+    test_example_channels()

@@ -23,7 +23,9 @@ def run(obj_file, width=640, height=480, display=True):
     )
 
 
-def default_scene(obj_file, width=640, height=480, use_distortion=True):
+def default_scene(
+    obj_file, width=640, height=480, use_distortion=True, integer_pixel_centers=True
+):
 
     mesh_trimesh = trimesh.load(obj_file)
 
@@ -39,7 +41,7 @@ def default_scene(obj_file, width=640, height=480, use_distortion=True):
         camera.distortion = np.array([-0.5, 0.5, 0, 0, 0])
 
     bg_color = np.array((0.8, 0.8, 0.8))
-    scene = differentiable_renderer.Scene3D(integer_pixel_centers=False)
+    scene = differentiable_renderer.Scene3D(integer_pixel_centers=integer_pixel_centers)
     light_ambient = 0
     light_directional = 0.3 * np.array([1, -1, 0])
     scene.set_light(light_directional=light_directional, light_ambient=light_ambient)
@@ -125,33 +127,40 @@ def example_moderngl(display=True, width=640, height=480):
     import deodr.opengl.moderngl
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(obj_file, width=width, height=height)
-    scene.sigma = 0  # removing edge overdraw antialiasing
-    # adding some perturbation to get better test
-    camera.extrinsic[1, 2] = camera.extrinsic[1, 2] + 0.1
-    camera.extrinsic[1, 1] = camera.extrinsic[1, 1] * 0.9
+    for integer_pixel_centers in [True, False]:
+        scene, camera = default_scene(
+            obj_file,
+            width=width,
+            height=height,
+            integer_pixel_centers=integer_pixel_centers,
+        )
+        scene.sigma = 0  # removing edge overdraw antialiasing
+        # adding some perturbation to get better test
+        camera.extrinsic[1, 2] = camera.extrinsic[1, 2] + 0.1
+        camera.extrinsic[1, 1] = camera.extrinsic[1, 1] * 0.9
 
-    image_no_antialiasing = scene.render(camera)
-    moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
-    moderngl_renderer.set_scene(scene)
-    image_moderngl = moderngl_renderer.render(camera)
-    diff = np.abs(
-        image_no_antialiasing.astype(np.float) * 255 - image_moderngl.astype(np.float)
-    )
-    if display:
-        plt.figure()
-        ax = plt.subplot(1, 3, 1)
-        ax.set_title("deodr no antialiasing")
-        ax.imshow(image_no_antialiasing)
+        image_no_antialiasing = scene.render(camera)
+        moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        moderngl_renderer.set_scene(scene)
+        image_moderngl = moderngl_renderer.render(camera)
+        diff = np.abs(
+            image_no_antialiasing.astype(np.float) * 255
+            - image_moderngl.astype(np.float)
+        )
+        if display:
+            plt.figure()
+            ax = plt.subplot(1, 3, 1)
+            ax.set_title("deodr no antialiasing")
+            ax.imshow(image_no_antialiasing)
 
-        ax = plt.subplot(1, 3, 2)
-        ax.set_title("moderngl")
-        ax.imshow(image_moderngl)
+            ax = plt.subplot(1, 3, 2)
+            ax.set_title("moderngl")
+            ax.imshow(image_moderngl)
 
-        ax = plt.subplot(1, 3, 3)
-        ax.set_title("difference")
-        ax.imshow(np.clip(10 * diff / 255, 0, 1))
-        plt.show()
+            ax = plt.subplot(1, 3, 3)
+            ax.set_title("difference")
+            ax.imshow(np.clip(10 * diff / 255, 0, 1))
+            plt.show()
 
     assert np.sum(np.any(np.abs(diff) > 15, axis=2)) <= 3
 
