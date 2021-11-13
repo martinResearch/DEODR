@@ -1062,6 +1062,7 @@ inline void render_part_interpolated_B(double *image, double *image_B, double *z
 }
 
 void compute_textured_gouraud_mapping_matrices(
+	double xy1_to_bary[9],
 	double xy1_to_UV[6],
 	double xy1_to_L[3],
 	double xy1_to_Z[3],
@@ -1070,7 +1071,7 @@ void compute_textured_gouraud_mapping_matrices(
 	double ShadeVertex[3],
 	bool perspective_correct)
 {
-	double xy1_to_bary[9];
+
 	// create matrices that map image coordinates to attributes A and depth z
 	if (perspective_correct)
 	{
@@ -1106,7 +1107,6 @@ template <class T>
 void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], T image[], int height, int width, int sizeA, T *Texture, int *Texture_size, bool strict_edge, bool perspective_correct)
 {
 	int y_begin[2], y_end[2];
-
 	double edge_eq[3][3];
 	double bary_to_xy1[9];
 	double xy1_to_bary[9];
@@ -1122,6 +1122,7 @@ void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], dou
 
 	// create matrices that map image coordinates to attributes A and depth z
 	compute_textured_gouraud_mapping_matrices(
+		xy1_to_bary,
 		xy1_to_UV,
 		xy1_to_L,
 		xy1_to_Z,
@@ -2772,7 +2773,7 @@ void checkSceneValid(Scene scene, bool has_derivatives)
 }
 
 void computeTrianglesAreasAndVerticesDepthSums(Scene &scene, vector<double> &signedAreaV, vector<sortdata> &sum_depth)
-{
+			{
 	signedAreaV.resize(scene.nb_triangles);
 	sum_depth.resize(scene.nb_triangles);
 	for (int k = 0; k < scene.nb_triangles; k++)
