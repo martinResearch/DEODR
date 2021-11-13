@@ -5,6 +5,7 @@
     "python.pythonPath": "python_venv\\Scripts\\python.exe",
     "python.formatting.provider": "black",
     "files.associations": {
-        "xiosbase": "cpp"
+        "xiosbase": "cpp",
+        "vector": "cpp"
     }
 }

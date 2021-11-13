@@ -2714,40 +2714,11 @@ void checkSceneValid(Scene scene, bool has_derivatives)
 	}
 }
 
-void renderScene(Scene scene, double *image, double *z_buffer, double sigma, bool antialiaseError = 0, double *obs = NULL, double *err_buffer = NULL)
+
+void computeTrianglesAreasAndVerticesDepthSums(Scene &scene, vector<double> &signedAreaV, vector<sortdata> &sum_depth)
 {
-
-	checkSceneValid(scene, false);
-	// first pass : render triangle without edge antialiasing
-
-	int Texture_size[2];
-
-	Texture_size[1] = scene.texture_height;
-	Texture_size[0] = scene.texture_width;
-
-	if (scene.background_image != NULL)
-	{
-		memcpy(image, scene.background_image, scene.height * scene.width * scene.nb_colors * sizeof(double));
-	}
-	else
-	{
-		for (int i = 0; i < scene.height * scene.width; i++)
-		{
-			for (int k = 0; k < scene.nb_colors; k++)
-			{
-				image[i * scene.nb_colors + k] = scene.background_color[k];
-			}
-		}
-	}
-	//for (int k=0;k<scene.height*scene.width;k++)
-	//z_buffer[k]=100000;
-	fill(z_buffer, z_buffer + scene.height * scene.width, numeric_limits<double>::infinity());
-
-	vector<sortdata> sum_depth;
-	sum_depth.resize(scene.nb_triangles);
-	vector<double> signedAreaV;
 	signedAreaV.resize(scene.nb_triangles);
-
+	sum_depth.resize(scene.nb_triangles);
 	for (int k = 0; k < scene.nb_triangles; k++)
 	{
 		sum_depth[k].value = 0;
@@ -2777,6 +2748,41 @@ void renderScene(Scene scene, double *image, double *z_buffer, double sigma, boo
 			signedAreaV[k] = 0;
 		}
 	}
+}
+
+void renderScene(Scene &scene, double *image, double *z_buffer, double sigma, bool antialiaseError = 0, double *obs = NULL, double *err_buffer = NULL)
+{
+
+	checkSceneValid(scene, false);
+	// first pass : render triangle without edge antialiasing
+
+	int Texture_size[2];
+
+	Texture_size[1] = scene.texture_height;
+	Texture_size[0] = scene.texture_width;
+
+	if (scene.background_image != NULL)
+	{
+		memcpy(image, scene.background_image, scene.height * scene.width * scene.nb_colors * sizeof(double));
+	}
+	else
+	{
+		for (int i = 0; i < scene.height * scene.width; i++)
+		{
+			for (int k = 0; k < scene.nb_colors; k++)
+			{
+				image[i * scene.nb_colors + k] = scene.background_color[k];
+			}
+		}
+	}
+	//for (int k=0;k<scene.height*scene.width;k++)
+	//z_buffer[k]=100000;
+	fill(z_buffer, z_buffer + scene.height * scene.width, numeric_limits<double>::infinity());
+
+	vector<sortdata> sum_depth;
+	vector<double> signedAreaV;
+
+	computeTrianglesAreasAndVerticesDepthSums(scene, signedAreaV, sum_depth);
 
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
 
@@ -2900,7 +2906,7 @@ void renderScene(Scene scene, double *image, double *z_buffer, double sigma, boo
 	}
 }
 
-void renderScene_B(Scene scene, double *image, double *z_buffer, double *image_b, double sigma, bool antialiaseError = 0, double *obs = NULL, double *err_buffer = NULL, double *err_buffer_b = NULL)
+void renderScene_B(Scene &scene, double *image, double *z_buffer, double *image_b, double sigma, bool antialiaseError = 0, double *obs = NULL, double *err_buffer = NULL, double *err_buffer_b = NULL)
 {
 
 	// first pass : render triangle without edge antialiasing
@@ -2914,45 +2920,17 @@ void renderScene_B(Scene scene, double *image, double *z_buffer, double *image_b
 
 	int list_sub[3][2] = {1, 0, 2, 1, 0, 2};
 
-	vector<sortdata> sum_depth;
-	sum_depth.resize(scene.nb_triangles);
-	vector<double> signedAreaV;
-	signedAreaV.resize(scene.nb_triangles);
+
 
 	if (!scene.backface_culling)
 	{
-		throw "You have to use backface_culling true if you ant to compute gradients";
+		throw "You have to use backface_culling true if you want to compute gradients";
 	}
 
-	for (int k = 0; k < scene.nb_triangles; k++)
-	{
-		sum_depth[k].value = 0;
-		sum_depth[k].index = k;
+	vector<sortdata> sum_depth;
+	vector<double> signedAreaV;
 
-		bool all_verticesInFront = true;
-		unsigned int *face = &scene.faces[k * 3];
-
-		for (int i = 0; i < 3; i++)
-		{
-			if (scene.depths[face[i]] < 0)
-			{
-				all_verticesInFront = false;
-			}
-			sum_depth[k].value += scene.depths[face[i]];
-		}
-		if (all_verticesInFront)
-		{
-			double ij[3][2];
-			for (int i = 0; i < 3; i++)
-				for (int j = 0; j < 2; j++)
-					ij[i][j] = scene.ij[face[i] * 2 + j];
-			signedAreaV[k] = signedArea(ij, scene.clockwise);
-		}
-		else
-		{
-			signedAreaV[k] = 0;
-		}
-	}
+	computeTrianglesAreasAndVerticesDepthSums(scene, signedAreaV, sum_depth);
 
 	sort(sum_depth.begin(), sum_depth.end(), sortcompare());
 
