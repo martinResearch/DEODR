@@ -6,6 +6,8 @@
     "python.formatting.provider": "black",
     "files.associations": {
         "xiosbase": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "xutility": "cpp",
+        "*.inc": "cpp"
     }
 }
