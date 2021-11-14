@@ -1,5 +1,6 @@
 # distutils: language=c++
 from libcpp cimport bool
+from libcpp.vector cimport vector
 cdef extern from "../C++/DifferentiableRenderer.h":
 	ctypedef struct Scene:
 		unsigned int* faces;
@@ -33,5 +34,16 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 		bool strict_edge
 		bool perspective_correct
 		bool integer_pixel_centers
+
+	ctypedef struct FragmentsDouble:
+		vector[int] list_x
+		vector[int] list_y
+		vector[double] list_values
+		vector[double] list_alpha
+		int nb_channels
+		int width
+		int height
+
 	void renderScene(Scene scene,double* image,double* z_buffer,double sigma,bool antialiase_error ,double* obs,double*  err_buffer)
 	void renderScene_B(Scene scene,double* image,double* z_buffer,double* image_b,double sigma,bool antialiase_error ,double* obs,double*  err_buffer, double* err_buffer_b)
+	void renderSceneFragments(Scene scene,double* z_buffer, double sigma, FragmentsDouble fragments)

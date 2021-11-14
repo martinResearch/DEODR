@@ -115,21 +115,27 @@ public:
 	}
 };
 
-
 template <class T>
 class Fragments
 {
-// class used to keep track of pixel writes
+	// class used to keep track of pixel writes
 public:
-	std::vector<T> list_values;
 	std::vector<int> list_x;
 	std::vector<int> list_y;
-	std::vector<int> list_alpha;
+	std::vector<T> list_values;
+	std::vector<double> list_alpha;
 	int nb_channels;
 	int width;
 	int height;
-
-	Fragments(const int &_w, const int &_h, const int &_nb_channels) : width(_w), height(_h), nb_channels(_nb_channels)
+	Fragments() : width(0), height(0), nb_channels(0)
+	{ /* empty image */
+	}
+	Fragments(
+		const int &_w,
+		const int &_h,
+		const int &_nb_channels) : width(_w),
+								   height(_h),
+								   nb_channels(_nb_channels)
 	{
 	}
 
@@ -140,7 +146,6 @@ public:
 		list_x.push_back(x);
 		list_y.push_back(y);
 		list_alpha.push_back(1);
-
 	}
 	inline void writePixelTransparent(int x, int y, T *color, double alpha)
 	{
@@ -148,9 +153,11 @@ public:
 			list_values.push_back(color[k]);
 		list_x.push_back(x);
 		list_y.push_back(y);
-		list_alpha.push_back(1);
+		list_alpha.push_back(alpha);
 	}
 };
+
+using FragmentsDouble = Fragments<double>;
 
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end);
 inline void render_part_interpolated(double *image, double *z_buffer, int y_begin, int x_min, int x_max, int y_end, bool strict_edge, double *xy1_to_A, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, bool perspective_correct);
@@ -808,7 +815,7 @@ void get_triangle_stencil_equations(double Vxy[][2], double bary_to_xy1[9], doub
 }
 
 template <class ImageType, class T>
-void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T *Avertex[], double z_buffer[], ImageType image, int height, int width, int sizeA, bool strict_edge, bool perspective_correct)
+void rasterize_triangle_interpolated(double Vxy[][2], double Zvertex[3], T *Avertex[], double z_buffer[], ImageType &image, int height, int width, int sizeA, bool strict_edge, bool perspective_correct)
 {
 	int y_begin[2], y_end[2];
 
@@ -975,7 +982,7 @@ inline void get_xrange(int width, const double *left_eq, const double *right_eq,
 }
 
 template <class ImageType>
-inline void render_part_interpolated(ImageType image, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_A, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, bool perspective_correct)
+inline void render_part_interpolated(ImageType &image, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_A, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, bool perspective_correct)
 {
 	double t[3];
 	double *A0y;
@@ -1157,7 +1164,7 @@ void compute_textured_gouraud_mapping_matrices(
 }
 
 template <class ImageType, class T>
-void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], ImageType image, int height, int width, int sizeA, T *Texture, int *Texture_size, bool strict_edge, bool perspective_correct)
+void rasterize_triangle_textured_gouraud(double Vxy[][2], double Zvertex[3], double UVvertex[][2], double ShadeVertex[], double z_buffer[], ImageType &image, int height, int width, int sizeA, T *Texture, int *Texture_size, bool strict_edge, bool perspective_correct)
 {
 	int y_begin[2], y_end[2];
 	double edge_eq[3][3];
@@ -1254,8 +1261,8 @@ void rasterize_triangle_textured_gouraud_B(double Vxy[][2], double Vxy_B[][2], d
 			Vxy_B[v][d] += bary_to_xy1_B[3 * d + v];
 }
 
-template<class ImageType>
-inline void render_part_textured_gouraud(ImageType image, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_UV, double *xy1_to_L, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, double *Texture, int *Texture_size, bool perspective_correct)
+template <class ImageType>
+inline void render_part_textured_gouraud(ImageType &image, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_UV, double *xy1_to_L, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, double *Texture, int *Texture_size, bool perspective_correct)
 {
 	double t[3];
 	double L0y;
@@ -2862,80 +2869,11 @@ void computeTrianglesAreasAndVerticesDepthSums(Scene &scene, vector<double> &sig
 	}
 }
 
-struct PixelFragments
+void renderSceneFragments(
+	Scene &scene,
+	double *z_buffer, double sigma,
+	Fragments<double> &image)
 {
-	vector<int> fragments_col;
-	vector<int> fragments_row;
-	vector<int> fragments_color;
-	vector<int> fragments_alpha;
-	vector<int> fragments_depth;
-};
-
-void computeFragments(Scene &scene, double sigma)
-{
-	checkSceneValid(scene, false);
-	float pixel_center_offset = scene.integer_pixel_centers ? 0 : 0.5;
-	vector<sortdata> sum_depth;
-	vector<double> signedAreaV;
-	computeTrianglesAreasAndVerticesDepthSums(scene, signedAreaV, sum_depth);
-
-	PixelFragments pixel_fragments;
-
-	for (int k = 0; k < scene.nb_triangles; k++)
-		if ((signedAreaV[k] > 0) || (!scene.backface_culling))
-		{
-			unsigned int *face = &scene.faces[k * 3];
-			double ij[3][2];
-			for (int i = 0; i < 3; i++)
-				for (int j = 0; j < 2; j++)
-					ij[i][j] = scene.ij[face[i] * 2 + j] - pixel_center_offset;
-
-			double depths[3];
-			for (int i = 0; i < 3; i++)
-				depths[i] = scene.depths[face[i]];
-
-			if ((scene.textured[k] && scene.shaded[k]))
-			{
-				unsigned int *face_uv = &scene.faces_uv[k * 3];
-				double shade[3];
-				for (int i = 0; i < 3; i++)
-					shade[i] = scene.shade[face[i]];
-				double uv[3][2];
-				for (int i = 0; i < 3; i++)
-					for (int j = 0; j < 2; j++)
-					{
-						uv[i][j] = scene.uv[face_uv[i] * 2 + j];
-					}
-
-				// rasterize_triangle_textured_gouraud_fragments(
-				// 	pixel_fragments,
-				// 	ij,
-				// 	depths,
-				// 	uv,
-				// 	shade,
-				// 	scene.height,
-				// 	scene.width,
-				// 	scene.nb_colors,
-				// 	scene.texture,
-				// 	Texture_size,
-				// 	scene.strict_edge,
-				// 	scene.perspective_correct);
-			}
-			if (!scene.textured[k])
-			{
-				double *colors[3];
-				for (int i = 0; i < 3; i++)
-					colors[i] = scene.colors + face[i] * scene.nb_colors;
-				//rasterize_triangle_interpolated_fragments(pixel_fragments, ij, depths, colors, scene.height, scene.width, scene.nb_colors, scene.strict_edge, scene.perspective_correct);
-			}
-		}
-}
-
-
-void renderSceneFragments(Scene &scene, double *z_buffer, double sigma)
-{
-	Fragments<double> image(scene.width, scene.height, scene.nb_colors);
-
 	checkSceneValid(scene, false);
 	// first pass : render triangle without edge antialiasing
 
@@ -2943,7 +2881,6 @@ void renderSceneFragments(Scene &scene, double *z_buffer, double sigma)
 
 	Texture_size[1] = scene.texture_height;
 	Texture_size[0] = scene.texture_width;
-
 
 	//for (int k=0;k<scene.height*scene.width;k++)
 	//z_buffer[k]=100000;

@@ -7,6 +7,7 @@ import numpy as np
 from . import differentiable_renderer_cython
 
 
+
 def renderScene(
     scene,
     sigma: float,
@@ -83,6 +84,8 @@ def renderScene(
             assert obs.shape[0] == height
             assert obs.shape[1] == width
             assert obs.shape[2] == nb_colors
+
+    fragments = differentiable_renderer_cython.renderSceneFragments(scene, sigma, z_buffer)
 
     differentiable_renderer_cython.renderScene(
         scene, sigma, image, z_buffer, antialiase_error, obs, err_buffer
@@ -1076,7 +1079,7 @@ class Scene3D:
             texture=texture,
             background_image=background_image,
             backface_culling=backface_culling,
-            background_color=None
+            background_color=None,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))
