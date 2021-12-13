@@ -7,7 +7,7 @@ import cython
 # import both numpy and the Cython declarations for numpy
 import numpy as np
 cimport numpy as np
-
+from cpython cimport Py_buffer
 
 
 @cython.boundscheck(False)
@@ -167,6 +167,76 @@ def renderScene(scene,
 	_differentiable_renderer.renderScene( scene_c,image_ptr, z_buffer_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr)
 
 
+
+
+cdef class VecInt:
+
+	cdef Py_ssize_t shape[1]
+	cdef Py_ssize_t strides[1]
+	cdef vector[int] v
+
+	def __cinit__(self):
+		pass
+
+	def set_data(self, vector[int]& data):
+		self.v.swap(data)
+
+
+	def __getbuffer__(self, Py_buffer *buffer, int flags):
+		cdef Py_ssize_t itemsize = sizeof(self.v[0])
+
+		self.shape[0] = self.v.size()
+		self.strides[0] = sizeof(int)
+
+		buffer.buf = <char *>&(self.v[0])
+		buffer.format = 'i'                     # int
+		buffer.internal = NULL                  # see References
+		buffer.itemsize = itemsize
+		buffer.len = self.v.size() * itemsize   # product(shape) * itemsize
+		buffer.ndim = 1
+		buffer.obj = self
+		buffer.readonly = 0
+		buffer.shape = self.shape
+		buffer.strides = self.strides
+		buffer.suboffsets = NULL                # for pointer arrays only
+
+	def __releasebuffer__(self, Py_buffer *buffer):
+		pass
+
+cdef class VecFloat:
+
+	cdef Py_ssize_t shape[1]
+	cdef Py_ssize_t strides[1]
+	cdef vector[float] v
+
+	def __cinit__(self):
+		pass
+
+	def set_data(self, vector[int]& data):
+		self.v.swap(data)
+
+
+	def __getbuffer__(self, Py_buffer *buffer, int flags):
+		cdef Py_ssize_t itemsize = sizeof(self.v[0])
+
+		self.shape[0] = self.v.size()
+		self.strides[0] = sizeof(int)
+
+		buffer.buf = <char *>&(self.v[0])
+		buffer.format = 'f'                     # float
+		buffer.internal = NULL                  # see References
+		buffer.itemsize = itemsize
+		buffer.len = self.v.size() * itemsize   # product(shape) * itemsize
+		buffer.ndim = 1
+		buffer.obj = self
+		buffer.readonly = 0
+		buffer.shape = self.shape
+		buffer.strides = self.strides
+		buffer.suboffsets = NULL                # for pointer arrays only
+
+	def __releasebuffer__(self, Py_buffer *buffer):
+		pass
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def renderSceneFragments(scene,
@@ -178,9 +248,6 @@ def renderSceneFragments(scene,
 
 	cdef _differentiable_renderer.Scene scene_c
 	cdef _differentiable_renderer.FragmentsDouble fragments
-
-
-
 
 	if check_valid:
 		assert (not(z_buffer is None))
@@ -310,7 +377,11 @@ def renderSceneFragments(scene,
 		sigma,
 		fragments
 	)
-	return 	fragments
+
+
+	v= VecInt()
+	v.set_data(fragments.list_x)
+	return 	np.asarray(v)
 
 
 @cython.boundscheck(False)
