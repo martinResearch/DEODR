@@ -3,7 +3,7 @@
 from deodr.examples.triangle_soup_fitting import run
 
 
-def test_soup(check_hashes=True):
+def test_triangle_soup_fitting(check_hashes=True):
 
     losses, hashes = run(
         nb_max_iter=50, display=False, clockwise=False, antialiase_error=False
@@ -59,9 +59,9 @@ def test_soup(check_hashes=True):
         )
         assert (
             hashes[1]
-            == "820a5f90b4c0496b88542f42ed773afcd7cc0e0e3edc7a3da6427e2ab881d44"
+            == "8820a5f90b4c0496b88542f42ed773afcd7cc0e0e3edc7a3da6427e2ab881d44"
         )
 
 
 if __name__ == "__main__":
-    test_soup()
+    test_triangle_soup_fitting()

@@ -36,6 +36,23 @@ def test_render_mesh_triangle_soup():
 
     np.random.seed(2)
     scene_gt = create_example_scene(clockwise=True)
+
+    hashlib.sha256(
+        scene_gt.ij.tobytes()
+    ).hexdigest() == "56a498bf243bd514c9ab4a3bfd90f8105aa2c168023fa288dc39ad82e2d36a20"
+    hashlib.sha256(
+        scene_gt.depths.tobytes()
+    ).hexdigest() == "e25eed6310fef37e401aef594c4c95e1b3cccf962a3646976cf546c58ddfac0a"
+    hashlib.sha256(
+        scene_gt.uv.tobytes()
+    ).hexdigest() == "f436623445124ecff7139efa57cce21c2768e23727bac974e236ea33651cc7c9"
+    hashlib.sha256(
+        scene_gt.shade.tobytes()
+    ).hexdigest() == "4b796b925c4349245e52a3e6311e99d536dc71e8aa8dc43cbd67cbe35d48892f"
+    hashlib.sha256(
+        scene_gt.colors.tobytes()
+    ).hexdigest() == "76dbff728be3eb0860bd27adf493e935dbd81cd7232ec732ba30c4f73ea35c94"
+
     sigma = 1
     image = np.zeros((scene_gt.height, scene_gt.width, scene_gt.nb_colors))
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))

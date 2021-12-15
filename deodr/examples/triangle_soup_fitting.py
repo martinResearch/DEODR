@@ -70,7 +70,16 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
         triangles.append(triangle)
 
     scene = {}
-    for key in triangles[0].keys():
+    for key in [
+        "ij",
+        "depths",
+        "textured",
+        "uv",
+        "shade",
+        "colors",
+        "shaded",
+        "edgeflags",
+    ]:
         scene[key] = np.squeeze(
             np.vstack([np.array(triangle[key]) for triangle in triangles])
         )
@@ -188,7 +197,10 @@ def run_with_and_without_antialiased_error(display=True):
         ax = fig.add_subplot(111)
     for antialiase_error in [False, True]:
         losses, _ = run(
-            nb_max_iter=500, display=True, clockwise=False, antialiase_error=antialiase_error
+            nb_max_iter=500,
+            display=True,
+            clockwise=False,
+            antialiase_error=antialiase_error,
         )
         if display:
             ax.plot(losses, label="antialiaseError=%d" % antialiase_error)
