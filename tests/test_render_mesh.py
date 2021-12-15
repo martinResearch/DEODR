@@ -3,12 +3,13 @@
 import os
 
 import deodr
-from deodr.examples.render_mesh import example_moderngl, example_channels, example_rgb
+from deodr.examples.render_mesh import example_moderngl, example_rgb
 
 
 import imageio
 
 import numpy as np
+import hashlib
 
 
 def test_render_mesh_moderngl():
@@ -23,6 +24,11 @@ def test_render_mesh(update=False):
         imageio.imwrite(image_file, image_uint8)
     image_prev = imageio.imread(image_file)
     assert np.max(np.abs(image_prev - image_uint8)) == 0
+
+    assert (
+        hashlib.sha256(image.tobytes()).hexdigest()
+        == "2f22e5402cd5a396bb09b4378ff5d619b47d8886209869111c148e4f97a8778e"
+    )
 
 
 if __name__ == "__main__":
