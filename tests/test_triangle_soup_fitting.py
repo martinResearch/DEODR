@@ -1,7 +1,6 @@
 """Test using triangle soup rendering."""
 
 from deodr.examples.triangle_soup_fitting import run
-import json
 
 
 def test_soup(check_hashes=True):
@@ -60,7 +59,7 @@ def test_soup(check_hashes=True):
         )
         assert (
             hashes[1]
-            == "8820a5f90b4c0496b88542f42ed773afcd7cc0e0e3edc7a3da6427e2ab881d44"
+            == "820a5f90b4c0496b88542f42ed773afcd7cc0e0e3edc7a3da6427e2ab881d44"
         )
 
 
