@@ -144,7 +144,6 @@ def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
         scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
     )
 
-    final_loss = {}
     hashes = []
 
     np.random.seed(2)
