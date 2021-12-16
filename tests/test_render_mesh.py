@@ -14,7 +14,8 @@ import hashlib
 
 
 def test_render_mesh_moderngl():
-    example_moderngl(display=False)
+    if not os.name == "nt":  # did not manage to install mesa on windows github action
+        example_moderngl(display=False)
 
 
 def test_render_mesh_duck(update=False):

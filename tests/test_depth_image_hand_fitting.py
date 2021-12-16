@@ -3,6 +3,8 @@ import os
 
 from deodr.examples.depth_image_hand_fitting import run
 
+import tensorflow as tf
+
 
 def test_depth_image_hand_fitting_pytorch():
 
@@ -36,6 +38,10 @@ def test_depth_image_hand_fitting_numpy():
 
 def test_depth_image_hand_fitting_tensorflow():
 
+    tf.config.set_visible_devices(
+        [], "GPU"
+    )  # Running on CPU to get determinisic results
+
     energies = run(
         dl_library="tensorflow",
         plot_curves=False,
@@ -44,7 +50,7 @@ def test_depth_image_hand_fitting_tensorflow():
         max_iter=50,
     )
     if os.name == "nt":  # windows
-        assert abs(energies[49] - 251.32711067236454) < 1e-10
+        assert abs(energies[49] - 251.3164879047919) < 1e-10
     else:
         assert abs(energies[49] - 251.31648983466366) < 1e-5
 
