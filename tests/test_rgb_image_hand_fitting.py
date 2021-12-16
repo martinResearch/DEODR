@@ -19,7 +19,9 @@ def test_rgb_image_hand_fitting_pytorch():
     if os.name == "nt":  # windows
         assert (abs(energies[49] - 2100.0239709048583) < 1e-10) or (
             abs(energies[49] - 2132.9307950405196) < 1e-10
-        )  # 2132 : result on lenovo laptop using Intel Core i5 4210-U
+        )
+        # 2100.0239709048583 : result on Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz   3.31GHz
+        # 2132.9307950405196 : result on Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz   2.40GHz
     else:
         assert abs(energies[49] - 2106.5436357944604) < 12
 
