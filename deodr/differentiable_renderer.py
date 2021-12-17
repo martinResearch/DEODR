@@ -1076,7 +1076,7 @@ class Scene3D:
             texture=texture,
             background_image=background_image,
             backface_culling=backface_culling,
-            background_color=None
+            background_color=None,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))

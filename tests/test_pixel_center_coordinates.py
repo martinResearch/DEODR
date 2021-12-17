@@ -1,11 +1,6 @@
 """Test using rgb mesh rendering."""
 
-import os
 
-from matplotlib import pyplot as plt
-
-import deodr
-from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.differentiable_renderer import Scene2D
 import numpy as np
 

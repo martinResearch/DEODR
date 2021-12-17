@@ -28,7 +28,7 @@ class MeshDepthFitter:
         translation_init,
         cregu=2000,
         inertia=0.96,
-        damping=0.05
+        damping=0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -109,7 +109,8 @@ class MeshDepthFitter:
         )
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_clipped = self.scene.render_depth(
-            self.camera, depth_scale=self.depthScale,
+            self.camera,
+            depth_scale=self.depthScale,
         )
         depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
         return depth

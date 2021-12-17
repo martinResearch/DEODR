@@ -189,7 +189,7 @@ def main():
         plot_curves=True,
         display=display,
         save_images=save_images,
-         n_subdivision=n_subdivision,
+        n_subdivision=n_subdivision,
     )
 
 
