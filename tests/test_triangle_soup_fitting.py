@@ -7,7 +7,7 @@ from deodr.examples.triangle_soup_fitting import run
 def get_platform():
     if os.name == "nt":  # windows
         return "windows"
-    elif os.name == "posix":  #  linux
+    elif os.name == "posix":  # linux
         return "linux"
     else:
         raise BaseException("Unrecognized platform")
@@ -36,7 +36,7 @@ def test_triangle_soup_fitting(check_hashes=True):
                 1: "0434ea722edb9e3364da9b0e8564c3002b9aa3b12791ba8f089689beecd3c4e9",
             },
         },
-        "linux": {  # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        "linux": {  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
             "losses": {-1: 1328.235645237829},
             "hashes": {
                 0: "f0571dcd10df3c81c902b703462b3c94139eab3d88bc8c081c1dca1c2533fc4c",
@@ -59,7 +59,7 @@ def test_triangle_soup_fitting(check_hashes=True):
                 1: "0de2e8b80730cfc444d0552cd81e5071897a525ec6495e643ca17fb0792496c0",
             },
         },
-        "linux": {  # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        "linux": {  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
             "losses": {-1: 1456.4362294737318},
             "hashes": {
                 0: "55b545a8ae70b51ed0ad762210daf7b3bf568c786f4ddd5716ca6ec6479951ba",
@@ -82,7 +82,7 @@ def test_triangle_soup_fitting(check_hashes=True):
                 1: "6b4cc11e56dfebe2b8235485ea1bb8230a5765e7f0eeb2ac671d9cd4e3311f74",
             },
         },
-        "linux": {  # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        "linux": {  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
             "losses": {-1: 1328.2356452378326},
             "hashes": {
                 0: "427c434a1e60537c57aa2d6a5a990e425c064fa9690955014f2dd7c087b30cfc",
@@ -104,7 +104,7 @@ def test_triangle_soup_fitting(check_hashes=True):
                 1: "8820a5f90b4c0496b88542f42ed773afcd7cc0e0e3edc7a3da6427e2ab881d44",
             },
         },
-        "linux": {  # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        "linux": {  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
             "losses": {-1: 1456.4362294737307},
             "hashes": {
                 0: "0b41270c59ddf37d8fd7e9ff0f0723042bd6ee0546ac071dadb306f65aa143ad",

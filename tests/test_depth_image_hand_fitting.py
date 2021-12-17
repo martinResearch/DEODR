@@ -51,9 +51,14 @@ def test_depth_image_hand_fitting_tensorflow():
     )
     if os.name == "nt":  # windows
         assert abs(energies[49] - 251.3164879047919) < 1e-10
+    elif os.name == "posix":  # linux
+        assert (abs(energies[49] - 251.31648932312913) < 1e-10) or (
+            abs(energies[49] - 251.3164914350016) < 1e-10
+        )
+        # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        # Gitbub workflow 251.31648932312913
     else:
-        assert abs(energies[49] - 251.31648983466366) < 1e-10
-        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz 251.3164914350016
+        raise BaseException(f"No results for os.name={os.name}")
 
 
 if __name__ == "__main__":

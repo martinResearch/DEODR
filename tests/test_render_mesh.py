@@ -74,8 +74,8 @@ def test_render_mesh_triangle_soup():
             == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
         )
 
-    elif os.name == "posix":  #  linux
-
+    elif os.name == "posix":  # linux
+        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
         assert (
             hashlib.sha256(image.tobytes()).hexdigest()
             == "ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6"
@@ -84,9 +84,6 @@ def test_render_mesh_triangle_soup():
             hashlib.sha256(z_buffer.tobytes()).hexdigest()
             == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
         )
-        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
-        # ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6
-        # b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a
 
     else:
         raise BaseException(f"No results for os.name={os.name}")

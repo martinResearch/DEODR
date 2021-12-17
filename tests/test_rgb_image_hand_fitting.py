@@ -20,8 +20,8 @@ def test_rgb_image_hand_fitting_pytorch():
         assert (abs(energies[49] - 2100.0239709048583) < 1e-10) or (
             abs(energies[49] - 2132.9307950405196) < 1e-10
         )
-        # 2100.0239709048583 : result on Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz   3.31GHz
-        # 2132.9307950405196 : result on Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz   2.40GHz
+        # 2100.0239709048583 : result on Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz 3.31GHz
+        # 2132.9307950405196 : result on Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz 2.40GHz
         # Possible explanation https://github.com/pytorch/pytorch/issues/54684
     else:
         assert abs(energies[49] - 2106.5436357944604) < 12
@@ -41,8 +41,9 @@ def test_rgb_image_hand_fitting_numpy():
     if os.name == "nt":  # windows
         assert abs(energies[49] - 2107.850380422819) < 1e-10
     else:
-        assert abs(energies[49] - 2113.7013184079137) < 2
-        # google colab 2107.850380422819
+        # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
+        assert abs(energies[49] - 2107.850380422819 ) < 2
+
 
 
 def test_rgb_image_hand_fitting_tensorflow():
@@ -65,12 +66,14 @@ def test_rgb_image_hand_fitting_tensorflow():
         # could use os.environ['TF_DETERMINISTIC_OPS'] = '1'
         # github action 2132.9307950405196
 
-    else:  # posix if linux
+    elif os.name == "posix": # linux
         assert (abs(energies[49] - 2115.9320061795634) < 1e-10) or (
             abs(energies[49] - 2107.962374538259) < 1e-10
         )
+        # github workflow linux 2115.9320061795634
         # google colab 2107.962374538259
-
+    else:
+        raise BaseException(f"No results for os.name={os.name}")
 
 if __name__ == "__main__":
 
