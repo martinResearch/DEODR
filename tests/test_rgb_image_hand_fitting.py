@@ -42,8 +42,7 @@ def test_rgb_image_hand_fitting_numpy():
         assert abs(energies[49] - 2107.850380422819) < 1e-10
     else:
         # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
-        assert abs(energies[49] - 2107.850380422819 ) < 2
-
+        assert abs(energies[49] - 2107.850380422819) < 2
 
 
 def test_rgb_image_hand_fitting_tensorflow():
@@ -66,7 +65,7 @@ def test_rgb_image_hand_fitting_tensorflow():
         # could use os.environ['TF_DETERMINISTIC_OPS'] = '1'
         # github action 2132.9307950405196
 
-    elif os.name == "posix": # linux
+    elif os.name == "posix":  # linux
         assert (abs(energies[49] - 2115.9320061795634) < 1e-10) or (
             abs(energies[49] - 2107.962374538259) < 1e-10
         )
@@ -74,6 +73,7 @@ def test_rgb_image_hand_fitting_tensorflow():
         # google colab 2107.962374538259
     else:
         raise BaseException(f"No results for os.name={os.name}")
+
 
 if __name__ == "__main__":
 
