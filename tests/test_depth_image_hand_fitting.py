@@ -18,7 +18,7 @@ def test_depth_image_hand_fitting_pytorch():
     if os.name == "nt":  # windows
         assert abs(energies[49] - 251.32711067513003) < 1e-10
     else:
-        assert abs(energies[49] - 251.31652686512888) < 1e-5
+        assert abs(energies[49] - 251.31652686512888) < 1e-10
 
 
 def test_depth_image_hand_fitting_numpy():
@@ -33,7 +33,7 @@ def test_depth_image_hand_fitting_numpy():
     if os.name == "nt":  # windows
         assert abs(energies[49] - 251.32711113732933) < 1e-10
     else:
-        assert abs(energies[49] - 251.32711113730954) < 1e-5
+        assert abs(energies[49] - 251.32711113730954) < 1e-10
 
 
 def test_depth_image_hand_fitting_tensorflow():
@@ -52,7 +52,8 @@ def test_depth_image_hand_fitting_tensorflow():
     if os.name == "nt":  # windows
         assert abs(energies[49] - 251.3164879047919) < 1e-10
     else:
-        assert abs(energies[49] - 251.31648983466366) < 1e-5
+        assert abs(energies[49] - 251.31648983466366) < 1e-10
+        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz 251.3164914350016
 
 
 if __name__ == "__main__":

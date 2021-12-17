@@ -22,8 +22,10 @@ def test_rgb_image_hand_fitting_pytorch():
         )
         # 2100.0239709048583 : result on Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz   3.31GHz
         # 2132.9307950405196 : result on Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz   2.40GHz
+        # Possible explanation https://github.com/pytorch/pytorch/issues/54684
     else:
         assert abs(energies[49] - 2106.5436357944604) < 12
+        # google colab 2117.9946156293213
 
 
 def test_rgb_image_hand_fitting_numpy():
@@ -40,6 +42,7 @@ def test_rgb_image_hand_fitting_numpy():
         assert abs(energies[49] - 2107.850380422819) < 1e-10
     else:
         assert abs(energies[49] - 2113.7013184079137) < 2
+        # google colab 2107.850380422819
 
 
 def test_rgb_image_hand_fitting_tensorflow():
@@ -57,13 +60,16 @@ def test_rgb_image_hand_fitting_tensorflow():
     )
     if os.name == "nt":  # windows
         assert abs(energies[49] - 2112.9566220857746) < 1e-10
-        # seems to change a lot from one run to the next when using GPU
+        # Running on CPU because it seems to change a lot
+        # from one run to the next when using GPU
         # could use os.environ['TF_DETERMINISTIC_OPS'] = '1'
         # github action 2132.9307950405196
-        # 2110.1568876644037
-        # 2206.686787515083
-    else:
-        assert abs(energies[49] - 2115.9320061795634) < 1
+
+    else:  # posix if linux
+        assert (abs(energies[49] - 2115.9320061795634) < 1e-10) or (
+            abs(energies[49] - 2107.962374538259) < 1e-10
+        )
+        # google colab 2107.962374538259
 
 
 if __name__ == "__main__":
