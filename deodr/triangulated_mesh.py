@@ -113,10 +113,7 @@ class TriMeshAdjacencies:
         triangles = vertices[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
-        if self.clockwise:
-            n = -np.cross(u, v)
-        else:
-            n = np.cross(u, v)
+        n = -np.cross(u, v) if self.clockwise else np.cross(u, v)
         normals = normalize(n, axis=1)
         self.store_backward["compute_face_normals"] = (u, v, n)
         return normals
@@ -142,8 +139,7 @@ class TriMeshAdjacencies:
     def compute_vertex_normals_backward(self, normals_b):
         n = self.store_backward["compute_vertex_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
-        face_normals_b = self._vertices_faces.T * n_b
-        return face_normals_b
+        return self._vertices_faces.T * n_b
 
     def edge_on_silhouette(self, vertices_2d):
         """Compute the a boolean for each of edges of each face that is true if
@@ -152,10 +148,7 @@ class TriMeshAdjacencies:
         triangles = vertices_2d[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
-        if self.clockwise:
-            face_visible = np.cross(u, v) > 0
-        else:
-            face_visible = np.cross(u, v) < 0
+        face_visible = np.cross(u, v) > 0 if self.clockwise else np.cross(u, v) < 0
         edge_bool = (self.edges_faces_ones * face_visible) == 1
         return edge_bool[self.faces_edges]
 
@@ -188,10 +181,8 @@ class TriMesh:
             self.faces, self.clockwise, nb_vertices=self.nb_vertices
         )
 
-        if self.vertices is not None:
-
-            if self.adjacencies.is_closed:
-                self.check_orientation()
+        if self.vertices is not None and self.adjacencies.is_closed:
+            self.check_orientation()
 
     def set_vertices(self, vertices):
         assert vertices.ndim == 2
@@ -283,13 +274,10 @@ class ColoredTriMesh(TriMesh):
 
         self.texture = texture
         self.vertices_colors = colors
-        self.textured = not (self.texture is None)
+        self.textured = self.texture is not None
         self.nb_colors = nb_colors
         if nb_colors is None:
-            if texture is None:
-                self.nb_colors = colors.shape[1]
-            else:
-                self.nb_colors = texture.shape[2]
+            self.nb_colors = colors.shape[1] if texture is None else texture.shape[2]
 
     def set_vertices_colors(self, colors):
         self.vertices_colors = colors
@@ -430,10 +418,9 @@ class ColoredTriMesh(TriMesh):
         material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
         visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
 
-        trimesh_mesh = trimesh.Trimesh(
+        return trimesh.Trimesh(
             vertices=new_vertices, faces=new_faces, visual=visual
         )
-        return trimesh_mesh
 
     @staticmethod
     def load(filename):

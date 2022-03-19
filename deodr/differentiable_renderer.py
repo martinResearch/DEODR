@@ -23,8 +23,8 @@ def renderScene(
         # when installed from a wheel. this also make interactive debugging easier
         # for the library user
 
-        assert not (image is None)
-        assert not (z_buffer is None)
+        assert image is not None
+        assert z_buffer is not None
         height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
@@ -107,8 +107,8 @@ def renderSceneB(
         # when installed from a wheel. this also make inderactive debugginh easier
         # for the library user
 
-        assert not (image is None)
-        assert not (z_buffer is None)
+        assert image is not None
+        assert z_buffer is not None
 
         height = image.shape[0]
         width = image.shape[1]
@@ -187,7 +187,7 @@ def renderSceneB(
             assert obs.shape[0] == height
             assert obs.shape[1] == width
         else:
-            assert not (image_b is None)
+            assert image_b is not None
             assert image_b.shape[0] == height
             assert image_b.shape[1] == width
 
@@ -350,9 +350,7 @@ class Camera:
         )
         if depths_b is not None:
             p_camera_b[:, 2] += depths_b
-        points_3d_b = p_camera_b.dot(self.extrinsic[:3, :3].T)
-
-        return points_3d_b
+        return p_camera_b.dot(self.extrinsic[:3, :3].T)
 
     def get_center(self):
         return -self.extrinsic[:3, :3].T.dot(self.extrinsic[:, 3])
@@ -763,8 +761,7 @@ class Scene3D:
             directional = np.zeros((self.mesh.nb_vertices))
         if self.store_backward_current is not None:
             self.store_backward_current["compute_vertices_luminosity"] = directional
-        vertices_luminosity = directional + self.light_ambient
-        return vertices_luminosity
+        return directional + self.light_ambient
 
     def _compute_vertices_colors_with_illumination(self):
 
@@ -884,10 +881,7 @@ class Scene3D:
                 self.edgeflags,
             )  # store this field as it could be overwritten when
             # rendering several views
-        if return_z_buffer:
-            return image, z_buffer
-        else:
-            return image
+        return (image, z_buffer) if return_z_buffer else image
 
     def render_backward(self, image_b):
         if self.perspective_correct:

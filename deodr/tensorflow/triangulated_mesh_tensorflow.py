@@ -22,10 +22,7 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
         tris = tf.gather(vertices, self.faces)
         u = tris[::, 1] - tris[::, 0]
         v = tris[::, 2] - tris[::, 0]
-        if self.clockwise:
-            n = -tf.linalg.cross(u, v)
-        else:
-            n = tf.linalg.cross(u, v)
+        n = -tf.linalg.cross(u, v) if self.clockwise else tf.linalg.cross(u, v)
         norm = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
         return n / norm[:, None]
 
@@ -68,7 +65,7 @@ class ColoredTriMeshTensorflow(TriMeshTensorflow):
         self.uv = uv
         self.texture = texture
         self.colors = colors
-        self.textured = not (self.texture is None)
+        self.textured = self.texture is not None
 
     def set_vertices_colors(self, colors):
         self.vertices_colors = colors
