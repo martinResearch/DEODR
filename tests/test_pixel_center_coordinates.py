@@ -28,6 +28,9 @@ def test_upper_left_pixel_center_coordinates():
         (0, height - 1),  # lower left,
         (width - 1, height - 1),  # lower right
     ]
+    eps = 0.001
+
+    clockwise = True
     for integer_pixel_centers in [False, True]:
         if integer_pixel_centers:
             point_coordinates = [
@@ -44,8 +47,6 @@ def test_upper_left_pixel_center_coordinates():
                 (width - 0.5, height - 0.5),  # lower right
             ]
 
-        eps = 0.001
-
         depths = np.array([1, 1, 1])
         shade = np.array([0, 0, 0])
         shade = np.array([1, 1, 1])
@@ -55,7 +56,6 @@ def test_upper_left_pixel_center_coordinates():
         shaded = np.array([0], dtype=np.bool)
         colors = np.array([[1], [1], [1]])
         edgeflags = np.zeros((1, 3), dtype=np.bool)
-        clockwise = True
         faces = np.array([[0, 2, 1]], dtype=np.uint32)
 
         texture = np.ones((2, 2, 1))

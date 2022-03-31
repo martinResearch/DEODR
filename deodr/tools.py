@@ -7,13 +7,11 @@ def qrot(q, v):
     if q.ndim == 2:
         uv = np.cross(q[:, None, :3], v[None, :, :])
         uuv = np.cross(q[:, None, :3], uv)
-        vr = v + 2 * (q[:, None, [3]] * uv + uuv)
+        return v + 2 * (q[:, None, [3]] * uv + uuv)
     else:
         uv = np.cross(q[:3], v)
         uuv = np.cross(q[:3], uv)
-        vr = v + 2 * (q[3] * uv + uuv)
-
-    return vr
+        return v + 2 * (q[3] * uv + uuv)
 
 
 def qrot_backward(q, v, vr_b):
@@ -31,8 +29,7 @@ def qrot_backward(q, v, vr_b):
 def normalize(x, axis=-1):
     n2 = np.sum(x ** 2, axis=axis)
     n = np.sqrt(n2)
-    xn = x / np.expand_dims(n, axis)
-    return xn
+    return x / np.expand_dims(n, axis)
 
 
 def normalize_backward(x, xn_b, axis=-1):
@@ -40,8 +37,7 @@ def normalize_backward(x, xn_b, axis=-1):
     n = np.sqrt(n2)
     inv_n = 1 / n
     n_b = -np.sum(xn_b * x, axis=axis) * (inv_n ** 2)
-    x_b = (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
-    return x_b
+    return (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
 
 
 def cross_backward(u, v, c_b):

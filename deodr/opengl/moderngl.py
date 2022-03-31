@@ -33,7 +33,7 @@ def opencv_to_opengl_perspective(camera, znear, zfar, integer_pixel_centers):
     np.testing.assert_array_equal(
         [[fx, 0, cx], [0, fy, cy], [0, 0, 1]], camera.intrinsic
     )
-    m = np.array(
+    return np.array(
         [
             [2.0 * fx / width, 0, 0, 0],
             [0, -2.0 * fy / height, 0, 0],
@@ -46,7 +46,6 @@ def opencv_to_opengl_perspective(camera, znear, zfar, integer_pixel_centers):
             [0, 0, 2.0 * zfar * znear / (znear - zfar), 0.0],
         ]
     )
-    return m
 
 
 class OffscreenRenderer:
@@ -191,8 +190,6 @@ class OffscreenRenderer:
         self.texture.use()
         self.vao.render()
         data = self.fbo.read(components=3, alignment=1)
-        array_rgb = np.frombuffer(data, dtype=np.uint8).reshape(
+        return np.frombuffer(data, dtype=np.uint8).reshape(
             camera.height, camera.width, 3
         )
-
-        return array_rgb

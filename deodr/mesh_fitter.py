@@ -112,8 +112,7 @@ class MeshDepthFitter:
             self.camera,
             depth_scale=self.depthScale,
         )
-        depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
-        return depth
+        return np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
 
     def render_backward(self, depth_b):
         self.scene.clear_gradients()
@@ -304,8 +303,7 @@ class MeshRGBFitterWithPose:
         self.mesh.set_vertices_colors(
             np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
         )
-        image = self.scene.render(self.camera)
-        return image
+        return self.scene.render(self.camera)
 
     def render_backward(self, image_b):
         self.scene.clear_gradients()
@@ -585,10 +583,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
             self.render_backward(image_b)
         energy_data = np.sum(energy_datas)
-        if return_images:
-            return energy_data, image, diff_image
-        else:
-            return energy_data
+        return (energy_data, image, diff_image) if return_images else energy_data
 
     def step(self, check_gradient=False):
 
