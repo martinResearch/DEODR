@@ -1,6 +1,6 @@
 -r requirements_build.txt
 scikit-learn
-matplotlib==3.3.4
+matplotlib==3.5.2
 imageio==2.9.0
 trimesh==3.9.32
 opencv-python==4.5.2.52
