@@ -14,7 +14,7 @@ import sklearn.datasets
 from sklearn import decomposition
 
 
-def main():
+def main() -> None:
     faces = sklearn.datasets.fetch_olivetti_faces()
 
     # plt.imshow(faces.images[0])

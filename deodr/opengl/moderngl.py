@@ -2,17 +2,22 @@
 
 This is used to have a reference implementation using OpenGL shaders that produce identical images to deodr
 """
-
+from typing import Tuple
 import moderngl
 
 import numpy as np
 
 from pyrr import Matrix44
 
+from deodr.triangulated_mesh import ColoredTriMesh
+
 from . import shaders as opengl_shaders
+from deodr.differentiable_renderer import Camera, Scene3D
 
 
-def opencv_to_opengl_perspective(camera, znear, zfar, integer_pixel_centers):
+def opencv_to_opengl_perspective(
+    camera: Camera, znear: float, zfar: float, integer_pixel_centers: bool
+) -> np.ndarray:
     # https://blog.noctua-software.com/opencv-opengl-projection-matrix.html
     fx = camera.intrinsic[0, 0]
     fy = camera.intrinsic[1, 1]
@@ -63,7 +68,7 @@ class OffscreenRenderer:
         self.fbo = None
         self.texture = None
 
-    def set_scene(self, deodr_scene):
+    def set_scene(self, deodr_scene: Scene3D):
 
         self.bg_color = deodr_scene.background_color
         if False and not (
@@ -80,11 +85,13 @@ class OffscreenRenderer:
         self.set_mesh(deodr_scene.mesh)
         self.integer_pixel_centers = deodr_scene.integer_pixel_centers
 
-    def set_light(self, light_directional, light_ambient):
+    def set_light(
+        self, light_directional: Tuple[float, float, float], light_ambient: float
+    ):
         self.shader_program["light_directional"].value = tuple(light_directional)
         self.shader_program["light_ambient"].value = float(light_ambient)
 
-    def set_mesh(self, mesh):
+    def set_mesh(self, mesh: ColoredTriMesh):
 
         self.set_texture(mesh.texture)
         # create triangles soup
@@ -116,9 +123,10 @@ class OffscreenRenderer:
             ],
         )
 
-    def set_texture(self, texture):
+    def set_texture(self, texture: np.ndarray):
         # Texture
         assert not texture.flags["WRITEABLE"]
+        assert texture.ndim == 3
         texture_id = id(texture)
         if self.texture is None or self.texture_id != texture_id:
             self.texture_id = id(texture)
@@ -129,7 +137,7 @@ class OffscreenRenderer:
             )
         # texture.build_mipmaps()
 
-    def set_camera(self, camera):
+    def set_camera(self, camera: Camera):
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
 
         intrinsic = Matrix44(

@@ -19,13 +19,13 @@ import numpy as np
 
 
 def run(
-    dl_library="none",
-    plot_curves=False,
-    save_images=False,
-    display=True,
-    max_iter=300,
-    n_subdivision=0,
-):
+    dl_library: str = "none",
+    plot_curves: bool = False,
+    save_images: bool = False,
+    display: bool = True,
+    max_iter: int = 300,
+    n_subdivision: int = 0,
+) -> None:
 
     file_folder = os.path.dirname(__file__)
 
@@ -68,9 +68,9 @@ def run(
     durations = []
     start = time.time()
 
-    iterfolder = os.path.join(file_folder, "./iterations/depth")
-    if not os.path.exists(iterfolder):
-        os.makedirs(iterfolder)
+    iter_folder = os.path.join(file_folder, "./iterations/depth")
+    if not os.path.exists(iter_folder):
+        os.makedirs(iter_folder)
 
     for niter in range(max_iter):
         energy, synthetic_depth, diff_image = hand_fitter.step()
@@ -84,14 +84,14 @@ def run(
                 cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
             if save_images:
                 imsave(
-                    os.path.join(iterfolder, f"depth_hand_iter_{niter}.png"),
+                    os.path.join(iter_folder, f"depth_hand_iter_{niter}.png"),
                     combined_image,
                 )
         cv2.waitKey(1)
 
     with open(
         os.path.join(
-            iterfolder,
+            iter_folder,
             "depth_image_fitting_result_%s.json"
             % str(datetime.datetime.now()).replace(":", "_"),
         ),
@@ -110,7 +110,7 @@ def run(
     if plot_curves:
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "depth_image_fitting_result_*.json")
+            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
@@ -122,7 +122,7 @@ def run(
         plt.legend()
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "depth_image_fitting_result_*.json")
+            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
@@ -133,7 +133,7 @@ def run(
     return energies
 
 
-def main():
+def main()->None:
     display = True
     n_subdivision = 0
     run(

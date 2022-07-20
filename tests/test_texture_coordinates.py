@@ -6,7 +6,7 @@ from deodr.differentiable_renderer import Scene2D
 import numpy as np
 
 
-def test_texture_coordinates():
+def test_texture_coordinates() -> None:
     texture = np.array([[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float)
 
     # coordinate of upper left pixel center is (0,0)

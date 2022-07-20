@@ -3,7 +3,7 @@
 import os
 
 import deodr
-from deodr.examples.render_mesh import example_moderngl, example_channels, example_rgb
+from deodr.examples.render_mesh import example_moderngl, example_rgb
 
 
 import imageio
@@ -11,11 +11,11 @@ import imageio
 import numpy as np
 
 
-def test_render_mesh_moderngl():
+def test_render_mesh_moderngl() -> None:
     example_moderngl(display=False)
 
 
-def test_render_mesh(update=False):
+def test_render_mesh(update: bool = False) -> None:
     image = example_rgb(display=False, save_image=False, width=320, height=240)
     image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
     image_uint8 = (image * 255).astype(np.uint8)

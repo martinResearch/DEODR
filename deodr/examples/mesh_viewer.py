@@ -4,11 +4,13 @@ import argparse
 import os
 import time
 import pickle
+from typing import Callable, Literal, Optional, Tuple, Union
 
 import cv2
 
 import deodr
 from deodr import differentiable_renderer
+from deodr.differentiable_renderer import Camera
 from deodr.triangulated_mesh import ColoredTriMesh
 
 import matplotlib.pyplot as plt
@@ -20,22 +22,26 @@ from scipy.spatial.transform import Rotation
 import trimesh
 
 
+interator_mode_type = Literal["camera_centered", "object_centered_trackball"]
+
+
 class Interactor:
     """Class that implements various mouse interaction with the 3D scene."""
 
     def __init__(
         self,
-        camera,
-        mode="object_centered_trackball",
-        object_center=None,
-        rotation_speed=0.003,
-        z_translation_speed=0.05,
-        xy_translation_speed=0.01,
+        camera: Camera,
+        mode: Literal = "object_centered_trackball",
+        object_center: Optional[np.ndarray] = None,
+        rotation_speed: float = 0.003,
+        z_translation_speed: float = 0.05,
+        xy_translation_speed: float = 0.01,
     ):
         self.left_is_down = False
         self.right_is_down = False
         self.middle_is_down = False
         self.mode = mode
+        assert object_center.shape == (3,)
         self.object_center = object_center
         self.rotation_speed = rotation_speed
         self.z_translation_speed = z_translation_speed
@@ -51,8 +57,9 @@ class Interactor:
 
     def rotate(
         self,
-        rot_vec,
+        rot_vec: np.ndarray,
     ):
+        assert np.ndarray.shape == (3,)
         rotation = Rotation.from_rotvec(np.array(rot_vec))
         if self.mode == "camera_centered":
             self.camera.extrinsic = rotation.as_matrix().dot(self.camera.extrinsic)
@@ -65,7 +72,7 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(self, event, x, y, flags, param):
+    def mouse_callback(self, event, x: int, y: int, flags, param):
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -212,22 +219,22 @@ class Interactor:
 class Viewer:
     def __init__(
         self,
-        file_or_mesh,
-        display_texture_map=True,
-        width=640,
-        height=480,
-        display_fps=True,
-        title=None,
-        use_moderngl=False,
-        light_directional=(0, 0, -0.5),
-        light_ambient=0.5,
-        background_color=(1, 1, 1),
-        use_antialiasing=True,
-        use_light=True,
-        fps_exp_average_decay=0.1,
-        horizontal_fov=60,
-        video_pattern="deodr_viewer_recording{id}.avi",
-        video_format="MJPG",
+        file_or_mesh: Union[str, ColoredTriMesh],
+        display_texture_map: bool = True,
+        width: int = 640,
+        height: int = 480,
+        display_fps: bool = True,
+        title: Optional[str] = None,
+        use_moderngl: bool = False,
+        light_directional: Tuple[float, float, float] = (0, 0, -0.5),
+        light_ambient: float = 0.5,
+        background_color: Tuple[float, float, float] = (1, 1, 1),
+        use_antialiasing: bool = True,
+        use_light: bool = True,
+        fps_exp_average_decay: float = 0.1,
+        horizontal_fov: float = 60,
+        video_pattern: str = "deodr_viewer_recording{id}.avi",
+        video_format: str = "MJPG",
     ):
         self.title = title
         self.scene = differentiable_renderer.Scene3D(sigma=1)
@@ -276,7 +283,7 @@ class Viewer:
         self.scene.mesh.compute_vertex_normals()
         self.offscreen_renderer.set_scene(self.scene)
 
-    def set_background_color(self, background_color):
+    def set_background_color(self, background_color: Tuple[float, float, float]):
         self.scene.set_background_color(background_color)
 
     def display_texture_map(self):
@@ -284,7 +291,7 @@ class Viewer:
             ax = plt.subplot(111)
             self.mesh.plot_uv_map(ax)
 
-    def set_mesh(self, file_or_mesh):
+    def set_mesh(self, file_or_mesh: Union[str, ColoredTriMesh]):
         if isinstance(file_or_mesh, str):
             if self.title is None:
                 self.title = file_or_mesh
@@ -340,7 +347,7 @@ class Viewer:
             xy_translation_speed=3e-4,
         )
 
-    def start(self, print_help=True, loop=True):
+    def start(self, print_help: bool=True, loop: bool=True):
         """Open the window and start the loop if loop true."""
         if print_help:
             self.print_help()
@@ -411,7 +418,7 @@ class Viewer:
         self.camera.width = self.width
         self.camera.height = self.height
 
-    def print_fps(self, image, fps):
+    def print_fps(self, image: np.ndarray, fps: float):
         font = cv2.FONT_HERSHEY_SIMPLEX
         bottom_left_corner_of_text = (20, image.shape[0] - 20)
         font_scale = 1
@@ -543,10 +550,10 @@ class Viewer:
         self.register_key("s", self.toggle_video_recording)
         self.register_key("t", self.toggle_interactor_mode)
 
-    def register_key(self, key, func):
+    def register_key(self, key: str, func: Callable[[],None]):
         self.keys_map[key] = func
 
-    def process_key(self, key):
+    def process_key(self, key: str):
         chr_key = chr(key)
         if chr_key in self.keys_map:
             self.keys_map[chr(key)]()
@@ -554,7 +561,7 @@ class Viewer:
             print(f"no function registered for key {chr_key}")
 
 
-def run():
+def run()->None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     Viewer(obj_file, use_moderngl=False).start()
 

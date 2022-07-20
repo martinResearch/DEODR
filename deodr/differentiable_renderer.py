@@ -205,7 +205,7 @@ def renderSceneB(
 
 
 class Camera:
-    """Camera class with the same distortion parameterization as opencv."""
+    """Camera class with the same distortion parameterization as OpenCV."""
 
     def __init__(
         self,
@@ -253,7 +253,7 @@ class Camera:
         return np.column_stack(values)
 
     def project_points(
-        self, points_3d, get_jacobians=False, store_backward=None, return_depths=True
+        self, points_3d, get_jacobians:bool=False, store_backward=None, return_depthss:bool=True
     ):  # similar to cv2.project_points
         p_camera = self.world_to_camera(points_3d)
         depths = p_camera[:, 2]

@@ -16,18 +16,18 @@ class CameraPytorch(Camera):
             extrinsic, intrinsic, height, width, distortion=distortion, checks=False
         )
 
-    def world_to_camera(self, points_3d):
+    def world_to_camera(self, points_3d: torch.Tensor):
         assert isinstance(points_3d, torch.Tensor)
         return torch.cat(
             (points_3d, torch.ones((points_3d.shape[0], 1), dtype=torch.double)), dim=1
         ).mm(torch.tensor(self.extrinsic.T))
 
-    def left_mul_intrinsic(self, projected):
+    def left_mul_intrinsic(self, projected: torch.Tensor):
         return torch.cat(
             (projected, torch.ones((projected.shape[0], 1), dtype=torch.double)), dim=1
         ).mm(torch.tensor(self.intrinsic[:2, :].T))
 
-    def column_stack(self, values):
+    def column_stack(self, values: Iterable[torch.Tensor]):
         return torch.stack(values, dim=1)
 
 

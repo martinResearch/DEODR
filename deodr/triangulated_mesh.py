@@ -1,6 +1,8 @@
 """Implementation of triangulated meshes."""
+from typing import Optional
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from scipy import sparse
 
@@ -12,9 +14,15 @@ class TriMeshAdjacencies:
     Unlike the TriMesh class there are no vertices stored in this class.
     """
 
-    def __init__(self, faces, clockwise=False, nb_vertices=None):
+    def __init__(
+        self, faces: ArrayLike, clockwise: bool = False, nb_vertices: bool = None
+    ):
         faces = np.array(faces)
+        assert faces.ndim == 2
+        assert faces.shape[1] == 3
+
         self.faces = faces
+
         self.nb_faces = int(faces.shape[0])
         if nb_vertices is None:
             nb_vertices = int(np.max(faces.flat)) + 1
@@ -95,21 +103,24 @@ class TriMeshAdjacencies:
         assert np.all(self.laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward = {}
 
-    def boundary_edges(self):
+    def boundary_edges(self) -> np.ndarray:
         is_boundary_edge = np.array(
             np.sum(self.adjacencies.edges_faces_ones, axis=1) == 1
         ).squeeze(axis=1)
         return self.edges[is_boundary_edge, :]
 
-    def id_edge(self, idv):
-
+    def id_edge(self, idv: np.ndarray):
+        assert idv.ndim == 2
+        assert idv.shape[1] == 2
         return (
             np.maximum(idv[:, 0], idv[:, 1]).astype(np.uint64)
             + np.minimum(idv[:, 0], idv[:, 1]).astype(np.uint64) * self.nb_vertices,
             idv[:, 0] < idv[:, 1],
         )
 
-    def compute_face_normals(self, vertices):
+    def compute_face_normals(self, vertices: np.ndarray) -> np.ndarray:
+        assert vertices.ndim == 2
+        assert vertices.shape[1] == 3
         triangles = vertices[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
@@ -121,7 +132,9 @@ class TriMeshAdjacencies:
         self.store_backward["compute_face_normals"] = (u, v, n)
         return normals
 
-    def compute_face_normals_backward(self, normals_b):
+    def compute_face_normals_backward(self, normals_b: np.ndarray) -> np.ndarray:
+        assert normals_b.ndim == 2
+        assert normals_b.shape[1] == 3
         u, v, n = self.store_backward["compute_face_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
         if self.clockwise:
@@ -133,22 +146,28 @@ class TriMeshAdjacencies:
         np.add.at(vertices_b, self.faces, triangles_b)
         return vertices_b
 
-    def compute_vertex_normals(self, face_normals):
+    def compute_vertex_normals(self, face_normals: np.ndarray) -> np.ndarray:
+        assert face_normals.ndim == 2
+        assert face_normals.shape[1] == 3
         n = self._vertices_faces * face_normals
         normals = normalize(n, axis=1)
         self.store_backward["compute_vertex_normals"] = n
         return normals
 
-    def compute_vertex_normals_backward(self, normals_b):
+    def compute_vertex_normals_backward(self, normals_b) -> np.ndarray:
+        assert normals_b.ndim == 2
+        assert normals_b.shape[1] == 3
         n = self.store_backward["compute_vertex_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
         face_normals_b = self._vertices_faces.T * n_b
         return face_normals_b
 
-    def edge_on_silhouette(self, vertices_2d):
+    def edge_on_silhouette(self, vertices_2d: np.ndarray):
         """Compute the a boolean for each of edges of each face that is true if
         and only if the edge is one the silhouette of the mesh given a view point
         """
+        assert vertices_2d.ndim == 2
+        assert vertices_2d.shape[1] == 2
         triangles = vertices_2d[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
@@ -163,7 +182,13 @@ class TriMeshAdjacencies:
 class TriMesh:
     """Class that implements a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False, compute_adjacencies=True):
+    def __init__(
+        self,
+        faces: ArrayLike,
+        vertices: Optional[np.ndarray] = None,
+        clockwise: bool = False,
+        compute_adjacencies: bool = True,
+    ):
         faces = np.array(faces)
         assert np.issubdtype(faces.dtype, np.integer)
         assert faces.ndim == 2
@@ -183,7 +208,7 @@ class TriMesh:
         if compute_adjacencies:
             self.compute_adjacencies()
 
-    def compute_adjacencies(self):
+    def compute_adjacencies(self) -> None:
         self.adjacencies = TriMeshAdjacencies(
             self.faces, self.clockwise, nb_vertices=self.nb_vertices
         )
@@ -193,14 +218,14 @@ class TriMesh:
             if self.adjacencies.is_closed:
                 self.check_orientation()
 
-    def set_vertices(self, vertices):
+    def set_vertices(self, vertices: np.ndarray) -> None:
         assert vertices.ndim == 2
         assert vertices.shape[1] == 3
         self.vertices = vertices
         self.face_normals = None
         self.vertex_normals = None
 
-    def compute_volume(self):
+    def compute_volume(self) -> float:
         """Compute the volume enclosed by the triangulated surface. It assumes the
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle.
@@ -221,7 +246,7 @@ class TriMesh:
             / 6
         )
 
-    def check_orientation(self):
+    def check_orientation(self) -> None:
         """Check the mesh faces are properly oriented for the normals to point
         outward.
         """
@@ -233,15 +258,15 @@ class TriMesh:
                 )
             )
 
-    def compute_face_normals(self):
+    def compute_face_normals(self) -> None:
         self.face_normals = self.adjacencies.compute_face_normals(self.vertices)
 
-    def compute_vertex_normals(self):
+    def compute_vertex_normals(self) -> None:
         if self.face_normals is None:
             self.compute_face_normals()
         self.vertex_normals = self.adjacencies.compute_vertex_normals(self.face_normals)
 
-    def compute_vertex_normals_backward(self, vertex_normals_b):
+    def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
         self.face_normals_b = self.adjacencies.compute_vertex_normals_backward(
             vertex_normals_b
         )
@@ -249,7 +274,7 @@ class TriMesh:
             self.face_normals_b
         )
 
-    def edge_on_silhouette(self, points_2d):
+    def edge_on_silhouette(self, points_2d) -> np.ndarray:
         """Compute the a boolean for each of edges that is true if and only if
         the edge is one the silhouette of the mesh.
         """

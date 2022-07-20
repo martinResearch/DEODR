@@ -1,5 +1,5 @@
 """Example with fitting a colored hand mesh model to an image."""
-
+from typing import Literal
 
 import datetime
 import glob
@@ -19,14 +19,16 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+dl_library_type = Literal["pytorch", "tensorflow", "none"]
+
 
 def run(
-    dl_library="pytorch",
-    plot_curves=True,
-    save_images=True,
-    display=True,
-    max_iter=100,
-    n_subdivision=0,
+    dl_library: dl_library_type = "pytorch",
+    plot_curves: bool = True,
+    save_images: bool = True,
+    display: bool = True,
+    max_iter: int = 100,
+    n_subdivision: int = 0,
 ):
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
@@ -163,7 +165,7 @@ def run(
     return energies
 
 
-def main():
+def main() -> None:
 
     display = True
     save_images = False
@@ -189,7 +191,7 @@ def main():
         plot_curves=True,
         display=display,
         save_images=save_images,
-         n_subdivision=n_subdivision,
+        n_subdivision=n_subdivision,
     )
 
 

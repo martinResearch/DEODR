@@ -1,17 +1,12 @@
 """Test using rgb mesh rendering."""
 
-import os
 
-from matplotlib import pyplot as plt
-
-import deodr
-from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.differentiable_renderer import Scene2D
 import numpy as np
 
 
-def test_upper_left_pixel_center_coordinates():
-    """testing  that pixel center cooridnates:
+def test_upper_left_pixel_center_coordinates() -> None:
+    """Testing  that pixel center coordinates:
 
     pixel centers are at integer coordinates when integer_pixel_centers=True with
         upper left at (0, 0)

@@ -3,7 +3,7 @@
 from deodr.examples.depth_image_hand_fitting import run
 
 
-def test_depth_image_hand_fitting_pytorch():
+def test_depth_image_hand_fitting_pytorch() -> None:
 
     energies = run(
         dl_library="pytorch",

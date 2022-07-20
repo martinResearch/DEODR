@@ -3,7 +3,7 @@
 from deodr.examples.rgb_image_hand_fitting import run
 
 
-def test_rgb_image_hand_fitting_pytorch():
+def test_rgb_image_hand_fitting_pytorch() -> None:
 
     energies = run(
         dl_library="pytorch",
@@ -15,7 +15,7 @@ def test_rgb_image_hand_fitting_pytorch():
     assert abs(energies[49] - 2106.5436357944604) < 12
 
 
-def test_rgb_image_hand_fitting_numpy():
+def test_rgb_image_hand_fitting_numpy() -> None:
 
     energies = run(
         dl_library="none",
@@ -25,10 +25,12 @@ def test_rgb_image_hand_fitting_numpy():
         max_iter=50,
     )
     # getting different result on python 3.6 or 3.7 in the github action, not sure why
-    assert (abs(energies[49] - 2107.850380422819) < 2) or (abs(energies[49] - 2113.7013184079137) < 2)
+    assert (abs(energies[49] - 2107.850380422819) < 2) or (
+        abs(energies[49] - 2113.7013184079137) < 2
+    )
 
 
-def test_rgb_image_hand_fitting_tensorflow():
+def test_rgb_image_hand_fitting_tensorflow() -> None:
 
     energies = run(
         dl_library="tensorflow",
