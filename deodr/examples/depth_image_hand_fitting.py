@@ -133,7 +133,7 @@ def run(
     return energies
 
 
-def main()->None:
+def main() -> None:
     display = True
     n_subdivision = 0
     run(

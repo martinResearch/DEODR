@@ -1,5 +1,6 @@
 """Pytorch interface to deodr."""
 
+from typing import Iterable
 import numpy as np
 
 import torch
@@ -36,8 +37,8 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, ij, colors, scene):
-        nb_color_chanels = colors.shape[1]
-        image = np.empty((scene.height, scene.width, nb_color_chanels))
+        nb_color_channels = colors.shape[1]
+        image = np.empty((scene.height, scene.width, nb_color_channels))
         z_buffer = np.empty((scene.height, scene.width))
         ctx.scene = scene
         scene.ij = ij.detach().numpy()  # should automatically detached according to

@@ -19,11 +19,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-dl_library_type = Literal["pytorch", "tensorflow", "none"]
+DlLibraryType = Literal["pytorch", "tensorflow", "none"]
 
 
 def run(
-    dl_library: dl_library_type = "pytorch",
+    dl_library: DlLibraryType = "pytorch",
     plot_curves: bool = True,
     save_images: bool = True,
     display: bool = True,

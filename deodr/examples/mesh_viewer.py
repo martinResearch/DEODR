@@ -22,7 +22,7 @@ from scipy.spatial.transform import Rotation
 import trimesh
 
 
-interator_mode_type = Literal["camera_centered", "object_centered_trackball"]
+InteractorModeType = Literal["camera_centered", "object_centered_trackball"]
 
 
 class Interactor:
@@ -31,7 +31,7 @@ class Interactor:
     def __init__(
         self,
         camera: Camera,
-        mode: Literal = "object_centered_trackball",
+        mode: InteractorModeType = "object_centered_trackball",
         object_center: Optional[np.ndarray] = None,
         rotation_speed: float = 0.003,
         z_translation_speed: float = 0.05,
@@ -48,7 +48,7 @@ class Interactor:
         self.xy_translation_speed = xy_translation_speed
         self.camera = camera
 
-    def toggle_mode(self):
+    def toggle_mode(self) -> None:
         if self.mode == "object_centered_trackball":
             self.mode = "camera_centered"
         else:
@@ -58,7 +58,7 @@ class Interactor:
     def rotate(
         self,
         rot_vec: np.ndarray,
-    ):
+    ) -> None:
         assert np.ndarray.shape == (3,)
         rotation = Rotation.from_rotvec(np.array(rot_vec))
         if self.mode == "camera_centered":
@@ -72,7 +72,7 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(self, event, x: int, y: int, flags, param):
+    def mouse_callback(self, event, x: int, y: int, flags, param) -> None:
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -177,7 +177,7 @@ class Interactor:
             self.x_last = x
             self.y_last = y
 
-    def print_help(self):
+    def print_help(self) -> None:
         help_str = ""
         help_str += "Mouse:\n"
         if self.mode == "object_centered_trackball":
@@ -269,29 +269,31 @@ class Viewer:
 
         self.register_keys()
 
-    def set_light(self, light_directional, light_ambient):
+    def set_light(self, light_directional, light_ambient) -> None:
         self.light_directional = np.array(light_directional)
         self.light_ambient = light_ambient
         self.scene.set_light(
             light_directional=self.light_directional, light_ambient=light_ambient
         )
 
-    def setup_moderngl(self):
+    def setup_moderngl(self) -> None:
         import deodr.opengl.moderngl
 
         self.offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
         self.scene.mesh.compute_vertex_normals()
         self.offscreen_renderer.set_scene(self.scene)
 
-    def set_background_color(self, background_color: Tuple[float, float, float]):
+    def set_background_color(
+        self, background_color: Tuple[float, float, float]
+    ) -> None:
         self.scene.set_background_color(background_color)
 
-    def display_texture_map(self):
+    def display_texture_map(self) -> None:
         if self.mesh.textured:
             ax = plt.subplot(111)
             self.mesh.plot_uv_map(ax)
 
-    def set_mesh(self, file_or_mesh: Union[str, ColoredTriMesh]):
+    def set_mesh(self, file_or_mesh: Union[str, ColoredTriMesh]) -> None:
         if isinstance(file_or_mesh, str):
             if self.title is None:
                 self.title = file_or_mesh
@@ -321,7 +323,7 @@ class Viewer:
         )
         self.scene.set_mesh(self.mesh)
 
-    def recenter_camera(self):
+    def recenter_camera(self) -> None:
         camera_center = self.object_center + np.array([0, 0, 3]) * self.object_radius
         rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         translation = -rotation.T.dot(camera_center)
@@ -347,7 +349,7 @@ class Viewer:
             xy_translation_speed=3e-4,
         )
 
-    def start(self, print_help: bool=True, loop: bool=True):
+    def start(self, print_help: bool = True, loop: bool = True) -> None:
         """Open the window and start the loop if loop true."""
         if print_help:
             self.print_help()
@@ -359,7 +361,7 @@ class Viewer:
             while cv2.getWindowProperty(self.windowname, 0) >= 0:
                 self.refresh()
 
-    def update_fps(self):
+    def update_fps(self) -> None:
         new_time = time.perf_counter()
         if self.last_time is None:
             self.fps = 0
@@ -372,7 +374,7 @@ class Viewer:
             ) * self.fps + self.fps_exp_average_decay * new_fps
         self.last_time = new_time
 
-    def refresh(self):
+    def refresh(self) -> None:
         self.width, self.height = cv2.getWindowImageRect(self.windowname)[2:]
         self.resize_camera()
 
@@ -404,7 +406,7 @@ class Viewer:
         if key > 0:
             self.process_key(key)
 
-    def resize_camera(self):
+    def resize_camera(self) -> None:
         ratio = self.width / self.camera.width
 
         intrinsic = np.array(
@@ -418,7 +420,7 @@ class Viewer:
         self.camera.width = self.width
         self.camera.height = self.height
 
-    def print_fps(self, image: np.ndarray, fps: float):
+    def print_fps(self, image: np.ndarray, fps: float) -> None:
         font = cv2.FONT_HERSHEY_SIMPLEX
         bottom_left_corner_of_text = (20, image.shape[0] - 20)
         font_scale = 1
@@ -434,7 +436,7 @@ class Viewer:
             thickness,
         )
 
-    def print_help(self):
+    def print_help(self) -> None:
         """Print the help message."""
         help_str = ""
         help_str += "-----------------\n"
@@ -446,7 +448,7 @@ class Viewer:
         print(help_str)
         self.interactor.print_help()
 
-    def toggle_renderer(self):
+    def toggle_renderer(self) -> None:
         """Toggle the renderer between DEODR cpu rendering and moderngl."""
         self.use_moderngl = not (self.use_moderngl)
         print(f"use_moderngl = { self.use_moderngl}")
@@ -454,7 +456,7 @@ class Viewer:
         if self.use_moderngl and self.offscreen_renderer is None:
             self.setup_moderngl()
 
-    def toggle_perspective_texture_mapping(self):
+    def toggle_perspective_texture_mapping(self) -> None:
         """Toggle between linear texture mapping and perspective correct texture mapping."""
         if self.use_moderngl:
             print("can only use perspective correct mapping  when using moderngl")
@@ -462,7 +464,7 @@ class Viewer:
             self.scene.perspective_correct = not (self.scene.perspective_correct)
             print(f"perspective_correct = {self.scene.perspective_correct}")
 
-    def toggle_lights(self):
+    def toggle_lights(self) -> None:
         """Toggle between uniform lighting vs directional + ambient."""
         self.use_light = not (self.use_light)
         print(f"use_light = { self.use_light}")
@@ -487,7 +489,7 @@ class Viewer:
             else:
                 self.scene.set_light(light_directional=None, light_ambient=1.0)
 
-    def toggle_edge_overdraw_antialiasing(self):
+    def toggle_edge_overdraw_antialiasing(self) -> None:
         """Toggle edge overdraw anti-aliasing (DEODR rendering only)."""
         if self.use_moderngl:
             print("no anti-aliasing available when using moderngl")
@@ -499,7 +501,7 @@ class Viewer:
             else:
                 self.scene.sigma = 0.0
 
-    def pickle_scene_and_cameras(self):
+    def pickle_scene_and_cameras(self) -> None:
         """Save scene and camera in a pickle file."""
         filename = os.path.abspath("scene.pickle")
         # save scene and camera in pickle file
@@ -515,12 +517,12 @@ class Viewer:
             pickle.dump(self.camera, file)
         print(f"saved camera in {filename}")
 
-    def toggle_interactor_mode(self):
+    def toggle_interactor_mode(self) -> None:
         """Change the camera interactor mode."""
         self.interactor.toggle_mode()
         self.interactor.print_help()
 
-    def toggle_video_recording(self):
+    def toggle_video_recording(self) -> None:
         """Start and stop video recording."""
         if not self.recording:
             id = 0
@@ -539,7 +541,7 @@ class Viewer:
             self.video_writer.release()
             self.recording = False
 
-    def register_keys(self):
+    def register_keys(self) -> None:
         self.keys_map = {}
         self.register_key("h", self.print_help)
         self.register_key("r", self.toggle_renderer)
@@ -550,10 +552,10 @@ class Viewer:
         self.register_key("s", self.toggle_video_recording)
         self.register_key("t", self.toggle_interactor_mode)
 
-    def register_key(self, key: str, func: Callable[[],None]):
+    def register_key(self, key: str, func: Callable[[], None]) -> None:
         self.keys_map[key] = func
 
-    def process_key(self, key: str):
+    def process_key(self, key: str) -> None:
         chr_key = chr(key)
         if chr_key in self.keys_map:
             self.keys_map[chr(key)]()
@@ -561,7 +563,7 @@ class Viewer:
             print(f"no function registered for key {chr_key}")
 
 
-def run()->None:
+def run() -> None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     Viewer(obj_file, use_moderngl=False).start()
 

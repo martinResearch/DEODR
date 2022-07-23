@@ -47,8 +47,8 @@ def TensorflowDifferentiableRender2D(ij, colors, scene):
     def forward(
         ij, colors
     ):  # using inner function as we don't differentate w.r.t scene
-        nb_color_chanels = colors.shape[1]
-        image = np.empty((scene.height, scene.width, nb_color_chanels))
+        nb_color_channels = colors.shape[1]
+        image = np.empty((scene.height, scene.width, nb_color_channels))
         z_buffer = np.empty((scene.height, scene.width))
         scene.ij = np.array(ij)  # should automatically detached according to
         # https://pytorch.org/docs/master/notes/extending.html

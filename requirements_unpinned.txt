@@ -15,5 +15,6 @@ pytest-xvfb
 flake8
 flake8-quotes
 radon
+mypy
 
 

@@ -123,7 +123,7 @@ class OffscreenRenderer:
             ],
         )
 
-    def set_texture(self, texture: np.ndarray):
+    def set_texture(self, texture: np.ndarray) -> None:
         # Texture
         assert not texture.flags["WRITEABLE"]
         assert texture.ndim == 3
@@ -137,7 +137,7 @@ class OffscreenRenderer:
             )
         # texture.build_mipmaps()
 
-    def set_camera(self, camera: Camera):
+    def set_camera(self, camera: Camera) -> None:
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
 
         intrinsic = Matrix44(
@@ -171,7 +171,7 @@ class OffscreenRenderer:
         self.shader_program["p1"].value = p1
         self.shader_program["p2"].value = p2
 
-    def render(self, camera):
+    def render(self, camera: Camera) -> np.ndarray:
         ctx = self.ctx
         self.zfar = camera.world_to_camera(self.bounding_box_corners)[:, 2].max()
         self.znear = 1e-3 * self.zfar

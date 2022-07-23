@@ -25,7 +25,10 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
         self.cT_torch = scipy_sparse_to_torch(self.cT)
 
     def evaluate(
-        self, vertices, return_grad=True, return_hessian=True, refresh_rotations=True
+        self,
+        vertices,
+        return_grad=True,
+        return_hessian=True,
     ):
         assert isinstance(vertices, torch.Tensor)
         if vertices.requires_grad:

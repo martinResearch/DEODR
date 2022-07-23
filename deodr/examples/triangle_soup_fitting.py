@@ -17,7 +17,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
+def create_example_scene(
+    n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False
+) -> Scene2D:
 
     material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
     height_material = material.shape[0]
@@ -94,7 +96,7 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
     return Scene2D(**scene)
 
 
-def run(nb_max_iter=500, display=True, clockwise=False):
+def run(nb_max_iter: int = 500, display: bool = True, clockwise: bool = False):
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
@@ -151,7 +153,6 @@ def run(nb_max_iter=500, display=True, clockwise=False):
                 sigma, antialiase_error, image_target
             )
             print(f"iter {niter} loss = {loss}")
-            # imsave(os.path.join(iterfolder,f'soup_{niter}.png'), combinedIMage)
 
             losses.append(loss)
             if loss_image.ndim == 2:

@@ -140,7 +140,10 @@ class MeshDepthFitter:
             self.mesh.set_vertices(vertices_with_grad_transformed)
 
             depth_scale = 1 * self.depthScale
-            depth = self.scene.render_depth(self.camera, depth_scale=depth_scale,)
+            depth = self.scene.render_depth(
+                self.camera,
+                depth_scale=depth_scale,
+            )
             depth = tf.clip_by_value(depth, 0, self.scene.max_depth)
 
             diff_image = tf.reduce_sum(

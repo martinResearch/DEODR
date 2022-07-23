@@ -1,12 +1,17 @@
 """Implementation of triangulated meshes."""
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, Dict
 
 from scipy import sparse
 
 from .tools import cross_backward, normalize, normalize_backward
+
+try:
+    from trimesh.base import Trimesh
+except ImportError:
+    Trimesh = None
 
 
 class TriMeshAdjacencies:
@@ -15,7 +20,10 @@ class TriMeshAdjacencies:
     """
 
     def __init__(
-        self, faces: ArrayLike, clockwise: bool = False, nb_vertices: bool = None
+        self,
+        faces: ArrayLike,
+        clockwise: bool = False,
+        nb_vertices: Optional[int] = None,
     ):
         faces = np.array(faces)
         assert faces.ndim == 2
@@ -101,15 +109,15 @@ class TriMeshAdjacencies:
         )
         self.hasBoundaries = np.any(np.sum(self.edges_faces_ones, axis=1) == 1)
         assert np.all(self.laplacian * np.ones((self.nb_vertices)) == 0)
-        self.store_backward = {}
+        self.store_backward: Dict[str, Any] = {}
 
     def boundary_edges(self) -> np.ndarray:
-        is_boundary_edge = np.array(
-            np.sum(self.adjacencies.edges_faces_ones, axis=1) == 1
-        ).squeeze(axis=1)
+        is_boundary_edge = np.array(np.sum(self.edges_faces_ones, axis=1) == 1).squeeze(
+            axis=1
+        )
         return self.edges[is_boundary_edge, :]
 
-    def id_edge(self, idv: np.ndarray):
+    def id_edge(self, idv: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         assert idv.ndim == 2
         assert idv.shape[1] == 2
         return (
@@ -154,7 +162,7 @@ class TriMeshAdjacencies:
         self.store_backward["compute_vertex_normals"] = n
         return normals
 
-    def compute_vertex_normals_backward(self, normals_b) -> np.ndarray:
+    def compute_vertex_normals_backward(self, normals_b: np.ndarray) -> np.ndarray:
         assert normals_b.ndim == 2
         assert normals_b.shape[1] == 3
         n = self.store_backward["compute_vertex_normals"]
@@ -162,7 +170,7 @@ class TriMeshAdjacencies:
         face_normals_b = self._vertices_faces.T * n_b
         return face_normals_b
 
-    def edge_on_silhouette(self, vertices_2d: np.ndarray):
+    def edge_on_silhouette(self, vertices_2d: np.ndarray) -> np.ndarray:
         """Compute the a boolean for each of edges of each face that is true if
         and only if the edge is one the silhouette of the mesh given a view point
         """
@@ -184,7 +192,7 @@ class TriMesh:
 
     def __init__(
         self,
-        faces: ArrayLike,
+        faces: np.ndarray,
         vertices: Optional[np.ndarray] = None,
         clockwise: bool = False,
         compute_adjacencies: bool = True,
@@ -230,6 +238,7 @@ class TriMesh:
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle.
         """
+        assert self.vertices is not None, "You need to set vertices first"
         return (
             (1 if self.clockwise else -1)
             * np.sum(
@@ -266,15 +275,15 @@ class TriMesh:
             self.compute_face_normals()
         self.vertex_normals = self.adjacencies.compute_vertex_normals(self.face_normals)
 
-    def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
-        self.face_normals_b = self.adjacencies.compute_vertex_normals_backward(
-            vertex_normals_b
-        )
-        self.vertices_b += self.adjacencies.compute_face_normals_backward(
-            self.face_normals_b
-        )
+    # def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
+    #     self.face_normals_b = self.adjacencies.compute_vertex_normals_backward(
+    #         vertex_normals_b
+    #     )
+    #     self.vertices_b += self.adjacencies.compute_face_normals_backward(
+    #         self.face_normals_b
+    #     )
 
-    def edge_on_silhouette(self, points_2d) -> np.ndarray:
+    def edge_on_silhouette(self, points_2d: np.ndarray) -> np.ndarray:
         """Compute the a boolean for each of edges that is true if and only if
         the edge is one the silhouette of the mesh.
         """
@@ -287,15 +296,15 @@ class ColoredTriMesh(TriMesh):
 
     def __init__(
         self,
-        faces,
-        vertices=None,
-        clockwise=False,
-        faces_uv=None,
-        uv=None,
-        texture=None,
-        colors=None,
-        nb_colors=None,
-        compute_adjacencies=True,
+        faces: np.ndarray,
+        vertices: Optional[np.ndarray] = None,
+        clockwise: bool = False,
+        faces_uv: Optional[np.ndarray] = None,
+        uv: Optional[np.ndarray] = None,
+        texture: Optional[np.ndarray] = None,
+        colors: Optional[np.ndarray] = None,
+        nb_colors: Optional[int] = None,
+        compute_adjacencies: bool = True,
     ):
         super(ColoredTriMesh, self).__init__(
             faces,
@@ -312,18 +321,27 @@ class ColoredTriMesh(TriMesh):
         self.nb_colors = nb_colors
         if nb_colors is None:
             if texture is None:
+                assert (
+                    colors is not None
+                ), "You need to provide at least on among nb_colors, texture or colors"
                 self.nb_colors = colors.shape[1]
             else:
+                assert (
+                    texture is not None
+                ), "You need to provide at least on among nb_colors, texture or colors"
                 self.nb_colors = texture.shape[2]
 
-    def set_vertices_colors(self, colors):
+    def set_vertices_colors(self, colors: np.ndarray) -> None:
         self.vertices_colors = colors
 
-    def plot_uv_map(self, ax):
-        ax.imshow(self.texture)
+    def plot_uv_map(self, ax: Any) -> None:
+        assert self.uv is not None, "You need to provide a uv to display the uv map"
+        if self.texture is not None:
+            ax.imshow(self.texture)
         ax.triplot(self.uv[:, 0], self.uv[:, 1], self.faces_uv)
 
-    def plot(self, ax, plot_normals=False):
+    def plot(self, ax: Any) -> None:
+        assert self.vertices is not None, "You need to provide vertices first"
         x, y, z = self.vertices.T
         u, v, w = self.vertex_normals.T
         ax.plot_trisurf(
@@ -334,14 +352,16 @@ class ColoredTriMesh(TriMesh):
         )
         ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True, color=[0, 1, 0])
 
-    def subdivise(self, n_iter):
+    def subdivise(self, n_iter: int) -> "ColoredTriMesh":
         """loop subdivision.
 
         https://graphics.stanford.edu/~mdfisher/subdivision.html"""
         return loop_subdivision(self, n_iter)
 
     @staticmethod
-    def from_trimesh(mesh, compute_adjacencies=True):  # inspired from pyrender
+    def from_trimesh(
+        mesh: Trimesh, compute_adjacencies: bool = True
+    ) -> "ColoredTriMesh":  # inspired from pyrender
         """Get the vertex colors, texture coordinates, and material properties
         from a :class:`~trimesh.base.Trimesh`.
         """
@@ -417,7 +437,7 @@ class ColoredTriMesh(TriMesh):
             compute_adjacencies=compute_adjacencies,
         )
 
-    def to_trimesh(self):
+    def to_trimesh(self) -> Trimesh:
         # lazy modules loading
         import PIL
         import trimesh
@@ -429,9 +449,13 @@ class ColoredTriMesh(TriMesh):
                 "convertion to timesh with per vertex color not support yet"
             )
 
+        assert self.vertices is not None, "You need to provide vertices first."
         v = self.vertices
         faces = self.faces
         faces_tex = self.faces_uv
+
+        assert self.uv is not None, "Only mesh with texture supported."
+        assert self.texture is not None, "Only mesh with texture supported."
 
         vt = np.column_stack(
             (
@@ -461,17 +485,19 @@ class ColoredTriMesh(TriMesh):
         return trimesh_mesh
 
     @staticmethod
-    def load(filename):
+    def load(filename: str) -> "ColoredTriMesh":
         import trimesh
 
         mesh_trimesh = trimesh.load(filename)
         return ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 
-def loop_subdivision(mesh, n_iter=1):
+def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
     """Loop subdivision.
 
     https://graphics.stanford.edu/~mdfisher/subdivision.html"""
+
+    assert mesh.vertices is not None
     if n_iter == 0:
         return mesh
 

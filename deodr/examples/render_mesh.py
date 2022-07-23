@@ -1,11 +1,11 @@
 """Examples with 3D mesh rendering using various backend and comparison with deodr."""
 
 import os
-
+from typing import Tuple
 import deodr
 from deodr import differentiable_renderer
 from deodr.triangulated_mesh import ColoredTriMesh
-
+from deodr.differentiable_renderer import Scene3D, Camera
 import imageio
 
 import matplotlib.pyplot as plt
@@ -24,8 +24,12 @@ def run(obj_file, width=640, height=480, display=True):
 
 
 def default_scene(
-    obj_file, width=640, height=480, use_distortion=True, integer_pixel_centers=True
-):
+    obj_file: str,
+    width: int = 640,
+    height: int = 480,
+    use_distortion: bool = True,
+    integer_pixel_centers: bool = True,
+) -> Tuple[Scene3D, Camera]:
 
     mesh_trimesh = trimesh.load(obj_file)
 
@@ -50,7 +54,9 @@ def default_scene(
     return scene, camera
 
 
-def example_rgb(display=True, save_image=False, width=640, height=480):
+def example_rgb(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> np.ndarray:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
     image = scene.render(camera)
@@ -66,7 +72,9 @@ def example_rgb(display=True, save_image=False, width=640, height=480):
     return image
 
 
-def example_channels(display=True, save_image=False, width=640, height=480):
+def example_channels(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
 
@@ -98,7 +106,9 @@ def example_channels(display=True, save_image=False, width=640, height=480):
             imageio.imwrite(image_file, image_uint8)
 
 
-def example_pyrender(display=True, save_image=False, width=640, height=480):
+def example_pyrender(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> None:
     import deodr.opengl.pyrender
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
@@ -123,7 +133,7 @@ def example_pyrender(display=True, save_image=False, width=640, height=480):
         ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
 
 
-def example_moderngl(display=True, width=640, height=480):
+def example_moderngl(display: bool = True, width: int = 640, height: int = 480) -> None:
     import deodr.opengl.moderngl
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
