@@ -1,6 +1,6 @@
 """Modules containing classes to fit 3D meshes to images using differentiable rendering."""
 
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 import copy
 
 import numpy as np
@@ -41,7 +41,7 @@ class MeshDepthFitter:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.mesh = TriMesh(
+        self.mesh = ColoredTriMesh(
             faces, vertices=vertices
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0)
@@ -75,7 +75,7 @@ class MeshDepthFitter:
         self.speed_quaternion = np.zeros(4)
 
     def set_max_depth(self, max_depth: float) -> None:
-        self.scene.max_depth = max_depth
+        self.max_depth = max_depth
         self.scene.set_background_color(np.array([max_depth], dtype=np.float))
 
     def set_depth_scale(self, depth_scale: float) -> None:
@@ -120,14 +120,16 @@ class MeshDepthFitter:
             self.camera,
             depth_scale=self.depthScale,
         )
-        depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
+        depth = np.clip(self.depth_not_clipped, 0, self.max_depth)
         return depth
 
     def render_backward(self, depth_b: np.ndarray) -> None:
         self.scene.clear_gradients()
         depth_b[self.depth_not_clipped < 0] = 0
-        depth_b[self.depth_not_clipped > self.scene.max_depth] = 0
+        depth_b[self.depth_not_clipped > self.max_depth] = 0
         self.scene.render_depth_backward(depth_b)
+        assert self.scene.mesh is not None
+        assert self.scene.mesh.vertices_b is not None
         vertices_transformed_b = self.scene.mesh.vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
@@ -462,6 +464,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
+        self.store_backward = Dict[str, Any] = {}
         self.reset()
 
     def set_background_color(self, background_color: np.ndarray) -> None:
@@ -537,7 +540,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.iter = 0
 
-    def render(self, idframe: Optional[int] = None):
+    def render(self, idframe: Optional[int] = None) -> np.ndarray:
         unormalized_quaternion = self.transform_quaternion[idframe]
         q_normalized = normalize(
             unormalized_quaternion
@@ -620,7 +623,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         if check_gradient:
 
-            def func(x):
+            def func(x: np.ndarray) -> float:
                 return self.rigid_energy.evaluate(
                     x, return_grad=False, return_hessian=False
                 )
@@ -629,7 +632,7 @@ class MeshRGBFitterWithPoseMultiFrame:
                 grad_rigidity.flatten(), func, self.vertices
             )
 
-            def func(x):
+            def func(x: np.ndarray) -> float:
                 return self.energy_data(x)[0]
 
             grad_data = self.vertices_b.copy()

@@ -56,7 +56,7 @@ def opencv_to_opengl_perspective(
 class OffscreenRenderer:
     """Class to perform offscreen rendering of deodr scenes using moderngl."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.ctx = moderngl.create_standalone_context()
 
         # Shaders
@@ -71,6 +71,7 @@ class OffscreenRenderer:
     def set_scene(self, deodr_scene: Scene3D) -> None:
         assert deodr_scene.mesh is not None
         assert deodr_scene.light_ambient is not None
+        assert deodr_scene.background_color is not None
         self.bg_color = deodr_scene.background_color
 
         self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
@@ -148,7 +149,7 @@ class OffscreenRenderer:
         self.shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         self.shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:
-            k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
+            k1, k2, p1, p2, k3 = (0.0, 0.0, 0.0, 0.0, 0.0)
         else:
             (
                 k1,
@@ -183,7 +184,7 @@ class OffscreenRenderer:
                 ctx.renderbuffer((camera.width, camera.height)),
                 ctx.depth_renderbuffer((camera.width, camera.height)),
             )
-
+        assert self.fbo is not None
         # Rendering the RGB image
         self.fbo.use()
         ctx.enable(moderngl.DEPTH_TEST)

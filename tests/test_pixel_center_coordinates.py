@@ -29,15 +29,16 @@ def test_upper_left_pixel_center_coordinates() -> None:
         (width - 1, height - 1),  # lower right
     ]
     for integer_pixel_centers in [False, True]:
+
         if integer_pixel_centers:
-            point_coordinates = [
-                (0, 0),  # upper left
-                (width - 1, 0),  # upper right,
-                (0, height - 1),  # lower left,
-                (width - 1, height - 1),  # lower right
+            points_coordinates = [
+                (0.0, 0.0),  # upper left
+                (width - 1.0, 0.0),  # upper right,
+                (0, height - 1.0),  # lower left,
+                (width - 1.0, height - 1.0),  # lower right
             ]
         else:
-            point_coordinates = [
+            points_coordinates = [
                 (0.5, 0.5),  # upper left
                 (width - 0.5, 0.5),  # upper right,
                 (0.5, height - 0.5),  # lower left,
@@ -62,7 +63,7 @@ def test_upper_left_pixel_center_coordinates() -> None:
         background_color = np.array([0])
 
         for integer_point_coordinates, point_coordinates in zip(
-            integer_points_coordinates, point_coordinates
+            integer_points_coordinates, points_coordinates
         ):
             ij = np.array([[-eps, -eps], [-eps, eps], [eps, -eps]]) + np.array(
                 point_coordinates

@@ -268,6 +268,13 @@ class Camera:
     def project_points(
         self,
         points_3d: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def project_points(
+        self,
+        points_3d: np.ndarray,
         return_depths: Literal[True],
         store_backward: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -771,6 +778,9 @@ class Scene3D(Scene2D):
         self.integer_pixel_centers = integer_pixel_centers
         self.colors: Optional[np.ndarray] = None
 
+        self.store_backward_current: Optional[Dict[str, Any]] = None
+        self.vertices_b: Optional[np.ndarray] = None
+
     def clear_gradients(self) -> None:
         # fields to store gradients
         assert self.mesh is not None
@@ -1011,6 +1021,7 @@ class Scene3D(Scene2D):
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
+        assert self.store_backward_current is not None
         camera, self.edgeflags = self.store_backward_current["render"]
         points_2d_b, colors_b = self._render_2d_backward(image_b)
         self._compute_vertices_colors_with_illumination_backward(colors_b)
@@ -1023,6 +1034,7 @@ class Scene3D(Scene2D):
     def render_depth(
         self, camera: Camera, depth_scale: float = 1, backface_culling: bool = True
     ) -> np.ndarray:
+        assert self.mesh is not None
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -1143,6 +1155,7 @@ class Scene3D(Scene2D):
 
         if self.mesh.uv is None:
             if color:
+                assert self.mesh.vertices_colors is not None
                 soup_vertices_colors = self.mesh.vertices_colors[
                     self.mesh.faces
                 ].reshape(soup_nb_vertices, 3)

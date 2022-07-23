@@ -64,7 +64,7 @@ class Interactor:
         self,
         rot_vec: np.ndarray,
     ) -> None:
-        assert np.ndarray.shape == (3,)
+        assert np.array(rot_vec).shape == (3,)
         rotation = Rotation.from_rotvec(np.array(rot_vec))
         if self.mode == "camera_centered":
             self.camera.extrinsic = rotation.as_matrix().dot(self.camera.extrinsic)
@@ -77,7 +77,7 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(self, event, x: int, y: int, flags, param) -> None:
+    def mouse_callback(self, event: int, x: int, y: int, flags, param: None) -> None:
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:

@@ -72,6 +72,7 @@ def deodr_directional_light_to_pyrender(
 
 def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
     assert deodr_mesh.uv is not None
+    assert deodr_mesh.texture is not None
 
     # trimesh and pyrender do to handle faces indices for texture
     # that are different from face indices for the 3d vertices

@@ -1,5 +1,6 @@
 """example fitting a texture mesh to an image using face images"""
 
+from typing import Tuple
 import cv2
 
 from deodr.differentiable_renderer import Scene2D
@@ -120,7 +121,9 @@ def main() -> None:
 
     rescale_factor = 10
 
-    def fun(points_deformed, pca_coefs):
+    def fun(
+        points_deformed: np.ndarray, pca_coefs: np.ndarray
+    ) -> Tuple[float, np.ndarray]:
         ij = points_deformed * 64 - 0.5
         # face=faces_pca.inverse_transform(coefs[:,None])
         face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape(
