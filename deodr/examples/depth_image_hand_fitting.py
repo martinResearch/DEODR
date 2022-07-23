@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import time
+from typing import List
 
 import cv2
 
@@ -25,16 +26,18 @@ def run(
     display: bool = True,
     max_iter: int = 300,
     n_subdivision: int = 0,
-) -> None:
+) -> List[float]:
 
     file_folder = os.path.dirname(__file__)
 
-    if dl_library == "pytorch":
+    if dl_library == "none":
+        from deodr.mesh_fitter import MeshDepthFitter
+    elif dl_library == "pytorch":
         from deodr.pytorch import MeshDepthFitter
+
     elif dl_library == "tensorflow":
         from deodr.tensorflow import MeshDepthFitter
-    elif dl_library == "none":
-        from deodr.mesh_fitter import MeshDepthFitter
+
     else:
         raise BaseException(f"unknown deep learning library {dl_library}")
 
@@ -64,8 +67,8 @@ def run(
     hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])
     hand_fitter.set_max_depth(1)
     hand_fitter.set_depth_scale(110 / max_depth)
-    energies = []
-    durations = []
+    energies: List[float] = []
+    durations: List[float] = []
     start = time.time()
 
     iter_folder = os.path.join(file_folder, "./iterations/depth")

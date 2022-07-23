@@ -12,10 +12,10 @@ def test_depth_image_hand_fitting_pytorch() -> None:
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 251.31652686512888) < 1e-5
+    assert abs(energies[49] - 251.31652686512888) < 2e-2
 
 
-def test_depth_image_hand_fitting_numpy():
+def test_depth_image_hand_fitting_numpy() -> None:
 
     energies = run(
         dl_library="none",
@@ -24,10 +24,10 @@ def test_depth_image_hand_fitting_numpy():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 251.32711113730954) < 1e-5
+    assert abs(energies[49] - 251.32711113730954) < 1e-2
 
 
-def test_depth_image_hand_fitting_tensorflow():
+def test_depth_image_hand_fitting_tensorflow() -> None:
 
     energies = run(
         dl_library="tensorflow",
@@ -36,7 +36,7 @@ def test_depth_image_hand_fitting_tensorflow():
         save_images=False,
         max_iter=50,
     )
-    assert abs(energies[49] - 251.31648983466366) < 1e-5
+    assert abs(energies[49] - 251.31648983466366) < 2e-2
 
 
 if __name__ == "__main__":

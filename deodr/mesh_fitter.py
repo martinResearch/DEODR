@@ -123,7 +123,7 @@ class MeshDepthFitter:
         depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
         return depth
 
-    def render_backward(self, depth_b) -> None:
+    def render_backward(self, depth_b: np.ndarray) -> None:
         self.scene.clear_gradients()
         depth_b[self.depth_not_clipped < 0] = 0
         depth_b[self.depth_not_clipped > self.scene.max_depth] = 0
@@ -305,7 +305,7 @@ class MeshRGBFitterWithPose:
     def render(self) -> np.ndarray:
         q_normalized = normalize(
             self.transform_quaternion
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_transformed = (
             qrot(q_normalized, self.vertices) + self.transform_translation
         )
@@ -333,7 +333,7 @@ class MeshRGBFitterWithPose:
         )
         self.transform_quaternion_b = normalize_backward(
             self.transform_quaternion, q_normalized_b
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
 
     def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
@@ -565,7 +565,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.mesh_color_b = np.zeros(self.mesh_color.shape)
         self.store_backward = {}
 
-    def render_backward(self, image_b) -> None:
+    def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.mesh is not None
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
@@ -584,13 +585,13 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def energy_data(self, vertices: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = vertices
-        image = [None] * self.nb_facesrames
-        diff_image = [None] * self.nb_facesrames
-        image_b = [None] * self.nb_facesrames
-        energy_datas = [None] * self.nb_facesrames
+        image = [None] * self.nb_frames
+        diff_image = [None] * self.nb_frames
+        image_b = [None] * self.nb_frames
+        energy_datas = [None] * self.nb_frames
         self.clear_gradients()
-        coef_data = self.cdata / self.nb_facesrames
-        for idframe in range(self.nb_facesrames):
+        coef_data = self.cdata / self.nb_frames
+        for idframe in range(self.nb_frames):
             image[idframe] = self.render(idframe=idframe)
             diff_image[idframe] = np.sum(
                 (image[idframe] - self.mesh_images[idframe]) ** 2, axis=2
@@ -608,7 +609,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
-        self.nb_facesrames = len(self.mesh_images)
+        self.nb_frames = len(self.mesh_images)
 
         energy_data, image, diff_image = self.energy_data(self.vertices)
         (
@@ -646,7 +647,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         # update v
         grad = self.vertices_b + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia

@@ -3,6 +3,7 @@
 
 import copy
 import os
+from typing import Dict
 
 import cv2
 
@@ -96,7 +97,9 @@ def create_example_scene(
     return Scene2D(**scene)
 
 
-def run(nb_max_iter: int = 500, display: bool = True, clockwise: bool = False):
+def run(
+    nb_max_iter: int = 500, display: bool = True, clockwise: bool = False
+) -> Dict[bool, float]:
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
@@ -137,7 +140,7 @@ def run(nb_max_iter: int = 500, display: bool = True, clockwise: bool = False):
         scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
     )
 
-    final_loss = {}
+    final_loss: Dict[bool, float] = {}
 
     for antialiase_error in [True, False]:
         np.random.seed(2)

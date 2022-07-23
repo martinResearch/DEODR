@@ -1,5 +1,5 @@
 """Example with fitting a colored hand mesh model to multiple images."""
-from typing import Literal
+from typing_extensions import Literal
 
 import datetime
 import glob
@@ -28,7 +28,7 @@ def run(
     save_images: bool = False,
     display: bool = True,
     max_iter: int = 400,
-):
+) -> None:
 
     file_folder = os.path.dirname(__file__)
     hand_images = [

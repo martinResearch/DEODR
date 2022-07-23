@@ -4,8 +4,8 @@ import argparse
 import os
 import time
 import pickle
-from typing import Callable, Literal, Optional, Tuple, Union
-
+from typing import Callable, Dict, Optional, Tuple, Union
+from typing_extensions import Literal
 import cv2
 
 import deodr
@@ -41,7 +41,12 @@ class Interactor:
         self.right_is_down = False
         self.middle_is_down = False
         self.mode = mode
-        assert object_center.shape == (3,)
+        if mode == "object_centered_trackball":
+            assert object_center is not None
+            assert object_center.shape == (3,)
+        elif object_center is None:
+            object_center = np.array([0, 0, 0])
+
         self.object_center = object_center
         self.rotation_speed = rotation_speed
         self.z_translation_speed = z_translation_speed
@@ -248,12 +253,13 @@ class Viewer:
         self.use_antialiasing = use_antialiasing
         self.use_light = use_light
         self.fps_exp_average_decay = fps_exp_average_decay
-        self.last_time = None
+        self.last_time: Optional[float] = None
         self.horizontal_fov = horizontal_fov
-        self.video_writer = None
+        self.video_writer: Optional[cv2.VideoWriter] = None
         self.recording = False
         self.video_pattern = video_pattern
         self.video_format = video_format
+        self.fps: float = 0
 
         if display_texture_map:
             self.display_texture_map()
@@ -262,14 +268,17 @@ class Viewer:
         self.set_light(light_directional, light_ambient)
         self.recenter_camera()
 
+        self.offscreen_renderer: Optional[
+            "deodr.opengl.moderngl.OffscreenRenderer"
+        ] = None
         if use_moderngl:
             self.setup_moderngl()
-        else:
-            self.offscreen_renderer = None
 
         self.register_keys()
 
-    def set_light(self, light_directional, light_ambient) -> None:
+    def set_light(
+        self, light_directional: np.ndarray, light_ambient: np.ndarray
+    ) -> None:
         self.light_directional = np.array(light_directional)
         self.light_ambient = light_ambient
         self.scene.set_light(
@@ -280,6 +289,7 @@ class Viewer:
         import deodr.opengl.moderngl
 
         self.offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        assert self.scene.mesh is not None
         self.scene.mesh.compute_vertex_normals()
         self.offscreen_renderer.set_scene(self.scene)
 
@@ -379,6 +389,7 @@ class Viewer:
         self.resize_camera()
 
         if self.use_moderngl:
+            assert self.offscreen_renderer is not None
             image = self.offscreen_renderer.render(self.camera)
         else:
             image = (self.scene.render(self.interactor.camera) * 255).astype(np.uint8)
@@ -386,6 +397,7 @@ class Viewer:
         bgr_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.recording:
+            assert self.video_writer is not None
             self.video_writer.write(bgr_image.astype(np.uint8))
 
         self.update_fps()
@@ -471,6 +483,7 @@ class Viewer:
 
         if self.use_light:
             if self.use_moderngl:
+                assert self.offscreen_renderer is not None
                 self.offscreen_renderer.set_light(
                     light_directional=np.array(self.light_directional),
                     light_ambient=self.light_ambient,
@@ -482,6 +495,7 @@ class Viewer:
                 )
         else:
             if self.use_moderngl:
+                assert self.offscreen_renderer is not None
                 self.offscreen_renderer.set_light(
                     light_directional=(0, 0, 0),
                     light_ambient=1.0,
@@ -538,11 +552,12 @@ class Viewer:
             )
             self.recording = True
         else:
+            assert self.video_writer is not None
             self.video_writer.release()
             self.recording = False
 
     def register_keys(self) -> None:
-        self.keys_map = {}
+        self.keys_map: Dict[str, Callable[[], None]] = {}
         self.register_key("h", self.print_help)
         self.register_key("r", self.toggle_renderer)
         self.register_key("p", self.toggle_perspective_texture_mapping)
@@ -555,7 +570,7 @@ class Viewer:
     def register_key(self, key: str, func: Callable[[], None]) -> None:
         self.keys_map[key] = func
 
-    def process_key(self, key: str) -> None:
+    def process_key(self, key: int) -> None:
         chr_key = chr(key)
         if chr_key in self.keys_map:
             self.keys_map[chr(key)]()

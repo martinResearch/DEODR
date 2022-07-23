@@ -67,32 +67,25 @@ class OffscreenRenderer:
         )
         self.fbo = None
         self.texture = None
+        self.texture_id: int = 0
 
-    def set_scene(self, deodr_scene: Scene3D):
-
+    def set_scene(self, deodr_scene: Scene3D) -> None:
+        assert deodr_scene.mesh is not None
+        assert deodr_scene.light_ambient is not None
         self.bg_color = deodr_scene.background_color
-        if False and not (
-            np.all(deodr_scene.background == self.bg_color[None, None, :])
-        ):
-            raise (
-                BaseException(
-                    "does not support background image yet, please provide a backround\
-                     image that correspond to a uniform color"
-                )
-            )
 
         self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
         self.set_mesh(deodr_scene.mesh)
         self.integer_pixel_centers = deodr_scene.integer_pixel_centers
 
-    def set_light(
-        self, light_directional: Tuple[float, float, float], light_ambient: float
-    ):
+    def set_light(self, light_directional: np.ndarray, light_ambient: float) -> None:
+        assert light_directional.shape == (3,)
         self.shader_program["light_directional"].value = tuple(light_directional)
         self.shader_program["light_ambient"].value = float(light_ambient)
 
-    def set_mesh(self, mesh: ColoredTriMesh):
-
+    def set_mesh(self, mesh: ColoredTriMesh) -> None:
+        assert mesh.uv is not None
+        assert mesh.texture is not None
         self.set_texture(mesh.texture)
         # create triangles soup
 

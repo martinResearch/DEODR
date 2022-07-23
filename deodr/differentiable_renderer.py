@@ -13,7 +13,7 @@ from . import differentiable_renderer_cython
 
 
 def renderScene(
-    scene: "Scene2D",
+    scene: "Scene2DBase",
     sigma: float,
     image: np.ndarray,
     z_buffer: np.ndarray,
@@ -220,7 +220,7 @@ class Camera:
         intrinsic: np.ndarray,
         height: int,
         width: int,
-        distortion: Optional[np.ndarray] = None,
+        distortion: Union[Optional[np.ndarray], Iterable[float]] = None,
         checks: bool = True,
         tol: float = 1e-6,
     ):
@@ -235,6 +235,7 @@ class Camera:
             )
 
             if distortion is not None:
+                distortion = np.array(distortion)
                 assert distortion.shape == (5,)
 
         self.extrinsic = extrinsic
@@ -256,7 +257,8 @@ class Camera:
         )
 
     def left_mul_intrinsic(self, projected: np.ndarray) -> np.ndarray:
-        assert projected.shape[-1] == 3
+        assert projected.ndim == 2
+        assert projected.shape[-1] == 2
         return projected.dot(self.intrinsic[:2, :2].T) + self.intrinsic[:2, 2]
 
     def column_stack(self, values: Iterable[np.ndarray]) -> np.ndarray:
@@ -711,9 +713,9 @@ class Scene2D(Scene2DBase):
 
     def render_compare_and_backward(
         self,
+        obs: np.ndarray,
         sigma: float = 1,
         antialiase_error: bool = False,
-        obs: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         clear_gradients: bool = True,
         make_copies: bool = True,
@@ -747,7 +749,7 @@ class Scene2D(Scene2DBase):
         return image, z_buffer, err_buffer, err
 
 
-class Scene3D:
+class Scene3D(Scene2D):
     """Class representing a 3D scene containing a single mesh, a directional light
     and an ambient light. The parameter sigma control the width of
     antialiasing edge overdraw.
@@ -761,7 +763,7 @@ class Scene3D:
     ):
         self.mesh: Optional[ColoredTriMesh] = None
         self.light_directional: Optional[np.ndarray] = None
-        self.light_ambient: Optional[np.ndarray] = None
+        self.light_ambient: float = 0
         self.sigma = sigma
         self.perspective_correct = perspective_correct
         self.background_image: Optional[np.ndarray] = None
@@ -901,11 +903,19 @@ class Scene3D:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
+        assert self.store_backward_current is not None
         ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
         self.ij = np.array(ij)
         self.colors = np.array(colors)
         renderSceneB(self, self.sigma, image.copy(), z_buffer, image_b)
         return self.ij_b, self.colors_b
+
+    @overload
+    def render(
+        self,
+        camera: Camera,
+    ) -> np.ndarray:
+        ...
 
     @overload
     def render(

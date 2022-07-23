@@ -59,11 +59,11 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
 class TriMeshPytorch(TriMesh):
     """Pytorch implementation of a triangulated mesh."""
 
-    def __init__(self, faces, vertices=None, clockwise=False):
+    def __init__(self, faces, vertices, clockwise=False):
         super().__init__(faces, vertices, clockwise)
 
     def compute_adjacencies(self):
-        self.adjacencies = TriMeshAdjacenciesPytorch(self.faces)
+        self._adjacencies = TriMeshAdjacenciesPytorch(self.faces)
 
 
 class ColoredTriMeshPytorch(TriMeshPytorch):
@@ -72,7 +72,7 @@ class ColoredTriMeshPytorch(TriMeshPytorch):
     def __init__(
         self,
         faces,
-        vertices=None,
+        vertices,
         clockwise=False,
         faces_uv=None,
         uv=None,

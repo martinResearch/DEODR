@@ -17,12 +17,6 @@ from scipy.spatial.transform import Rotation
 import trimesh
 
 
-def run(obj_file, width=640, height=480, display=True):
-    example_rgb(
-        obj_file, width=width, height=height, display=display, display_moderngl=True
-    )
-
-
 def default_scene(
     obj_file: str,
     width: int = 640,
@@ -72,19 +66,20 @@ def example_rgb(
     return image
 
 
+def normalize_unit_cube(v: np.ndarray) -> np.ndarray:
+    if v.ndim == 3 and v.shape[2] < 3:
+        nv = np.zeros((v.shape[0], v.shape[1], 3))
+        nv[:, :, : v.shape[2]] = v
+    else:
+        nv = v
+    return (nv - nv.min()) / (nv.max() - nv.min())
+
+
 def example_channels(
     display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
 ) -> None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
-
-    def normalize(v):
-        if v.ndim == 3 and v.shape[2] < 3:
-            nv = np.zeros((v.shape[0], v.shape[1], 3))
-            nv[:, :, : v.shape[2]] = v
-        else:
-            nv = v
-        return (nv - nv.min()) / (nv.max() - nv.min())
 
     scene.sigma = 0
 
@@ -94,7 +89,7 @@ def example_channels(
         for i, (name, v) in enumerate(channels.items()):
             ax = plt.subplot(2, 4, i + 1)
             ax.set_title(name)
-            ax.imshow(normalize(v))
+            ax.imshow(normalize_unit_cube(v))
 
     if save_image:
         for name, v in channels.items():
@@ -102,7 +97,7 @@ def example_channels(
                 os.path.join(deodr.data_path, f"test/duck_{name}.png")
             )
             os.makedirs(os.path.dirname(image_file), exist_ok=True)
-            image_uint8 = (normalize(v) * 255).astype(np.uint8)
+            image_uint8 = (normalize_unit_cube(v) * 255).astype(np.uint8)
             imageio.imwrite(image_file, image_uint8)
 
 

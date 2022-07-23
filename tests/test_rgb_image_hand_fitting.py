@@ -45,5 +45,6 @@ def test_rgb_image_hand_fitting_tensorflow() -> None:
 if __name__ == "__main__":
 
     test_rgb_image_hand_fitting_pytorch()
-    test_rgb_image_hand_fitting_numpy()
     test_rgb_image_hand_fitting_tensorflow()
+    test_rgb_image_hand_fitting_numpy()
+

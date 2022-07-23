@@ -6,7 +6,10 @@ import numpy as np
 
 def qrot(q: np.ndarray, v: np.ndarray) -> np.ndarray:
     assert q.ndim in [1, 2]
-    assert q.shape[-1] == 3
+    assert q.shape[-1] == 4
+    assert v.ndim == 2
+    assert v.shape[-1] == 3
+
     if q.ndim == 2:
         uv = np.cross(q[:, None, :3], v[None, :, :])
         uuv = np.cross(q[:, None, :3], uv)

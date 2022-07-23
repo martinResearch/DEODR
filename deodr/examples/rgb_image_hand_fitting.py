@@ -1,5 +1,6 @@
 """Example with fitting a colored hand mesh model to an image."""
-from typing import Literal
+from typing import List
+from typing_extensions import Literal
 
 import datetime
 import glob
@@ -29,7 +30,7 @@ def run(
     display: bool = True,
     max_iter: int = 100,
     n_subdivision: int = 0,
-):
+) -> List[float]:
     if dl_library == "pytorch":
         from deodr.pytorch import MeshRGBFitterWithPose
     elif dl_library == "tensorflow":
@@ -58,7 +59,7 @@ def run(
     euler_init = np.array([0, 0, 0])
     translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
-    mesh.vertices = mesh.vertices - translation_init[None, :]
+    mesh.set_vertices(mesh.vertices - translation_init[None, :])
 
     hand_fitter = MeshRGBFitterWithPose(
         mesh.vertices,

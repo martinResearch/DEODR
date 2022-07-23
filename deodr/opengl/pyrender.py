@@ -70,7 +70,8 @@ def deodr_directional_light_to_pyrender(
     return directional_light, pose
 
 
-def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh):
+def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
+    assert deodr_mesh.uv is not None
 
     # trimesh and pyrender do to handle faces indices for texture
     # that are different from face indices for the 3d vertices
@@ -119,16 +120,22 @@ def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh):
     return pyrender.Mesh(primitives=[primitive])
 
 
-def render(deodr_scene: Scene3D, camera: Camera):
+def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray]:
+    assert (
+        deodr_scene.mesh is not None
+    ), "You need a mesh in the scene you want to render"
     """Render a deodr scene using pyrender"""
-    bg_color = deodr_scene.background[0, 0]
-    if not (np.all(deodr_scene.background == bg_color[None, None, :])):
-        raise (
-            BaseException(
-                "pyrender does not support background image, please provide a"
-                " background image that correspond to a uniform color"
+    if deodr_scene.background_image is not None:
+        bg_color = deodr_scene.background_image[0, 0]
+        if not (np.all(deodr_scene.background_image == bg_color[None, None, :])):
+            raise (
+                BaseException(
+                    "pyrender does not support background image, please provide a"
+                    " background image that correspond to a uniform color"
+                )
             )
-        )
+    else:
+        bg_color = deodr_scene.background_color
     pyrender_scene = pyrender.Scene(
         ambient_light=deodr_scene.light_ambient * np.ones((3)), bg_color=bg_color
     )

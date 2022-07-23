@@ -2,7 +2,8 @@
 from typing import Any, Optional, Tuple
 
 import numpy as np
-from numpy.typing import ArrayLike, Dict
+from typing import Dict
+
 
 from scipy import sparse
 
@@ -21,7 +22,7 @@ class TriMeshAdjacencies:
 
     def __init__(
         self,
-        faces: ArrayLike,
+        faces: np.ndarray,
         clockwise: bool = False,
         nb_vertices: Optional[int] = None,
     ):
@@ -193,7 +194,7 @@ class TriMesh:
     def __init__(
         self,
         faces: np.ndarray,
-        vertices: Optional[np.ndarray] = None,
+        vertices: np.ndarray,
         clockwise: bool = False,
         compute_adjacencies: bool = True,
     ):
@@ -203,51 +204,61 @@ class TriMesh:
         assert faces.shape[1] == 3
         assert np.all(faces >= 0)
 
-        self.faces = faces
+        self._faces = faces
         self.nb_vertices = int(np.max(faces)) + 1
         self.nb_faces = int(faces.shape[0])
 
-        self.vertices = None
-        self.face_normals = None
-        self.vertex_normals = None
+        self._face_normals = None
+        self._vertex_normals = None
         self.clockwise = clockwise
-        if vertices is not None:
-            self.set_vertices(vertices)
+        self.set_vertices(vertices)
         if compute_adjacencies:
             self.compute_adjacencies()
 
     def compute_adjacencies(self) -> None:
-        self.adjacencies = TriMeshAdjacencies(
+        self._adjacencies = TriMeshAdjacencies(
             self.faces, self.clockwise, nb_vertices=self.nb_vertices
         )
 
-        if self.vertices is not None:
+        if self._adjacencies.is_closed:
+            self.check_orientation()
 
-            if self.adjacencies.is_closed:
-                self.check_orientation()
+    @property
+    def vertices(self) -> np.ndarray:
+        return self._vertices
+
+    @property
+    def faces(self) -> np.ndarray:
+        return self._faces
+
+    @property
+    def adjacencies(self) -> TriMeshAdjacencies:
+        if self._adjacencies is None:
+            self.compute_adjacencies()
+        return self._adjacencies
 
     def set_vertices(self, vertices: np.ndarray) -> None:
         assert vertices.ndim == 2
         assert vertices.shape[1] == 3
-        self.vertices = vertices
-        self.face_normals = None
-        self.vertex_normals = None
+        self._vertices = vertices
+        self._face_normals = None
+        self._vertex_normals = None
+        self._vertices_b = np.zeros((self.nb_vertices, 3))
 
     def compute_volume(self) -> float:
         """Compute the volume enclosed by the triangulated surface. It assumes the
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle.
         """
-        assert self.vertices is not None, "You need to set vertices first"
         return (
             (1 if self.clockwise else -1)
             * np.sum(
                 np.linalg.det(
                     np.dstack(
                         (
-                            self.vertices[self.faces[:, 0]],
-                            self.vertices[self.faces[:, 1]],
-                            self.vertices[self.faces[:, 2]],
+                            self.vertices[self._faces[:, 0]],
+                            self.vertices[self._faces[:, 1]],
+                            self.vertices[self._faces[:, 2]],
                         )
                     )
                 )
@@ -268,20 +279,43 @@ class TriMesh:
             )
 
     def compute_face_normals(self) -> None:
-        self.face_normals = self.adjacencies.compute_face_normals(self.vertices)
+        self._face_normals = self.adjacencies.compute_face_normals(self.vertices)
+
+    @property
+    def face_normals(self) -> np.ndarray:
+        """Return the face normals.
+
+        face normals evaluation is done in a lazy manner.
+        """
+        if self._face_normals is None:
+            self.compute_face_normals()
+        assert self._face_normals is not None
+        return self._face_normals
 
     def compute_vertex_normals(self) -> None:
-        if self.face_normals is None:
-            self.compute_face_normals()
-        self.vertex_normals = self.adjacencies.compute_vertex_normals(self.face_normals)
+        self._vertex_normals = self.adjacencies.compute_vertex_normals(
+            self.face_normals
+        )
 
-    # def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
-    #     self.face_normals_b = self.adjacencies.compute_vertex_normals_backward(
-    #         vertex_normals_b
-    #     )
-    #     self.vertices_b += self.adjacencies.compute_face_normals_backward(
-    #         self.face_normals_b
-    #     )
+    @property
+    def vertex_normals(self) -> np.ndarray:
+        """Return the vertices normals.
+
+        face normals evaluation is done in a lazy manner.
+        """
+
+        if self._vertex_normals is None:
+            self.compute_vertex_normals()
+        assert self._vertex_normals is not None
+        return self._vertex_normals
+
+    def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
+        self._face_normals_b = self.adjacencies.compute_vertex_normals_backward(
+            vertex_normals_b
+        )
+        self._vertices_b += self.adjacencies.compute_face_normals_backward(
+            self._face_normals_b
+        )
 
     def edge_on_silhouette(self, points_2d: np.ndarray) -> np.ndarray:
         """Compute the a boolean for each of edges that is true if and only if
@@ -297,7 +331,7 @@ class ColoredTriMesh(TriMesh):
     def __init__(
         self,
         faces: np.ndarray,
-        vertices: Optional[np.ndarray] = None,
+        vertices: np.ndarray,
         clockwise: bool = False,
         faces_uv: Optional[np.ndarray] = None,
         uv: Optional[np.ndarray] = None,
@@ -330,6 +364,8 @@ class ColoredTriMesh(TriMesh):
                     texture is not None
                 ), "You need to provide at least on among nb_colors, texture or colors"
                 self.nb_colors = texture.shape[2]
+
+        self.vertices_colors_b: Optional[np.ndarray] = None
 
     def set_vertices_colors(self, colors: np.ndarray) -> None:
         self.vertices_colors = colors
@@ -381,7 +417,7 @@ class ColoredTriMesh(TriMesh):
         # Process face colors
         elif mesh.visual.kind == "face":
             raise BaseException(
-                "not supported yet, will need antialisaing at the seams"
+                "not supported yet, will need antialiasing at the seams"
             )
 
         # Process texture colors
@@ -446,10 +482,9 @@ class ColoredTriMesh(TriMesh):
 
         if self.vertices_colors is not None:
             raise BaseException(
-                "convertion to timesh with per vertex color not support yet"
+                "Conversion to trimesh with per vertex color not support yet"
             )
 
-        assert self.vertices is not None, "You need to provide vertices first."
         v = self.vertices
         faces = self.faces
         faces_tex = self.faces_uv
@@ -497,7 +532,6 @@ def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
 
     https://graphics.stanford.edu/~mdfisher/subdivision.html"""
 
-    assert mesh.vertices is not None
     if n_iter == 0:
         return mesh
 
