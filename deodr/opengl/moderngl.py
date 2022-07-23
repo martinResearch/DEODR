@@ -2,7 +2,6 @@
 
 This is used to have a reference implementation using OpenGL shaders that produce identical images to deodr
 """
-from typing import Tuple
 import moderngl
 
 import numpy as np
