@@ -64,11 +64,11 @@ def test_render_mesh_triangle_soup() -> None:
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
     differentiable_renderer_cython.renderScene(scene_gt, sigma, image, z_buffer)
 
-    filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.tiff")
-    # imageio.imwrite(filename,image.astype(np.float32))
+    filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.png")
+    # imageio.imwrite(filename,image)
 
     image_lkg = imageio.imread(filename)
-    assert np.max(np.abs(image_lkg - image)) < 1e-5
+    assert np.max(np.abs(image_lkg - image * 255)) <= 1
 
     if os.name == "nt":  # windows
         assert (
