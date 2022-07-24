@@ -42,7 +42,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = ColoredTriMesh(
-            faces, vertices=vertices, colors = np.zeros((vertices.shape[0],0))
+            faces, vertices=vertices, colors=np.zeros((vertices.shape[0], 0))
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0)
         object_radius = np.max(np.std(vertices, axis=0))
