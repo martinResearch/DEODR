@@ -79,7 +79,9 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(self, event: int, x: int, y: int, flags, param: Any) -> None:
+    def mouse_callback(
+        self, event: int, x: int, y: int, flags: int, param: Any
+    ) -> None:
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
