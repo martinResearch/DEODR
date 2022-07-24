@@ -33,7 +33,7 @@ def test_render_mesh_duck(update: bool = False) -> None:
     )
 
 
-def test_render_mesh_triangle_soup()->None:
+def test_render_mesh_triangle_soup() -> None:
 
     np.random.seed(2)
     scene_gt = create_example_scene(clockwise=True)
@@ -64,6 +64,12 @@ def test_render_mesh_triangle_soup()->None:
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
     differentiable_renderer_cython.renderScene(scene_gt, sigma, image, z_buffer)
 
+    filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.tiff")
+    # imageio.imwrite(filename,image.astype(np.float32))
+
+    image_lkg = imageio.imread(filename)
+    assert np.max(np.abs(image_lkg - image)) < 1e-5
+
     if os.name == "nt":  # windows
         assert (
             hashlib.sha256(image.tobytes()).hexdigest()
@@ -74,19 +80,19 @@ def test_render_mesh_triangle_soup()->None:
             == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
         )
 
-    elif os.name == "posix":  # linux
-        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
-        assert (
-            hashlib.sha256(image.tobytes()).hexdigest()
-            == "ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6"
-        )
-        assert (
-            hashlib.sha256(z_buffer.tobytes()).hexdigest()
-            == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
-        )
+    # elif os.name == "posix":  # linux
+    #     # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
+    #     assert (
+    #         hashlib.sha256(image.tobytes()).hexdigest()
+    #         == "ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6"
+    #     )
+    #     assert (
+    #         hashlib.sha256(z_buffer.tobytes()).hexdigest()
+    #         == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
+    #     )
 
-    else:
-        raise BaseException(f"No results for os.name={os.name}")
+    # else:
+    #     raise BaseException(f"No results for os.name={os.name}")
 
 
 if __name__ == "__main__":

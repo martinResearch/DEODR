@@ -163,7 +163,7 @@ def run(
     losses: List[float] = []
     for niter in range(nb_max_iter):
         image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
-            sigma, antialiase_error, image_target
+            sigma=sigma, antialiase_error=antialiase_error, obs=image_target
         )
         hashes.append(hashlib.sha256(image.tobytes()).hexdigest())
         print(f"iter {niter} loss = {loss}")
