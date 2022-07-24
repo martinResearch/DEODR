@@ -982,7 +982,7 @@ class Scene3D(Scene2DBase):
 
         self.depths = depths
         if self.mesh.uv is not None:
-            assert self.texture is not None
+            assert self.mesh.texture is not None
             self.uv = self.mesh.uv
             self.faces_uv = self.mesh.faces_uv
             self.textured = np.ones((self.mesh.nb_faces), dtype=np.bool)

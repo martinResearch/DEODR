@@ -333,7 +333,7 @@ class MeshRGBFitterWithPose:
         vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self.vertices_b = qrot_backward(
+        q_normalized_b, self._vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
         self.transform_quaternion_b = normalize_backward(
@@ -359,9 +359,9 @@ class MeshRGBFitterWithPose:
 
         self.render_backward(image_b)
 
-        self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+        self._vertices_b = self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
         # update v
-        grad = self.vertices_b + grad_rigidity
+        grad = self._vertices_b + grad_rigidity
 
         def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
@@ -565,7 +565,7 @@ class MeshRGBFitterWithPoseMultiFrame:
     def clear_gradients(self) -> None:
         self.light_directional_b = np.zeros(self.light_directional.shape)
         self.light_ambient_b = np.zeros(self.light_ambient.shape)
-        self.vertices_b = np.zeros(self.vertices.shape)
+        self._vertices_b = np.zeros(self.vertices.shape)
         self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
         self.transform_translation_b = np.zeros(self.transform_translation.shape)
         self.mesh_color_b = np.zeros(self.mesh_color.shape)
@@ -582,10 +582,10 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.light_ambient_b += self.scene.light_ambient_b
         vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
-        q_normalized_b, vertices_b = qrot_backward(
+        q_normalized_b, _vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
-        self.vertices_b += vertices_b
+        self._vertices_b += _vertices_b
         self.transform_quaternion_b[idframe] += normalize_backward(
             unormalized_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangent space
@@ -639,7 +639,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             def func(x: np.ndarray) -> float:
                 return self.energy_data(x)[0]
 
-            grad_data = self.vertices_b.copy()
+            grad_data = self._vertices_b.copy()
             check_jacobian_finite_differences(grad_data.flatten(), func, self.vertices)
 
         energy = energy_data + energy_rigid
@@ -648,11 +648,11 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
 
         if self.iter < 500:
-            self.vertices_b = (
-                self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+            self._vertices_b = (
+                self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
             )
         # update v
-        grad = self.vertices_b + grad_rigidity
+        grad = self._vertices_b + grad_rigidity
 
         def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
