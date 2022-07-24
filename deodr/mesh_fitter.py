@@ -8,7 +8,7 @@ import numpy as np
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
-from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D, TriMesh
+from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D
 from .tools import (
     normalize,
     normalize_backward,
@@ -42,7 +42,7 @@ class MeshDepthFitter:
         self.step_max_translation = 0.1
 
         self.mesh = ColoredTriMesh(
-            faces, vertices=vertices
+            faces, vertices=vertices, colors = np.zeros((vertices.shape[0],0))
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0)
         object_radius = np.max(np.std(vertices, axis=0))
@@ -86,7 +86,7 @@ class MeshDepthFitter:
         mesh_image: np.ndarray,
         focal: Optional[float] = None,
         distortion: Optional[np.ndarray] = None,
-    ):
+    ) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 2
@@ -129,11 +129,11 @@ class MeshDepthFitter:
         depth_b[self.depth_not_clipped > self.max_depth] = 0
         self.scene.render_depth_backward(depth_b)
         assert self.scene.mesh is not None
-        assert self.scene.mesh.vertices_b is not None
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        assert self.scene.mesh._vertices_b is not None
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self.vertices_b = qrot_backward(
+        q_normalized_b, self._vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
         self.transform_quaternion_b = normalize_backward(
@@ -165,7 +165,7 @@ class MeshDepthFitter:
         # update v
         grad = grad_data + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia
@@ -254,7 +254,9 @@ class MeshRGBFitterWithPose:
     def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(self, euler, translation: np.ndarray) -> None:
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
@@ -322,12 +324,13 @@ class MeshRGBFitterWithPose:
         return image
 
     def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.scene.mesh is not None
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
         self.mesh_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b = self.scene.light_directional_b
         self.light_ambient_b = self.scene.light_ambient_b
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
         q_normalized_b, self.vertices_b = qrot_backward(
@@ -360,7 +363,7 @@ class MeshRGBFitterWithPose:
         # update v
         grad = self.vertices_b + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia
@@ -464,7 +467,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
-        self.store_backward = Dict[str, Any] = {}
+        self.store_backward: Dict[str, Any] = {}
         self.reset()
 
     def set_background_color(self, background_color: np.ndarray) -> None:
@@ -570,13 +573,14 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def render_backward(self, image_b: np.ndarray) -> None:
         assert self.mesh is not None
+        assert self.scene.mesh is not None
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
         self.mesh_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b += self.scene.light_directional_b
         self.light_ambient_b += self.scene.light_ambient_b
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
         q_normalized_b, vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b

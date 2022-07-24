@@ -58,7 +58,9 @@ else:
     raise Exception("wrong number of arguments")
 
 
-def formula_as_file(formula, file, negate=False, header=""):
+def formula_as_file(
+    formula: str, file: str, negate: bool = False, header: str = ""
+) -> None:
     laxtex_tmp_file = os.path.join(dirpath, "tmp_equation.tex")
     pdf_tmp_file = os.path.join(dirpath, "tmp_equation.pdf")
     latexfile = open(laxtex_tmp_file, "w")

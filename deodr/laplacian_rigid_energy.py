@@ -39,6 +39,13 @@ class LaplacianRigidEnergy:
     def evaluate(
         self,
         vertices: np.ndarray,
+    ) -> Tuple[float, np.ndarray, scipy.sparse.csr_matrix]:
+        ...
+
+    @overload
+    def evaluate(
+        self,
+        vertices: np.ndarray,
         return_grad: Literal[True],
         return_hessian: Literal[True],
     ) -> Tuple[float, np.ndarray, scipy.sparse.csr_matrix]:

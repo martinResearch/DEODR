@@ -208,9 +208,12 @@ class TriMesh:
         self.nb_vertices = int(np.max(faces)) + 1
         self.nb_faces = int(faces.shape[0])
 
-        self._face_normals = None
-        self._vertex_normals = None
+        self._face_normals: Optional[np.ndarray] = None
+        self._vertex_normals: Optional[np.ndarray] = None
         self.clockwise = clockwise
+
+        self._vertices_b = np.zeros((self.nb_vertices, 3))
+
         self.set_vertices(vertices)
         if compute_adjacencies:
             self.compute_adjacencies()

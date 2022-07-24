@@ -1,6 +1,7 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
 
 import copy
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Optional, Tuple, Union, overload
 from typing_extensions import Literal
 import warnings
@@ -97,7 +98,7 @@ def renderScene(
 
 
 def renderSceneB(
-    scene: "Scene2D",
+    scene: "Scene2DBase",
     sigma: float,
     image: np.ndarray,
     z_buffer: np.ndarray,
@@ -164,6 +165,12 @@ def renderSceneB(
         else:
             assert scene.background_color.shape[0] == nb_colors
 
+        assert scene.uv_b is not None
+        assert scene.ij_b is not None
+        assert scene.shade_b is not None
+        assert scene.uv_b is not None
+        assert scene.colors_b is not None
+
         assert scene.uv_b.ndim == 2
         assert scene.ij_b.ndim == 2
         assert scene.shade_b.ndim == 1
@@ -179,6 +186,7 @@ def renderSceneB(
         assert scene.colors_b.shape[1] == nb_colors
 
         if scene.texture.size > 0:
+            assert scene.texture_b is not None
             assert scene.texture.ndim == 3
             assert scene.texture_b.ndim == 3
             assert scene.texture.shape[0] > 0
@@ -268,6 +276,15 @@ class Camera:
     def project_points(
         self,
         points_3d: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def project_points(
+        self,
+        points_3d: np.ndarray,
+        *,
+        store_backward: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         ...
 
@@ -489,57 +506,38 @@ def default_camera(
     return PerspectiveCamera(width, height, fov, camera_center, rot, distortion)
 
 
+@dataclass
 class Scene2DBase:
     """Class representing the structure representing the 2.5
-    scene expect by the C++ code
+    scene expected by the C++ code
     """
 
-    def __init__(
-        self,
-        faces: np.ndarray,
-        faces_uv: np.ndarray,
-        ij: np.ndarray,
-        depths: np.ndarray,
-        textured: np.ndarray,
-        uv: np.ndarray,
-        shade: np.ndarray,
-        colors: np.ndarray,
-        shaded: np.ndarray,
-        edgeflags: np.ndarray,
-        height: int,
-        width: int,
-        nb_colors: int,
-        texture: np.ndarray,
-        background_image: np.ndarray,
-        background_color: np.ndarray,
-        clockwise: bool = False,
-        backface_culling: bool = True,
-        strict_edge: bool = True,
-        perspective_correct: bool = False,
-        integer_pixel_centers: bool = True,
-    ):
-
-        self.faces = faces
-        self.faces_uv = faces_uv
-        self.ij = ij
-        self.depths = depths
-        self.textured = textured
-        self.uv = uv
-        self.shade = shade
-        self.colors = colors
-        self.shaded = shaded
-        self.edgeflags = edgeflags
-        self.height = height
-        self.width = width
-        self.nb_colors = nb_colors
-        self.texture = texture
-        self.background_image = background_image
-        self.background_color = background_color
-        self.clockwise = clockwise
-        self.backface_culling = backface_culling
-        self.strict_edge = strict_edge
-        self.perspective_correct = perspective_correct
-        self.integer_pixel_centers = integer_pixel_centers
+    faces: np.ndarray
+    faces_uv: np.ndarray
+    ij: np.ndarray
+    depths: np.ndarray
+    textured: np.ndarray
+    uv: np.ndarray
+    shade: np.ndarray
+    colors: np.ndarray
+    shaded: np.ndarray
+    edgeflags: np.ndarray
+    height: int
+    width: int
+    nb_colors: int
+    texture: np.ndarray
+    background_image: np.ndarray
+    background_color: np.ndarray
+    uv_b: Optional[np.ndarray] = None
+    ij_b: Optional[np.ndarray] = None
+    shade_b: Optional[np.ndarray] = None
+    colors_b: Optional[np.ndarray] = None
+    texture_b: Optional[np.ndarray] = None
+    clockwise: bool = False
+    backface_culling: bool = True
+    strict_edge: bool = True
+    perspective_correct: bool = False
+    integer_pixel_centers: bool = True
 
 
 class Scene2D(Scene2DBase):
@@ -615,6 +613,12 @@ class Scene2D(Scene2DBase):
         self.store_backward: Tuple
 
     def clear_gradients(self) -> None:
+        assert self.uv_b is not None
+        assert self.ij_b is not None
+        assert self.shade_b is not None
+        assert self.colors_b is not None
+        assert self.texture_b is not None
+
         self.uv_b.fill(0)
         self.ij_b.fill(0)
         self.shade_b.fill(0)
@@ -756,7 +760,7 @@ class Scene2D(Scene2DBase):
         return image, z_buffer, err_buffer, err
 
 
-class Scene3D(Scene2D):
+class Scene3D(Scene2DBase):
     """Class representing a 3D scene containing a single mesh, a directional light
     and an ambient light. The parameter sigma control the width of
     antialiasing edge overdraw.
@@ -865,6 +869,7 @@ class Scene3D(Scene2D):
         self, colors_b: np.ndarray
     ) -> None:
         assert self.mesh is not None
+        assert self.store_backward_current is not None
         vertices_luminosity: np.ndarray = self.store_backward_current[
             "_compute_vertices_colors_with_illumination"
         ]
@@ -877,6 +882,7 @@ class Scene3D(Scene2D):
         self, vertices_luminosity_b: np.ndarray
     ) -> None:
         assert self.mesh is not None
+        assert self.store_backward_current is not None
         directional: np.ndarray = self.store_backward_current[
             "compute_vertices_luminosity"
         ]
@@ -976,6 +982,7 @@ class Scene3D(Scene2D):
 
         self.depths = depths
         if self.mesh.uv is not None:
+            assert self.texture is not None
             self.uv = self.mesh.uv
             self.faces_uv = self.mesh.faces_uv
             self.textured = np.ones((self.mesh.nb_faces), dtype=np.bool)
@@ -1017,6 +1024,7 @@ class Scene3D(Scene2D):
             return image
 
     def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.mesh is not None
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
@@ -1025,7 +1033,7 @@ class Scene3D(Scene2D):
         camera, self.edgeflags = self.store_backward_current["render"]
         points_2d_b, colors_b = self._render_2d_backward(image_b)
         self._compute_vertices_colors_with_illumination_backward(colors_b)
-        self.mesh.vertices_b = camera.project_points_backward(
+        self.mesh._vertices_b = camera.project_points_backward(
             points_2d_b, store_backward=self.store_backward_current
         )
         if self.light_directional is not None:
@@ -1071,6 +1079,8 @@ class Scene3D(Scene2D):
         return image
 
     def render_depth_backward(self, depth_b: np.ndarray) -> None:
+        assert self.store_backward_current is not None
+        assert self.mesh is not None
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
@@ -1078,7 +1088,7 @@ class Scene3D(Scene2D):
         camera, depth_scale = self.store_backward_current["render_depth"]
         ij_b, colors_b = self._render_2d_backward(depth_b)
         depths_b = np.squeeze(colors_b * depth_scale, axis=1)
-        self.mesh.vertices_b = camera.project_points_backward(
+        self.mesh._vertices_b = camera.project_points_backward(
             ij_b, depths_b=depths_b, store_backward=self.store_backward_current
         )
 
@@ -1095,7 +1105,7 @@ class Scene3D(Scene2D):
         uv: bool = True,
         xyz: bool = True,
         backface_culling: bool = True,
-    ):
+    ) -> Dict[str, np.ndarray]:
         assert self.mesh is not None, "You need to provide a mesh first"
         points_2d, depths = camera.project_points(self.mesh.vertices)
 
@@ -1214,7 +1224,7 @@ class Scene3D(Scene2D):
         z_buffer = np.empty((camera.height, camera.width))
         renderScene(scene_2d, 0, buffers, z_buffer)
 
-        output = {}
+        output: Dict[str, np.ndarray] = {}
         for k in channels.keys():
             output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
 
