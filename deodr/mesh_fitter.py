@@ -150,8 +150,8 @@ class MeshDepthFitter:
         depth_b = 2 * (depth - self.mesh_image[:, :, None])
         self.render_backward(depth_b)
 
-        self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
-        grad_data = self.vertices_b
+        self._vertices_b = self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
+        grad_data = self._vertices_b
         # update v
 
         (

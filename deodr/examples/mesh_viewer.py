@@ -1,5 +1,7 @@
 """Example of interactive 3D mesh visualization using DEODR and OpenCV."""
 
+from typing import Any
+
 import argparse
 import os
 import time
@@ -77,7 +79,7 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(self, event: int, x: int, y: int, flags, param: None) -> None:
+    def mouse_callback(self, event: int, x: int, y: int, flags, param: Any) -> None:
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
