@@ -70,6 +70,7 @@ def test_depth_image_hand_fitting_tensorflow() -> None:
 
 
 if __name__ == "__main__":
-    test_depth_image_hand_fitting_numpy()
     test_depth_image_hand_fitting_pytorch()
+    test_depth_image_hand_fitting_numpy()
+
     test_depth_image_hand_fitting_tensorflow()

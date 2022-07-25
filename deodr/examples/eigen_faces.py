@@ -182,6 +182,8 @@ def main() -> None:
         cv2.waitKey(1)
 
         # get gradient on pca coefs
+        assert scene.texture_b is not None
+        assert scene.ij_b is not None
         coefs_grad = faces_pca.components_.dot(scene.texture_b.flatten())
         points_deformed_grad = scene.ij_b * 64
         print(np.max(np.abs(points_deformed_grad)))

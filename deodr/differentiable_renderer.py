@@ -2,7 +2,7 @@
 
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Optional, Tuple, Union, overload
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 from typing_extensions import Literal
 import warnings
 
@@ -10,7 +10,7 @@ import numpy as np
 
 from deodr.triangulated_mesh import ColoredTriMesh
 
-from . import differentiable_renderer_cython
+from deodr import differentiable_renderer_cython
 
 
 def renderScene(
@@ -269,7 +269,9 @@ class Camera:
         assert projected.shape[-1] == 2
         return projected.dot(self.intrinsic[:2, :2].T) + self.intrinsic[:2, 2]
 
-    def column_stack(self, values: Iterable[np.ndarray]) -> np.ndarray:
+    def column_stack(
+        self, values: Union[List[np.ndarray], Tuple[np.ndarray, ...]]
+    ) -> np.ndarray:
         return np.column_stack(values)
 
     @overload

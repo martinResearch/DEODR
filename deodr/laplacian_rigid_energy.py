@@ -35,58 +35,13 @@ class LaplacianRigidEnergy:
                 )
             )
 
-    @overload
     def evaluate(
         self,
         vertices: np.ndarray,
     ) -> Tuple[float, np.ndarray, scipy.sparse.csr_matrix]:
-        ...
-
-    @overload
-    def evaluate(
-        self,
-        vertices: np.ndarray,
-        return_grad: Literal[True],
-        return_hessian: Literal[True],
-    ) -> Tuple[float, np.ndarray, scipy.sparse.csr_matrix]:
-        ...
-
-    @overload
-    def evaluate(
-        self,
-        vertices: np.ndarray,
-        return_grad: Literal[True],
-        return_hessian: Literal[False],
-    ) -> Tuple[float, np.ndarray]:
-        ...
-
-    @overload
-    def evaluate(
-        self,
-        vertices: np.ndarray,
-        return_grad: Literal[False],
-        return_hessian: Literal[False],
-    ) -> float:
-        ...
-
-    def evaluate(
-        self,
-        vertices: np.ndarray,
-        return_grad: bool = True,
-        return_hessian: bool = True,
-    ) -> Union[
-        float,
-        Tuple[float, np.ndarray],
-        Tuple[float, np.ndarray, scipy.sparse.csr_matrix],
-    ]:
 
         diff = (vertices - self.vertices_ref).flatten()
         grad_vertices = self.cregu * (self.cT * diff).reshape((vertices.shape[0], 3))
         energy = 0.5 * diff.dot(grad_vertices.flatten())
-        if not (return_grad):
-            assert not (return_hessian)
-            return energy
-        if not (return_hessian):
-            return energy, grad_vertices
 
         return energy, grad_vertices, self.approx_hessian

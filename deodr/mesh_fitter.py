@@ -628,9 +628,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         if check_gradient:
 
             def func(x: np.ndarray) -> float:
-                return self.rigid_energy.evaluate(
-                    x, return_grad=False, return_hessian=False
-                )
+                return self.rigid_energy.evaluate(x)[0]
 
             check_jacobian_finite_differences(
                 grad_rigidity.flatten(), func, self.vertices
