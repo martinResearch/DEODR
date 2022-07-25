@@ -10,7 +10,7 @@ import numpy as np
 
 from deodr.triangulated_mesh import ColoredTriMesh
 
-from deodr import differentiable_renderer_cython
+from . import differentiable_renderer_cython
 
 
 def renderScene(

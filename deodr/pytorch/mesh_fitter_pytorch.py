@@ -168,8 +168,8 @@ class MeshDepthFitterPytorchOptim:
     def set_depth_scale(self, depth_scale: float) -> None:
         self.energy.set_depth_scale(depth_scale)
 
-    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
-        def closure() -> torch.Tensor:
+    def step(self) -> Tuple[torch.Tensor, np.ndarray, np.ndarray]:
+        def closure() -> float:
             self.optimizer.zero_grad()
             loss = self.energy()
             loss.backward()
@@ -177,10 +177,11 @@ class MeshDepthFitterPytorchOptim:
 
         self.optimizer.step(closure)
         # self.iter += 1
+
         return (
             self.energy.loss,
-            self.energy.Depth[:, :, 0].detach().numpy(),
-            self.energy.diffImage.detach().numpy(),
+            self.energy.depth[:, :, 0].detach().numpy(),
+            self.energy.diff_image.detach().numpy(),
         )
 
 

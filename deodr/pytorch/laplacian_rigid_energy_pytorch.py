@@ -21,12 +21,13 @@ def scipy_sparse_to_torch(sparse_matrix: spmatrix) -> DoubleTensor:
     return DoubleTensor(i, v, torch.Size(shape))
 
 
-class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
+class LaplacianRigidEnergyPytorch:
     """Pytorch class that implements an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
     def __init__(self, mesh: ColoredTriMeshPytorch, vertices: np.ndarray, cregu: float):
-        super().__init__(mesh, vertices, cregu)
-        self.cT_torch = scipy_sparse_to_torch(self.cT)
+        self.numpy_imp = LaplacianRigidEnergy(mesh, vertices, cregu)
+        self.cT_torch = scipy_sparse_to_torch(self.numpy_imp.cT)
+        self.approx_hessian = scipy_sparse_to_torch(self.numpy_imp.approx_hessian)
 
     def evaluate(
         self,
@@ -34,19 +35,20 @@ class LaplacianRigidEnergyPytorch(LaplacianRigidEnergy):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         assert isinstance(vertices, torch.Tensor)
         if vertices.requires_grad:
-            diff = (vertices - self.vertices_ref).flatten()
-            grad_vertices = self.cregu * (
+            diff = (vertices - self.numpy_imp.vertices_ref).flatten()
+            grad_vertices = self.numpy_imp.cregu * (
                 self.cT_torch.matmul(diff[:, None])
             ).reshape_as(vertices)
             energy = 0.5 * diff.dot(grad_vertices.flatten())
             return energy
         else:
-            diff = (vertices - torch.tensor(self.vertices_ref)).flatten()
+            diff = (vertices - torch.tensor(self.numpy_imp.vertices_ref)).flatten()
             # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
             # 40x slower than scipy !
             grad_vertices = torch.tensor(
-                self.cregu * (self.cT * (diff[:, None].numpy())).reshape(vertices.shape)
+                self.numpy_imp.cregu
+                * (self.numpy_imp.cT * (diff[:, None].numpy())).reshape(vertices.shape)
             )
             energy = 0.5 * diff.dot(grad_vertices.flatten())
 
-            return energy, grad_vertices, self.approx_hessian
+            return energy, grad_vertices, self.numpy_imp.approx_hessian
