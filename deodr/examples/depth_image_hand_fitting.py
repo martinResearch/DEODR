@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import time
+from typing import List
 
 import cv2
 
@@ -17,31 +18,26 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from deodr.mesh_fitter import MeshDepthFitter
+from deodr.pytorch import MeshDepthFitter as PytorchMeshDepthFitter
+from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
+
 
 def run(
-    dl_library="none",
-    plot_curves=False,
-    save_images=False,
-    display=True,
-    max_iter=300,
-    n_subdivision=0,
-):
+    dl_library: str = "none",
+    plot_curves: bool = False,
+    save_images: bool = False,
+    display: bool = True,
+    max_iter: int = 300,
+    n_subdivision: int = 0,
+) -> List[float]:
 
     file_folder = os.path.dirname(__file__)
-
-    if dl_library == "pytorch":
-        from deodr.pytorch import MeshDepthFitter
-    elif dl_library == "tensorflow":
-        from deodr.tensorflow import MeshDepthFitter
-    elif dl_library == "none":
-        from deodr.mesh_fitter import MeshDepthFitter
-    else:
-        raise BaseException(f"unknown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
         np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
         .reshape(240, 320)
-        .astype(np.float)
+        .astype(np.float64)
     )
     depth_image = depth_image[20:-20, 60:-60]
     max_depth = 450
@@ -57,20 +53,26 @@ def run(
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
 
-    hand_fitter = MeshDepthFitter(
+    MeshDepthFittersSelector = {
+        "none": MeshDepthFitter,
+        "pytorch": PytorchMeshDepthFitter,
+        "tensorflow": TensorFlowMeshDepthFitter,
+    }
+
+    hand_fitter: MeshDepthFitter = MeshDepthFittersSelector[dl_library](  # type: ignore
         mesh.vertices, mesh.faces, euler_init, translation_init, cregu=1000
     )
-
-    hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])
+    distortion = np.array([1, 0, 0, 0, 0])
+    hand_fitter.set_image(depth_image, focal=241, distortion=distortion)
     hand_fitter.set_max_depth(1)
     hand_fitter.set_depth_scale(110 / max_depth)
-    energies = []
-    durations = []
+    energies: List[float] = []
+    durations: List[float] = []
     start = time.time()
 
-    iterfolder = os.path.join(file_folder, "./iterations/depth")
-    if not os.path.exists(iterfolder):
-        os.makedirs(iterfolder)
+    iter_folder = os.path.join(file_folder, "./iterations/depth")
+    if not os.path.exists(iter_folder):
+        os.makedirs(iter_folder)
 
     for niter in range(max_iter):
         energy, synthetic_depth, diff_image = hand_fitter.step()
@@ -80,20 +82,19 @@ def run(
             combined_image = np.column_stack(
                 (depth_image, synthetic_depth, 3 * diff_image)
             )
-            if display:
-                cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
-            if save_images:
-                imsave(
-                    os.path.join(iterfolder, f"depth_hand_iter_{niter}.png"),
-                    combined_image,
-                )
+        if display:
+            cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
+        if save_images:
+            imsave(
+                os.path.join(iter_folder, f"depth_hand_iter_{niter}.png"),
+                combined_image,
+            )
         cv2.waitKey(1)
 
     with open(
         os.path.join(
-            iterfolder,
-            "depth_image_fitting_result_%s.json"
-            % str(datetime.datetime.now()).replace(":", "_"),
+            iter_folder,
+            f'depth_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json',
         ),
         "w",
     ) as f:
@@ -110,7 +111,7 @@ def run(
     if plot_curves:
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "depth_image_fitting_result_*.json")
+            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
@@ -122,7 +123,7 @@ def run(
         plt.legend()
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "depth_image_fitting_result_*.json")
+            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
@@ -133,7 +134,7 @@ def run(
     return energies
 
 
-def main():
+def main() -> None:
     display = True
     n_subdivision = 0
     run(

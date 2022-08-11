@@ -12,7 +12,7 @@ if ~exist('AutoDiff','class')
 end
 
 if ~options.antialiaseError
-    mask=repmat(reshape(mask,1,size(mask,1),size(mask,2)),3,1,1);% duplicating on the 3 chanels
+    mask=repmat(reshape(mask,1,size(mask,1),size(mask,2)),3,1,1);% duplicating on the 3 channels
 end
 
 M.F = faces;
@@ -39,24 +39,24 @@ approxRigidHessian=  options.cregu * (edgeDiff3' * edgeDiff3) + options.gamma * 
 
 start = tic;
 for iter = 1:options.nb_max_iter
-    
+
     MiterAD = Miter;
     MiterAD.V = AutoDiff(Miter.V);
-    
+
     scene3 = mesh2scene(MiterAD,CameraMatrix,lights.light_directional,lights.light_ambient,height,width,false);
-    
+
     J_col = getderivs(scene3.colors);
     J_ij = getderivs(scene3.ij);
-    
+
     scene2 = mesh2scene(Miter,CameraMatrix,lights.light_directional,lights.light_ambient,height,width);
     scene2.background = repmat(background_color(:),1,scene2.height,scene2.width);
-    
+
     if options.display
         [scene2b,Edata,image]= render_and_compare(scene2, options.sigma, obs, options.antialiaseError, mask);
     else
         [scene2b] = render_and_compare(scene2, options.sigma, obs, options.antialiaseError);
     end
-    
+
     if options.display || options.saveGif
         if iter == 1
             figure(1)
@@ -65,12 +65,12 @@ for iter = 1:options.nb_max_iter
             set(p,'CData',permute(image,[2,3,1]));
             drawnow;
         end
-        
+
         if options.save_images && ismember(iter,[1,20,40])
             imwrite(permute(image,[2,3,1]),fullfile(options.iter_images_folder,sprintf('iter_%d.png',iter)))
         end
     end
-    
+
     if options.save_gif
         filename=fullfile(options.iter_images_folder,'iterations.gif');
         if iter == 1
@@ -82,22 +82,22 @@ for iter = 1:options.nb_max_iter
         end
     end
     imwrite(permute(image,[2,3,1]),fullfile(options.iter_images_folder,sprintf('iter_%d.png',iter)))
-    
+
     ijB = scene2b.ij_b;
     colorsB = scene2b.colors_b;
     GradData = ijB(:)'*J_ij+colorsB(:)'*J_col;
-    
+
     %regularization: we add the folowing quadratic term to the energy we
     %are minimising ,
     %0.5*norm(L*(M.V-Mref.V))^2
     % with L the lapalacian matrix of the graph corresponding
     %to the mesh , this term penalise deformation with respect to the
     %original mesh and enforce some kind of rigidity to the mesh
-    
+
     H = options.alpha * (J_col' * J_col) + options.beta * (J_ij' * J_ij) + approxRigidHessian;
-    
+
     %H= cTplusGama;
-    
+
     switch options.method
         case 'filteredGradient'
             filteredGrad = 0.8*filteredGrad+options.coefData*GradData;
@@ -111,7 +111,7 @@ for iter = 1:options.nb_max_iter
             %Eregu=cregu*0.5*sum(diff.^2);
             Eregu = options.cregu * 0.5 * sum(diff.^2);
             G = GradData' + grad_regu;
-            
+
             step = -H\G;
             %[step,~]=pcg(H,-G,0.2,100);
             % step=-bicg(H,G,1e-4,10);

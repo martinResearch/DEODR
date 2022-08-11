@@ -20,7 +20,7 @@ environment:
    encrypted_pypi_api_token:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
    TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
-   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-* 
+   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-* cp37-* cp310-* cp311-* pp*
    CIBW_BEFORE_BUILD: pip install -r requirements_build.txt
    CIBW_BEFORE_BUILD_LINUX: pip install -r requirements_build.txt
    TWINE_USERNAME: __token__
@@ -30,8 +30,9 @@ environment:
          
 build_script:
   # releasing pure source distribution (no binaries) as tar.gz file on pypi  
-  - cmd: set PYTHON=C:\\Miniconda37-x64
-  - cmd: set PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;
+  - cmd: set PYTHON=C:\Miniconda38-x64
+  - cmd: set PATH=%PYTHON%;%PYTHON%\Scripts;%PYTHON%\Library\bin;%PYTHON%\Lib\site-packages;%PATH%;
+  - cmd: echo %PATH%
   - cmd: pip install -r requirements_build.txt
   - cmd: python setup.py sdist 
   
@@ -40,15 +41,15 @@ build_script:
   - cmd: pip install %targz_file%
   
   # releasing precompiled wheels for linux
-  - sh: sudo pip install cibuildwheel==1.1.0 
+  - sh: sudo pip install cibuildwheel
   - sh: cibuildwheel --output-dir wheelhouse --platform linux
-  - sh: sudo pip install twine==1.15.0
+  - sh: sudo pip install twine
   - sh: echo $TWINE_REPOSITORY_URL
 
   # releasing precompiled wheels for windows  
-  - cmd: pip install cibuildwheel==1.0.0
+  - cmd: pip install cibuildwheel
   - cmd: cibuildwheel --output-dir wheelhouse
-  - cmd: pip install twine==1.15.0
+  - cmd: pip install twine
   - cmd: echo %TWINE_REPOSITORY_URL%
   - cmd: python -m twine upload wheelhouse/*.whl --skip-existing -p %encrypted_pypi_api_token%
   

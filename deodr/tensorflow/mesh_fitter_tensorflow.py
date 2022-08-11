@@ -1,5 +1,5 @@
 """Modules containing Tensorflow classes to fit 3D meshes to images using differentiable rendering."""
-
+from typing import Optional, Tuple, Union
 
 import copy
 
@@ -16,11 +16,10 @@ from . import (
     Scene3DTensorflow,
 )
 from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
-from .triangulated_mesh_tensorflow import TriMeshTensorflow as TriMesh
 from .. import LaplacianRigidEnergy
 
 
-def qrot(q, v):
+def qrot(q: tf.Tensor, v: tf.Tensor) -> tf.Tensor:
     qr = tf.tile(q[None, :], (v.shape[0], 1))
     qvec = qr[:, :-1]
     uv = tf.linalg.cross(qvec, v)
@@ -28,18 +27,22 @@ def qrot(q, v):
     return v + 2 * (qr[:, 3][None, 0] * uv + uuv)
 
 
+def mult_and_clamp(x: Union[np.ndarray, tf.Tensor], a: float, t: float) -> np.ndarray:
+    return np.minimum(np.maximum(x * a, -t), t)
+
+
 class MeshDepthFitter:
     """Class to fit a deformable mesh to a depth image using Tensorflow."""
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -51,8 +54,8 @@ class MeshDepthFitter:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.mesh = TriMesh(
-            faces, vertices
+        self.mesh = ColoredTriMesh(
+            faces, vertices, colors=np.zeros((vertices.shape[0], 0))
         )  # we do a copy to avoid negative stride not support by Tensorflow
         object_center = vertices.mean(axis=0)
         object_radius = np.max(np.std(vertices, axis=0))
@@ -67,13 +70,15 @@ class MeshDepthFitter:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices_init.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -81,14 +86,19 @@ class MeshDepthFitter:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-    def set_max_depth(self, max_depth):
-        self.scene.max_depth = max_depth
+    def set_max_depth(self, max_depth: float) -> None:
+        self.max_depth = max_depth
         self.scene.set_background_color([max_depth])
 
-    def set_depth_scale(self, depth_scale):
+    def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
 
-    def set_image(self, mesh_image, focal=None, distortion=None):
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 2
@@ -111,7 +121,7 @@ class MeshDepthFitter:
         )
         self.iter = 0
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = (
             self.vertices - tf.reduce_mean(self.vertices, axis=0)[None, :]
         )  # centervertices because we have another paramter to control translations
@@ -140,8 +150,11 @@ class MeshDepthFitter:
             self.mesh.set_vertices(vertices_with_grad_transformed)
 
             depth_scale = 1 * self.depthScale
-            depth = self.scene.render_depth(self.camera, depth_scale=depth_scale,)
-            depth = tf.clip_by_value(depth, 0, self.scene.max_depth)
+            depth = self.scene.render_depth(
+                self.camera,
+                depth_scale=depth_scale,
+            )
+            depth = tf.clip_by_value(depth, 0, self.max_depth)
 
             diff_image = tf.reduce_sum(
                 (depth - tf.constant(self.mesh_image[:, :, None])) ** 2, axis=2
@@ -164,16 +177,13 @@ class MeshDepthFitter:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices.numpy())
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         # update v
         grad = grad_data + grad_rigidity
-
-        def mult_and_clamp(x, a, t):
-            return np.minimum(np.maximum(x * a, -t), t)
 
         # update vertices
         step_vertices = mult_and_clamp(
@@ -217,17 +227,17 @@ class MeshRGBFitterWithPose:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        default_color,
-        default_light,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
-        update_lights=True,
-        update_color=True,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        default_color: np.ndarray,
+        default_light: np.ndarray,
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
+        update_lights: bool = True,
+        update_color: bool = True,
     ):
         self.cregu = cregu
 
@@ -245,7 +255,9 @@ class MeshRGBFitterWithPose:
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(
-            faces.copy()
+            faces=faces.copy(),
+            vertices=vertices,
+            colors=np.zeros((vertices.shape[0], 0)),
         )  # we do a copy to avoid negative stride not support by Tensorflow
         object_center = vertices.mean(axis=0) + translation_init
         object_radius = np.max(np.std(vertices, axis=0))
@@ -260,16 +272,18 @@ class MeshRGBFitterWithPose:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_background_color(self, background_color):
+    def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -285,7 +299,12 @@ class MeshRGBFitterWithPose:
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_image(self, mesh_image, focal=None, distortion=None):
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 3
@@ -308,7 +327,7 @@ class MeshRGBFitterWithPose:
         )
         self.iter = 0
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
 
         with tf.GradientTape() as tape:
 
@@ -387,9 +406,6 @@ class MeshRGBFitterWithPose:
         # update v
         grad = grad_data + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
-            return np.minimum(np.maximum(x * a, -t), t)
-
         inertia = self.inertia
 
         # update vertices
@@ -439,4 +455,4 @@ class MeshRGBFitterWithPose:
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
-        return energy, image.numpy(), diff_image.numpy()
+        return energy, image.numpy(), diff_image.numpy()  # type: ignore

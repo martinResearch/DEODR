@@ -1,5 +1,6 @@
 """Example with fitting a colored hand mesh model to an image."""
-
+from typing import List
+from typing_extensions import Literal
 
 import datetime
 import glob
@@ -19,23 +20,29 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from deodr.mesh_fitter import MeshRGBFitterWithPose
+from deodr.pytorch import MeshRGBFitterWithPose as PyTorchMeshRGBFitterWithPose
+from deodr.tensorflow import (
+    MeshRGBFitterWithPose as TensorflowTorchMeshRGBFitterWithPose,
+)
+
+DlLibraryType = Literal["pytorch", "tensorflow", "none"]
+
 
 def run(
-    dl_library="pytorch",
-    plot_curves=True,
-    save_images=True,
-    display=True,
-    max_iter=100,
-    n_subdivision=0,
-):
-    if dl_library == "pytorch":
-        from deodr.pytorch import MeshRGBFitterWithPose
-    elif dl_library == "tensorflow":
-        from deodr.tensorflow import MeshRGBFitterWithPose
-    elif dl_library == "none":
-        from deodr.mesh_fitter import MeshRGBFitterWithPose
-    else:
-        raise BaseException(f"unknown deep learning library {dl_library}")
+    dl_library: DlLibraryType = "pytorch",
+    plot_curves: bool = True,
+    save_images: bool = True,
+    display: bool = True,
+    max_iter: int = 100,
+    n_subdivision: int = 0,
+) -> List[float]:
+
+    MeshFittersSelector = {
+        "none": MeshRGBFitterWithPose,
+        "pytorch": PyTorchMeshRGBFitterWithPose,
+        "tensorflow": TensorflowTorchMeshRGBFitterWithPose,
+    }
 
     hand_image = (
         imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
@@ -56,9 +63,9 @@ def run(
     euler_init = np.array([0, 0, 0])
     translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
-    mesh.vertices = mesh.vertices - translation_init[None, :]
+    mesh.set_vertices(mesh.vertices - translation_init[None, :])
 
-    hand_fitter = MeshRGBFitterWithPose(
+    hand_fitter: MeshRGBFitterWithPose = MeshFittersSelector[dl_library](  # type: ignore
         mesh.vertices,
         mesh.faces,
         default_color=default_color,
@@ -85,7 +92,8 @@ def run(
     )
 
     background_color = np.array([0.5, 0.6, 0.7])
-    hand_fitter.set_image(hand_image, distortion=[-1, 0, 0, 0, 0])
+    distortion = np.array([-1, 0, 0, 0, 0])
+    hand_fitter.set_image(hand_image, distortion=distortion)
     hand_fitter.set_background_color(background_color)
     energies = []
     durations = []
@@ -103,23 +111,20 @@ def run(
             combined_image = np.column_stack(
                 (hand_image, image, np.tile(diff_image[:, :, None], (1, 1, 3)))
             )
-            if display:
-                cv2.imshow(
-                    "animation",
-                    cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
-                )
-            if save_images:
-                imsave(
-                    os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image
-                )
+        if display:
+            cv2.imshow(
+                "animation",
+                cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
+            )
+        if save_images:
+            imsave(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
         cv2.waitKey(1)
 
     # save convergence curve
     with open(
         os.path.join(
             iterfolder,
-            "rgb_image_fitting_result_%s.json"
-            % str(datetime.datetime.now()).replace(":", "_"),
+            f'rgb_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json',
         ),
         "w",
     ) as f:
@@ -163,7 +168,7 @@ def run(
     return energies
 
 
-def main():
+def main() -> None:
 
     display = True
     save_images = False
@@ -189,7 +194,7 @@ def main():
         plot_curves=True,
         display=display,
         save_images=save_images,
-         n_subdivision=n_subdivision,
+        n_subdivision=n_subdivision,
     )
 
 

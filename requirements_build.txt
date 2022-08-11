@@ -1,3 +1,2 @@
-numpy==1.19.5
-scipy==1.5.4
-Cython==0.29.23
+numpy==1.21
+cython==0.29.32

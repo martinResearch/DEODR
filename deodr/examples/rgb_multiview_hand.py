@@ -1,5 +1,5 @@
 """Example with fitting a colored hand mesh model to multiple images."""
-
+from typing_extensions import Literal
 
 import datetime
 import glob
@@ -19,14 +19,16 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+dl_library_type = Literal["pytorch", "tensorflow", "none"]
+
 
 def run(
-    dl_library="pytorch",
-    plot_curves=False,
-    save_images=False,
-    display=True,
-    max_iter=400,
-):
+    dl_library: dl_library_type = "pytorch",
+    plot_curves: bool = False,
+    save_images: bool = False,
+    display: bool = True,
+    max_iter: int = 400,
+) -> None:
 
     file_folder = os.path.dirname(__file__)
     hand_images = [
@@ -39,10 +41,8 @@ def run(
     faces, vertices = read_obj(obj_file)
 
     default_color = np.array([0.4, 0.3, 0.25]) * 1.5
-    default_light = {
-        "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambient": np.array([0.6]),
-    }
+    default_light_directional = -np.array([0.1, 0.5, 0.4])
+    default_light_ambient = 0.6
     # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
     euler_init = np.row_stack(
@@ -58,7 +58,8 @@ def run(
         vertices,
         faces,
         default_color=default_color,
-        default_light=default_light,
+        default_light_directional=default_light_directional,
+        default_light_ambient=default_light_ambient,
         update_lights=True,
         update_color=True,
         euler_init=euler_init,
@@ -91,9 +92,9 @@ def run(
     durations = []
     start = time.time()
 
-    iterfolder = os.path.join(file_folder, "./iterations/depth")
-    if not os.path.exists(iterfolder):
-        os.makedirs(iterfolder)
+    iter_folder = os.path.join(file_folder, "./iterations/depth")
+    if not os.path.exists(iter_folder):
+        os.makedirs(iter_folder)
 
     for niter in range(max_iter):
 
@@ -104,30 +105,27 @@ def run(
             combined_image = np.column_stack(
                 (
                     np.row_stack(hand_images),
-                    np.row_stack(image),
-                    np.tile(
-                        np.row_stack(np.minimum(diff_image, 1))[:, :, None], (1, 1, 3)
-                    ),
+                    image,
+                    np.tile(np.minimum(diff_image, 1)[:, :, None], (1, 1, 3)),
                 )
             )
-            if display:
-                cv2.imshow(
-                    "animation",
-                    cv2.resize(combined_image[:, :, ::-1], None, fx=1, fy=1),
-                )
-            if save_images:
-                imsave(
-                    os.path.join(iterfolder, f"hand_iter_{niter}.png"),
-                    (combined_image * 255).astype(np.uint8),
-                )
+        if display:
+            cv2.imshow(
+                "animation",
+                cv2.resize(combined_image[:, :, ::-1], None, fx=1, fy=1),
+            )
+        if save_images:
+            imsave(
+                os.path.join(iter_folder, f"hand_iter_{niter}.png"),
+                (combined_image * 255).astype(np.uint8),
+            )
         cv2.waitKey(1)
 
     # save convergence curve
     with open(
         os.path.join(
-            iterfolder,
-            "rgb_image_fitting_result_%s.json"
-            % str(datetime.datetime.now()).replace(":", "_"),
+            iter_folder,
+            f'rgb_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json',
         ),
         "w",
     ) as f:
@@ -145,7 +143,7 @@ def run(
     if plot_curves:
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "rgb_image_fitting_result_*.json")
+            os.path.join(iter_folder, "rgb_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
@@ -159,12 +157,12 @@ def run(
         plt.legend()
         plt.figure()
         for file in glob.glob(
-            os.path.join(iterfolder, "rgb_image_fitting_result_*.json")
+            os.path.join(iter_folder, "rgb_image_fitting_result_*.json")
         ):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(json_data["energies"], label=json_data["label"])
-                plt.xlabel("interations")
+                plt.xlabel("iterations")
                 plt.ylabel("energies")
         plt.legend()
         plt.show()

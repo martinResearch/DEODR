@@ -4,11 +4,15 @@
 See http://www.fileformat.info/format/wavefrontobj/.
 At the moment only v and f keywords are supported
 """
-
+from typing import List, Tuple
 import numpy as np
 
 
-def read_obj(filename):
+def read_obj(filename: str) -> Tuple[np.ndarray, np.ndarray]:
+    """Very limited obj file loading.
+
+    At the moment only v and f keywords are supported
+    """
 
     faces = []
     vertices = []
@@ -33,14 +37,14 @@ def read_obj(filename):
             fields.pop(0)
 
             # in some obj faces are defined as -70//-70 -69//-69 -62//-62
-            cleaned_fields = []
+            cleaned_fields: List[int] = []
             for f in fields:
-                f = int(f.split("/")[0]) - 1
-                if f < 0:
-                    f = node_counter + f
-                cleaned_fields.append(f)
+                v = int(f.split("/")[0]) - 1
+                if v < 0:
+                    v = node_counter + v
+                cleaned_fields.append(v)
             faces.append(np.array(cleaned_fields))
 
-    faces = np.row_stack(faces)
-    vertices = np.row_stack(vertices)
-    return faces, vertices
+    faces_np = np.row_stack(faces)
+    vertices_np = np.row_stack(vertices)
+    return faces_np, vertices_np

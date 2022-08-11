@@ -1,17 +1,12 @@
 """Test using rgb mesh rendering."""
 
-import os
 
-from matplotlib import pyplot as plt
-
-import deodr
-from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.differentiable_renderer import Scene2D
 import numpy as np
 
 
-def test_upper_left_pixel_center_coordinates():
-    """testing  that pixel center cooridnates:
+def test_upper_left_pixel_center_coordinates() -> None:
+    """Testing  that pixel center coordinates:
 
     pixel centers are at integer coordinates when integer_pixel_centers=True with
         upper left at (0, 0)
@@ -33,41 +28,42 @@ def test_upper_left_pixel_center_coordinates():
         (0, height - 1),  # lower left,
         (width - 1, height - 1),  # lower right
     ]
+    eps = 0.001
+
+    clockwise = True
     for integer_pixel_centers in [False, True]:
+
         if integer_pixel_centers:
-            point_coordinates = [
-                (0, 0),  # upper left
-                (width - 1, 0),  # upper right,
-                (0, height - 1),  # lower left,
-                (width - 1, height - 1),  # lower right
+            points_coordinates = [
+                (0.0, 0.0),  # upper left
+                (width - 1.0, 0.0),  # upper right,
+                (0, height - 1.0),  # lower left,
+                (width - 1.0, height - 1.0),  # lower right
             ]
         else:
-            point_coordinates = [
+            points_coordinates = [
                 (0.5, 0.5),  # upper left
                 (width - 0.5, 0.5),  # upper right,
                 (0.5, height - 0.5),  # lower left,
                 (width - 0.5, height - 0.5),  # lower right
             ]
 
-        eps = 0.001
-
         depths = np.array([1, 1, 1])
         shade = np.array([0, 0, 0])
         shade = np.array([1, 1, 1])
         faces_uv = np.array([[0, 2, 1]], dtype=np.uint32)
-        uv = np.zeros((3, 2), dtype=np.bool)
-        textured = np.array([0], dtype=np.bool)
-        shaded = np.array([0], dtype=np.bool)
+        uv = np.zeros((3, 2), dtype=bool)
+        textured = np.array([0], dtype=bool)
+        shaded = np.array([0], dtype=bool)
         colors = np.array([[1], [1], [1]])
-        edgeflags = np.zeros((1, 3), dtype=np.bool)
-        clockwise = True
+        edgeflags = np.zeros((1, 3), dtype=bool)
         faces = np.array([[0, 2, 1]], dtype=np.uint32)
 
         texture = np.ones((2, 2, 1))
         background_color = np.array([0])
 
         for integer_point_coordinates, point_coordinates in zip(
-            integer_points_coordinates, point_coordinates
+            integer_points_coordinates, points_coordinates
         ):
             ij = np.array([[-eps, -eps], [-eps, eps], [eps, -eps]]) + np.array(
                 point_coordinates
