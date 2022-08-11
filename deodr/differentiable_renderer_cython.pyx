@@ -212,7 +212,7 @@ cdef class VecFloat:
 	def __cinit__(self):
 		pass
 
-	def set_data(self, vector[int]& data):
+	def set_data(self, vector[float]& data):
 		self.v.swap(data)
 
 
@@ -379,9 +379,22 @@ def renderSceneFragments(scene,
 	)
 
 
-	v= VecInt()
-	v.set_data(fragments.list_x)
-	return 	np.asarray(v)
+	list_x= VecInt()
+	list_x.set_data(fragments.list_x)
+
+	list_y =VecInt()
+	list_y.set_data(fragments.list_y)
+
+	list_alpha =VecFloat()
+	list_alpha.set_data(fragments.list_alpha)
+
+	list_values =VecFloat()
+	list_values.set_data(fragments.list_values)
+	x= np.asarray(list_x)
+	y= np.asarray(list_y)
+	alpha = np.asarray(list_alpha)
+	values = np.array(list_values).reshape(-1,nb_colors)
+	return 	x, y, alpha, values 
 
 
 @cython.boundscheck(False)

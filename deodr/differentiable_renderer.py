@@ -47,6 +47,87 @@ class Scene2DBase:
     integer_pixel_centers: bool = True
 
 
+def _check_scene_2d(scene: Scene2DBase, check_b: bool = False) -> None:
+
+    nb_colors = scene.nb_colors
+    nb_triangles = scene.faces.shape[0]
+    assert nb_triangles == scene.faces_uv.shape[0]
+    nb_vertices = scene.depths.shape[0]
+    nb_vertices_uv = scene.uv.shape[0]
+
+    assert scene.faces.dtype == np.uint32
+    assert np.all(scene.faces < nb_vertices)
+    assert np.all(scene.faces_uv < nb_vertices_uv)
+
+    assert scene.colors.ndim == 2
+    assert scene.uv.ndim == 2
+    assert scene.ij.ndim == 2
+    assert scene.shade.ndim == 1
+    assert scene.edgeflags.ndim == 2
+    assert scene.textured.ndim == 1
+    assert scene.shaded.ndim == 1
+    assert scene.uv.shape[1] == 2
+    assert scene.ij.shape[0] == nb_vertices
+    assert scene.ij.shape[1] == 2
+    assert scene.shade.shape[0] == nb_vertices
+    assert scene.colors.shape[0] == nb_vertices
+    assert scene.colors.shape[1] == nb_colors
+    assert scene.edgeflags.shape[0] == nb_triangles
+    assert scene.edgeflags.shape[1] == 3
+    assert scene.textured.shape[0] == nb_triangles
+    assert scene.shaded.shape[0] == nb_triangles
+
+    assert (scene.background_image is not None) != (scene.background_color is not None)
+
+    if scene.background_image is not None:
+        assert scene.background_image.ndim == 3
+        # assert scene.background_image.shape[0] == height
+        # assert scene.background_image.shape[1] == width
+        assert scene.background_image.shape[2] == nb_colors
+        assert (
+            scene.background_color is None
+        ), "You need to provide either background_image or background_color"
+    else:
+        assert (
+            scene.background_color is not None
+        ), "You need to provide background_image or background_color"
+        assert scene.background_color.shape[0] == nb_colors
+
+    if scene.texture.size > 0:
+        assert scene.texture.ndim == 3
+        assert scene.texture.shape[0] > 0
+        assert scene.texture.shape[1] > 0
+        assert scene.texture.shape[2] == nb_colors
+
+    if check_b:
+        assert scene.uv_b is not None
+        assert scene.ij_b is not None
+        assert scene.shade_b is not None
+        assert scene.uv_b is not None
+        assert scene.colors_b is not None
+
+        assert scene.uv_b.ndim == 2
+        assert scene.ij_b.ndim == 2
+        assert scene.shade_b.ndim == 1
+
+        assert scene.uv_b.shape[0] == nb_vertices_uv
+        assert scene.uv_b.shape[1] == 2
+        assert scene.ij_b.shape[0] == nb_vertices
+        assert scene.ij_b.shape[1] == 2
+        assert scene.shade_b.shape[0] == nb_vertices
+        assert scene.colors_b.shape[0] == nb_vertices
+        assert scene.colors_b.shape[1] == nb_colors
+
+        if scene.texture.size > 0:
+            assert scene.texture_b is not None
+            assert scene.texture_b.ndim == 3
+            assert scene.texture.shape[0] > 0
+            assert scene.texture.shape[1] > 0
+            assert scene.texture.shape[0] == scene.texture_b.shape[0]
+            assert scene.texture.shape[1] == scene.texture_b.shape[1]
+            assert scene.texture.shape[2] == nb_colors
+            assert scene.texture_b.shape[2] == nb_colors
+
 
 def renderScene(
     scene: Scene2DBase,
@@ -63,63 +144,18 @@ def renderScene(
         # doing checks here as it seems the debugger in not able to find the pyx file
         # when installed from a wheel. this also make interactive debugging easier
         # for the library user
-
+        _check_scene_2d(scene, check_b=False)
         assert image is not None
         assert z_buffer is not None
         height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
 
-        nb_triangles = scene.faces.shape[0]
-        assert nb_triangles == scene.faces_uv.shape[0]
-        nb_vertices = scene.depths.shape[0]
-        nb_vertices_uv = scene.uv.shape[0]
-
-        assert scene.faces.dtype == np.uint32
-        assert np.all(scene.faces < nb_vertices)
-        assert np.all(scene.faces_uv < nb_vertices_uv)
-
-        assert scene.colors.ndim == 2
-        assert scene.uv.ndim == 2
-        assert scene.ij.ndim == 2
-        assert scene.shade.ndim == 1
-        assert scene.edgeflags.ndim == 2
-        assert scene.textured.ndim == 1
-        assert scene.shaded.ndim == 1
-        assert scene.uv.shape[1] == 2
-        assert scene.ij.shape[0] == nb_vertices
-        assert scene.ij.shape[1] == 2
-        assert scene.shade.shape[0] == nb_vertices
-        assert scene.colors.shape[0] == nb_vertices
-        assert scene.colors.shape[1] == nb_colors
-        assert scene.edgeflags.shape[0] == nb_triangles
-        assert scene.edgeflags.shape[1] == 3
-        assert scene.textured.shape[0] == nb_triangles
-        assert scene.shaded.shape[0] == nb_triangles
-
-        assert (scene.background_image is not None) != (
-            scene.background_color is not None
-        )
+        assert scene.nb_colors == nb_colors
 
         if scene.background_image is not None:
-            assert scene.background_image.ndim == 3
             assert scene.background_image.shape[0] == height
             assert scene.background_image.shape[1] == width
-            assert scene.background_image.shape[2] == nb_colors
-            assert (
-                scene.background_color is None
-            ), "You need to provide either background_image or background_color"
-        else:
-            assert (
-                scene.background_color is not None
-            ), "You need to provide background_image or background_color"
-            assert scene.background_color.shape[0] == nb_colors
-
-        if scene.texture.size > 0:
-            assert scene.texture.ndim == 3
-            assert scene.texture.shape[0] > 0
-            assert scene.texture.shape[1] > 0
-            assert scene.texture.shape[2] == nb_colors
 
         assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
@@ -133,11 +169,24 @@ def renderScene(
             assert obs.shape[1] == width
             assert obs.shape[2] == nb_colors
 
-    fragments = differentiable_renderer_cython.renderSceneFragments(scene, sigma, z_buffer)
-
     differentiable_renderer_cython.renderScene(
         scene, sigma, image, z_buffer, antialiase_error, obs, err_buffer
     )
+
+
+def renderSceneFragments(
+    scene: Scene2DBase,
+    sigma: float,
+    z_buffer: np.ndarray,
+    check_valid: bool = True,
+) -> Any:
+    if check_valid:
+        _check_scene_2d(scene)
+
+    fragments = differentiable_renderer_cython.renderSceneFragments(
+        scene, sigma, z_buffer
+    )
+    return fragments
 
 
 def renderSceneB(
@@ -157,105 +206,29 @@ def renderSceneB(
         # doing checks here as it seems the debugger in not able to find the pyx file
         # when installed from a wheel. this also make interactive debugging easier
         # for the library user
-
+        _check_scene_2d(scene, check_b=True)
         assert image is not None
         assert z_buffer is not None
 
         height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
-        nb_triangles = scene.faces.shape[0]
 
         assert nb_colors == scene.colors.shape[1]
         assert z_buffer.shape[0] == height
         assert z_buffer.shape[1] == width
-        assert nb_triangles == scene.faces_uv.shape[0]
 
-        nb_vertices = scene.depths.shape[0]
-        nb_vertices_uv = scene.uv.shape[0]
-
-        assert scene.faces.dtype == np.uint32
-        assert np.all(scene.faces < nb_vertices)
-        assert np.all(scene.faces_uv < nb_vertices_uv)
-
-        assert scene.colors.ndim == 2
-        assert scene.uv.ndim == 2
-        assert scene.ij.ndim == 2
-        assert scene.shade.ndim == 1
-        assert scene.edgeflags.ndim == 2
-        assert scene.textured.ndim == 1
-        assert scene.shaded.ndim == 1
-        assert scene.uv.shape[1] == 2
-        assert scene.ij.shape[0] == nb_vertices
-        assert scene.ij.shape[1] == 2
-        assert scene.shade.shape[0] == nb_vertices
-        assert scene.colors.shape[0] == nb_vertices
-        assert scene.colors.shape[1] == nb_colors
-        assert scene.edgeflags.shape[0] == nb_triangles
-        assert scene.edgeflags.shape[1] == 3
-        assert scene.textured.shape[0] == nb_triangles
-        assert scene.shaded.shape[0] == nb_triangles
-
-        assert (scene.background_image is not None) != (
-            scene.background_color is not None
-        )
-
-        if scene.background_image is not None:
-            assert scene.background_image.ndim == 3
-            assert scene.background_image.shape[0] == height
-            assert scene.background_image.shape[1] == width
-            assert scene.background_image.shape[2] == nb_colors
-            assert (
-                scene.background_color is None
-            ), "You need to provide either background_image or background_color"
-        else:
-            assert (
-                scene.background_color is not None
-            ), "You need to provide background_image or background_color"
-            assert scene.background_color.shape[0] == nb_colors
-
-        assert scene.uv_b is not None
-        assert scene.ij_b is not None
-        assert scene.shade_b is not None
-        assert scene.uv_b is not None
-        assert scene.colors_b is not None
-
-        assert scene.uv_b.ndim == 2
-        assert scene.ij_b.ndim == 2
-        assert scene.shade_b.ndim == 1
-        assert scene.edgeflags.ndim == 2
-        assert scene.textured.ndim == 1
-        assert scene.shaded.ndim == 1
-        assert scene.uv_b.shape[0] == nb_vertices_uv
-        assert scene.uv_b.shape[1] == 2
-        assert scene.ij_b.shape[0] == nb_vertices
-        assert scene.ij_b.shape[1] == 2
-        assert scene.shade_b.shape[0] == nb_vertices
-        assert scene.colors_b.shape[0] == nb_vertices
-        assert scene.colors_b.shape[1] == nb_colors
-
-        if scene.texture.size > 0:
-            assert scene.texture_b is not None
-            assert scene.texture.ndim == 3
-            assert scene.texture_b.ndim == 3
-            assert scene.texture.shape[0] > 0
-            assert scene.texture.shape[1] > 0
-            assert scene.texture.shape[0] == scene.texture_b.shape[0]
-            assert scene.texture.shape[1] == scene.texture_b.shape[1]
-            assert scene.texture.shape[2] == nb_colors
-            assert scene.texture_b.shape[2] == nb_colors
-
-        if antialiase_error:
-            assert err_buffer is not None
-            assert obs is not None
-            assert err_buffer.shape[0] == height
-            assert err_buffer.shape[1] == width
-            assert obs.shape[0] == height
-            assert obs.shape[1] == width
-        else:
-            assert image_b is not None
-            assert image_b.shape[0] == height
-            assert image_b.shape[1] == width
+    if antialiase_error:
+        assert err_buffer is not None
+        assert obs is not None
+        assert err_buffer.shape[0] == height
+        assert err_buffer.shape[1] == width
+        assert obs.shape[0] == height
+        assert obs.shape[1] == width
+    else:
+        assert image_b is not None
+        assert image_b.shape[0] == height
+        assert image_b.shape[1] == width
 
     differentiable_renderer_cython.renderSceneB(
         scene,
@@ -662,6 +635,11 @@ class Scene2D(Scene2DBase):
         self.store_backward = (sigma, image, z_buffer)
         return image, z_buffer
 
+    def render_fragments(self, sigma: float = 1) -> Any:
+        z_buffer = np.zeros((self.height, self.width))
+        fragments = renderSceneFragments(self, sigma, z_buffer)
+        return fragments
+
     def render_error_backward(
         self, err_buffer_b: np.ndarray, make_copies: bool = True
     ) -> None:
@@ -971,6 +949,39 @@ class Scene3D:
         return_z_buffer: bool = False,
         backface_culling: bool = True,
     ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+        self._generate_scene_2d(
+            camera=camera,
+            return_z_buffer=return_z_buffer,
+            backface_culling=backface_culling,
+        )
+        image, z_buffer = self._render_2d()
+        if self.store_backward_current is not None:
+            self.store_backward_current["render"] = (
+                camera,
+            )  # store this field as it could be overwritten when
+            # rendering several views
+        return (image, z_buffer) if return_z_buffer else image
+
+    def render_fragments(
+        self,
+        camera: Camera,
+        return_z_buffer: bool = False,
+        backface_culling: bool = True,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+        self._generate_scene_2d(
+            camera=camera,
+            return_z_buffer=return_z_buffer,
+            backface_culling=backface_culling,
+        )
+        fragments = self.scene_2d.render_fragments()
+        return fragments
+
+    def _generate_scene_2d(
+        self,
+        camera: Camera,
+        return_z_buffer: bool = False,
+        backface_culling: bool = True,
+    ) -> None:
         assert self.mesh is not None, "You need to provide a mesh first."
         self.store_backward_current = {}
 
@@ -1053,15 +1064,6 @@ class Scene3D:
         )
         self.scene_2d = scene_2d
 
-        image, z_buffer = self._render_2d()
-        if self.store_backward_current is not None:
-            self.store_backward_current["render"] = (
-                camera,
-                edgeflags,
-            )  # store this field as it could be overwritten when
-            # rendering several views
-        return (image, z_buffer) if return_z_buffer else image
-
     def render_backward(self, image_b: np.ndarray) -> None:
         assert self.scene_2d is not None
         assert self.scene_2d.colors_b is not None
@@ -1071,7 +1073,7 @@ class Scene3D:
                 "perspective_correct not supported yet for gradient back propagation"
             )
         assert self.store_backward_current is not None
-        camera, self.edgeflags = self.store_backward_current["render"]
+        (camera,) = self.store_backward_current["render"]
         self._render_2d_backward(image_b)
         self._compute_vertices_colors_with_illumination_backward(self.scene_2d.colors_b)
         self.mesh._vertices_b = camera.project_points_backward(
