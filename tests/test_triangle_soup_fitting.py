@@ -1,6 +1,5 @@
 """Test using triangle soup rendering."""
 from typing import Any, Dict, List
-import os
 
 from deodr.examples.triangle_soup_fitting import run
 
