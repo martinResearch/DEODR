@@ -37,6 +37,7 @@
 
 """Script to render latex figure for each equation found in readme.md"""
 
+
 import os
 import re
 import shutil
@@ -49,7 +50,7 @@ for arg in sys.argv:
 
 dirpath = tempfile.mkdtemp()
 # ... do stuff with dirpath
-print("temporary directory for latex compilation = %s" % dirpath)
+print(f"temporary directory for latex compilation = {dirpath}")
 if len(sys.argv) == 1:
     texfile = "./readme.md"
 elif len(sys.argv) == 2:
@@ -58,29 +59,30 @@ else:
     raise Exception("wrong number of arguments")
 
 
-def formula_as_file(formula, file, negate=False, header=""):
+def formula_as_file(
+    formula: str, file: str, negate: bool = False, header: str = ""
+) -> None:
     laxtex_tmp_file = os.path.join(dirpath, "tmp_equation.tex")
     pdf_tmp_file = os.path.join(dirpath, "tmp_equation.pdf")
-    latexfile = open(laxtex_tmp_file, "w")
-    latexfile.write("\\documentclass[preview]{standalone}")
-    # latexfile.write('\\input{header.tex}')
-    latexfile.write("\\usepackage{wasysym}")
-    latexfile.write("\\usepackage{amssymb}")
-    latexfile.write("\n\\begin{document}")
-    latexfile.write(" %s" % formula)
-    latexfile.write("\n\\end{document}  ")
-    latexfile.close()
+    with open(laxtex_tmp_file, "w") as latexfile:
+        latexfile.write("\\documentclass[preview]{standalone}")
+        # latexfile.write('\\input{header.tex}')
+        latexfile.write("\\usepackage{wasysym}")
+        latexfile.write("\\usepackage{amssymb}")
+        latexfile.write("\n\\begin{document}")
+        latexfile.write(f" {formula}")
+        latexfile.write("\n\\end{document}  ")
     os.system('pdflatex -output-directory="%s"  %s' % (dirpath, laxtex_tmp_file))
     if file.startswith("https://rawgithub.com") or file.startswith(
         "https://raw.githack.com"
     ):
         file = "./" + re.findall(r"""/master/(.*)""", file)[0]
-    if file[-3:] == "svg":
-        os.system("pdf2svg %s %s" % (pdf_tmp_file, file))
-    elif file[-3:] == "pdf":
+    if file.endswith("svg"):
+        os.system(f"pdf2svg {pdf_tmp_file} {file}")
+    elif file.endswith("pdf"):
         shutil.copyfile(pdf_tmp_file, file)
     else:
-        os.system("convert -density 100  %s -quality 90  %s" % (pdf_tmp_file, file))
+        os.system(f"convert -density 100  {pdf_tmp_file} -quality 90  {file}")
 
 
 raw = open(texfile)
@@ -91,10 +93,10 @@ print("found %d equations " % len(latex_equations))
 listname = set()
 for eqn in latex_equations:
     if eqn[1] in listname:
-        raise Exception("equation image file %s already used" % eqn[1])
+        raise Exception(f"equation image file {eqn[1]} already used")
 
     listname.add(eqn[1])
-    print("creating %s" % eqn[1])
+    print(f"creating {eqn[1]}")
     formula_as_file(eqn[0], eqn[1])
     print("done")
 

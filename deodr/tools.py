@@ -1,22 +1,28 @@
 """Tooling functions for 3D geometry processing with their backward derivatives implementations."""
 
+from typing import Callable, Tuple
 import numpy as np
 
 
-def qrot(q, v):
+def qrot(q: np.ndarray, v: np.ndarray) -> np.ndarray:
+    assert q.ndim in [1, 2]
+    assert q.shape[-1] == 4
+    assert v.ndim == 2
+    assert v.shape[-1] == 3
+
     if q.ndim == 2:
         uv = np.cross(q[:, None, :3], v[None, :, :])
         uuv = np.cross(q[:, None, :3], uv)
-        vr = v + 2 * (q[:, None, [3]] * uv + uuv)
+        return v + 2 * (q[:, None, [3]] * uv + uuv)
     else:
         uv = np.cross(q[:3], v)
         uuv = np.cross(q[:3], uv)
-        vr = v + 2 * (q[3] * uv + uuv)
-
-    return vr
+        return v + 2 * (q[3] * uv + uuv)
 
 
-def qrot_backward(q, v, vr_b):
+def qrot_backward(
+    q: np.ndarray, v: np.ndarray, vr_b: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     uv = np.cross(q[:3], v)
     v_b = vr_b.copy()
     q_b = np.zeros((4))
@@ -28,29 +34,31 @@ def qrot_backward(q, v, vr_b):
     return q_b, v_b
 
 
-def normalize(x, axis=-1):
-    n2 = np.sum(x ** 2, axis=axis)
+def normalize(x: np.ndarray, axis: int = -1) -> np.ndarray:
+    n2 = np.sum(x**2, axis=axis)
     n = np.sqrt(n2)
-    xn = x / np.expand_dims(n, axis)
-    return xn
+    return x / np.expand_dims(n, axis)
 
 
-def normalize_backward(x, xn_b, axis=-1):
-    n2 = np.sum(x ** 2, axis=axis)
+def normalize_backward(x: np.ndarray, xn_b: np.ndarray, axis: int = -1) -> np.ndarray:
+    n2 = np.sum(x**2, axis=axis)
     n = np.sqrt(n2)
     inv_n = 1 / n
-    n_b = -np.sum(xn_b * x, axis=axis) * (inv_n ** 2)
-    x_b = (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
-    return x_b
+    n_b = -np.sum(xn_b * x, axis=axis) * (inv_n**2)
+    return (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
 
 
-def cross_backward(u, v, c_b):
+def cross_backward(
+    u: np.ndarray, v: np.ndarray, c_b: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     v_b = np.cross(c_b, u)
     u_b = np.cross(v, c_b)
     return u_b, v_b
 
 
-def jacobian_finite_differences(func, x, epsilon=1e-6):
+def jacobian_finite_differences(
+    func: Callable[[np.ndarray], np.ndarray], x: np.ndarray, epsilon: float = 1e-6
+) -> np.ndarray:
 
     v0 = func(x)
     nx = x.copy()
@@ -67,7 +75,13 @@ def jacobian_finite_differences(func, x, epsilon=1e-6):
     return jacobian
 
 
-def check_jacobian_finite_differences(jac, func, x, epsilon=1e-7, tol=1e-4):
+def check_jacobian_finite_differences(
+    jac: np.ndarray,
+    func: Callable[[np.ndarray], np.ndarray],
+    x: np.ndarray,
+    epsilon: float = 1e-7,
+    tol: float = 1e-4,
+) -> None:
     nx = x.copy()
     for d in range(x.size):
         nx.flat[d] = x.flat[d] + epsilon

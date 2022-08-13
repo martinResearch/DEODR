@@ -6,13 +6,13 @@ from deodr.differentiable_renderer import Scene2D
 import numpy as np
 
 
-def test_texture_coordinates():
+def test_texture_coordinates() -> None:
     texture = np.array([[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float)
 
     # coordinate of upper left pixel center is (0,0)
     # coordinate of the upper left texture pixel center (texel) is (0, 0)
     # the color of the texture bilinearly sampled as (0,0) is texture[0, 0]
-    # this contrasts with opengl when the texture at position (0.5/texture_width , 0.5/texture_width) is texture[0, 0]
+    # this contrasts with OpenGL when the texture at position (0.5/texture_width , 0.5/texture_width) is texture[0, 0]
 
     uv = np.array([[0, 0], [1, 0], [0, 1]])
     ij = np.array([[1, 1], [1, 15], [15, 1]])

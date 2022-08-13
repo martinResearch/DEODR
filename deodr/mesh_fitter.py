@@ -1,5 +1,6 @@
 """Modules containing classes to fit 3D meshes to images using differentiable rendering."""
 
+from typing import Any, Dict, Optional, Tuple
 import copy
 
 import numpy as np
@@ -7,7 +8,7 @@ import numpy as np
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
-from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D, TriMesh
+from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D
 from .tools import (
     normalize,
     normalize_backward,
@@ -22,13 +23,13 @@ class MeshDepthFitter:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -40,8 +41,8 @@ class MeshDepthFitter:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.mesh = TriMesh(
-            faces, vertices=vertices
+        self.mesh = ColoredTriMesh(
+            faces, vertices=vertices, colors=np.zeros((vertices.shape[0], 0))
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0)
         object_radius = np.max(np.std(vertices, axis=0))
@@ -57,13 +58,15 @@ class MeshDepthFitter:
 
         self.reset()
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices_init.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -71,14 +74,19 @@ class MeshDepthFitter:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-    def set_max_depth(self, max_depth):
-        self.scene.max_depth = max_depth
+    def set_max_depth(self, max_depth: float) -> None:
+        self.max_depth = max_depth
         self.scene.set_background_color(np.array([max_depth], dtype=np.float))
 
-    def set_depth_scale(self, depth_scale):
+    def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
 
-    def set_image(self, mesh_image, focal=None, distortion=None):
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 2
@@ -100,10 +108,10 @@ class MeshDepthFitter:
         )
         self.iter = 0
 
-    def render(self):
+    def render(self) -> np.ndarray:
         q_normalized = normalize(
             self.transform_quaternion
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_transformed = (
             qrot(q_normalized, self.vertices) + self.transform_translation
         )
@@ -112,26 +120,26 @@ class MeshDepthFitter:
             self.camera,
             depth_scale=self.depthScale,
         )
-        depth = np.clip(self.depth_not_clipped, 0, self.scene.max_depth)
-        return depth
+        return np.clip(self.depth_not_clipped, 0, self.max_depth)
 
-    def render_backward(self, depth_b):
+    def render_backward(self, depth_b: np.ndarray) -> None:
         self.scene.clear_gradients()
         depth_b[self.depth_not_clipped < 0] = 0
-        depth_b[self.depth_not_clipped > self.scene.max_depth] = 0
+        depth_b[self.depth_not_clipped > self.max_depth] = 0
         self.scene.render_depth_backward(depth_b)
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        assert self.scene.mesh is not None
+        assert self.scene.mesh._vertices_b is not None
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self.vertices_b = qrot_backward(
+        q_normalized_b, self._vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
         self.transform_quaternion_b = normalize_backward(
             self.transform_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangeant space
-        return
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
         depth = self.render()
@@ -141,8 +149,8 @@ class MeshDepthFitter:
         depth_b = 2 * (depth - self.mesh_image[:, :, None])
         self.render_backward(depth_b)
 
-        self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
-        grad_data = self.vertices_b
+        self._vertices_b = self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
+        grad_data = self._vertices_b
         # update v
 
         (
@@ -156,7 +164,7 @@ class MeshDepthFitter:
         # update v
         grad = grad_data + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia
@@ -201,17 +209,17 @@ class MeshRGBFitterWithPose:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        default_color,
-        default_light,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
-        update_lights=True,
-        update_color=True,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        default_color: np.ndarray,
+        default_light: np.ndarray,
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
+        update_lights: bool = True,
+        update_color: bool = True,
     ):
         self.cregu = cregu
 
@@ -242,16 +250,18 @@ class MeshRGBFitterWithPose:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_background_color(self, background_color):
+    def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -267,7 +277,12 @@ class MeshRGBFitterWithPose:
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_image(self, mesh_image, focal=None, distortion=None):
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 3
@@ -290,10 +305,10 @@ class MeshRGBFitterWithPose:
         )
         self.iter = 0
 
-    def render(self):
+    def render(self) -> np.ndarray:
         q_normalized = normalize(
             self.transform_quaternion
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_transformed = (
             qrot(q_normalized, self.vertices) + self.transform_translation
         )
@@ -304,27 +319,26 @@ class MeshRGBFitterWithPose:
         self.mesh.set_vertices_colors(
             np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
         )
-        image = self.scene.render(self.camera)
-        return image
+        return self.scene.render(self.camera)
 
-    def render_backward(self, image_b):
+    def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.scene.mesh is not None
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
         self.mesh_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b = self.scene.light_directional_b
         self.light_ambient_b = self.scene.light_ambient_b
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self.vertices_b = qrot_backward(
+        q_normalized_b, self._vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
         self.transform_quaternion_b = normalize_backward(
             self.transform_quaternion, q_normalized_b
-        )  # that will lead to a gradient that is in the tangeant space
-        return
+        )  # that will lead to a gradient that is in the tangent space
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
         image = self.render()
@@ -343,11 +357,11 @@ class MeshRGBFitterWithPose:
 
         self.render_backward(image_b)
 
-        self.vertices_b = self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+        self._vertices_b = self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
         # update v
-        grad = self.vertices_b + grad_rigidity
+        grad = self._vertices_b + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia
@@ -411,18 +425,18 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        default_color,
-        default_light,
-        cregu=2000,
-        cdata=1,
-        inertia=0.97,
-        damping=0.15,
-        update_lights=True,
-        update_color=True,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        default_color: np.ndarray,
+        default_light: np.ndarray,
+        cregu: float = 2000,
+        cdata: float = 1,
+        inertia: float = 0.97,
+        damping: float = 0.15,
+        update_lights: bool = True,
+        update_color: bool = True,
     ):
         self.cregu = cregu
         self.cdata = cdata
@@ -451,18 +465,21 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.Hfactorized = None
         self.Hpreconditioner = None
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
+        self.store_backward: Dict[str, Any] = {}
         self.reset()
 
-    def set_background_color(self, background_color):
+    def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -478,7 +495,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_images(self, mesh_images, focal=None):
+    def set_images(
+        self, mesh_images: np.ndarray, focal: Optional[float] = None
+    ) -> None:
         self.width = mesh_images[0].shape[1]
         self.height = mesh_images[0].shape[0]
         assert mesh_images[0].ndim == 3
@@ -500,7 +519,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.iter = 0
 
-    def set_image(self, mesh_image, focal=None):
+    def set_image(self, mesh_image: np.ndarray, focal: Optional[float] = None) -> None:
         self.width = mesh_image.shape[1]
         self.height = mesh_image.shape[0]
         assert mesh_image.ndim == 3
@@ -522,11 +541,11 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.iter = 0
 
-    def render(self, idframe=None):
+    def render(self, idframe: Optional[int] = None) -> np.ndarray:
         unormalized_quaternion = self.transform_quaternion[idframe]
         q_normalized = normalize(
             unormalized_quaternion
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_transformed = (
             qrot(q_normalized, self.vertices) + self.transform_translation[idframe]
         )
@@ -541,42 +560,43 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
         return image
 
-    def clear_gradients(self):
+    def clear_gradients(self) -> None:
         self.light_directional_b = np.zeros(self.light_directional.shape)
         self.light_ambient_b = np.zeros(self.light_ambient.shape)
-        self.vertices_b = np.zeros(self.vertices.shape)
+        self._vertices_b = np.zeros(self.vertices.shape)
         self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
         self.transform_translation_b = np.zeros(self.transform_translation.shape)
         self.mesh_color_b = np.zeros(self.mesh_color.shape)
         self.store_backward = {}
 
-    def render_backward(self, image_b):
+    def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.mesh is not None
+        assert self.scene.mesh is not None
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
         self.mesh_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b += self.scene.light_directional_b
         self.light_ambient_b += self.scene.light_ambient_b
-        vertices_transformed_b = self.scene.mesh.vertices_b
+        vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
-        q_normalized_b, vertices_b = qrot_backward(
+        q_normalized_b, _vertices_b = qrot_backward(
             q_normalized, self.vertices, vertices_transformed_b
         )
-        self.vertices_b += vertices_b
+        self._vertices_b += _vertices_b
         self.transform_quaternion_b[idframe] += normalize_backward(
             unormalized_quaternion, q_normalized_b
-        )  # that will lead to a gradient that is in the tangeant space
-        return
+        )  # that will lead to a gradient that is in the tangent space
 
-    def energy_data(self, vertices, return_images=True):
+    def energy_data(self, vertices: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = vertices
-        image = [None] * self.nb_facesrames
-        diff_image = [None] * self.nb_facesrames
-        image_b = [None] * self.nb_facesrames
-        energy_datas = [None] * self.nb_facesrames
+        image = [None] * self.nb_frames
+        diff_image = [None] * self.nb_frames
+        image_b = [None] * self.nb_frames
+        energy_datas = [None] * self.nb_frames
         self.clear_gradients()
-        coef_data = self.cdata / self.nb_facesrames
-        for idframe in range(self.nb_facesrames):
+        coef_data = self.cdata / self.nb_frames
+        for idframe in range(self.nb_frames):
             image[idframe] = self.render(idframe=idframe)
             diff_image[idframe] = np.sum(
                 (image[idframe] - self.mesh_images[idframe]) ** 2, axis=2
@@ -585,16 +605,16 @@ class MeshRGBFitterWithPoseMultiFrame:
             energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
             self.render_backward(image_b)
         energy_data = np.sum(energy_datas)
-        if return_images:
-            return energy_data, image, diff_image
-        else:
-            return energy_data
 
-    def step(self, check_gradient=False):
+        return energy_data, image, diff_image
+
+    def step(
+        self, check_gradient: bool = False
+    ) -> Tuple[float, np.ndarray, np.ndarray]:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
-        self.nb_facesrames = len(self.mesh_images)
+        self.nb_frames = len(self.mesh_images)
 
         energy_data, image, diff_image = self.energy_data(self.vertices)
         (
@@ -605,19 +625,17 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         if check_gradient:
 
-            def func(x):
-                return self.rigid_energy.evaluate(
-                    x, return_grad=False, return_hessian=False
-                )
+            def func(x: np.ndarray) -> float:
+                return self.rigid_energy.evaluate(x)[0]
 
             check_jacobian_finite_differences(
                 grad_rigidity.flatten(), func, self.vertices
             )
 
-            def func(x):
-                return self.energy_data(x, return_images=False)
+            def func(x: np.ndarray) -> float:
+                return self.energy_data(x)[0]
 
-            grad_data = self.vertices_b.copy()
+            grad_data = self._vertices_b.copy()
             check_jacobian_finite_differences(grad_data.flatten(), func, self.vertices)
 
         energy = energy_data + energy_rigid
@@ -626,13 +644,13 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
 
         if self.iter < 500:
-            self.vertices_b = (
-                self.vertices_b - np.mean(self.vertices_b, axis=0)[None, :]
+            self._vertices_b = (
+                self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
             )
         # update v
-        grad = self.vertices_b + grad_rigidity
+        grad = self._vertices_b + grad_rigidity
 
-        def mult_and_clamp(x, a, t):
+        def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
             return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia

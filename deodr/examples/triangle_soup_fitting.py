@@ -1,6 +1,6 @@
 """Example with fitting a 32 triangles soup to an image."""
 
-
+from typing import List, Tuple
 import copy
 import hashlib
 import os
@@ -8,7 +8,7 @@ import os
 import cv2
 
 import deodr
-from deodr import differentiable_renderer_cython
+from deodr import differentiable_renderer_cython  # type: ignore
 from deodr.differentiable_renderer import Scene2D
 
 from imageio import imread
@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
+def create_example_scene(
+    n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False
+) -> Scene2D:
 
     material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
     height_material = material.shape[0]
@@ -42,11 +44,11 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
 
         if np.linalg.det(np.vstack((tmp, np.ones((3))))) > 0:
             tmp = np.fliplr(tmp)
-        triangle = {}
-        triangle["ij"] = tmp.T
-        triangle["depths"] = np.random.rand(1) * np.ones(
-            (3, 1)
-        )  # constant depth triangles to avoid collisions
+        triangle = {
+            "ij": tmp.T,
+            "depths": (np.random.rand(1) * np.ones((3, 1))),
+        }
+
         triangle["textured"] = np.random.rand(1) > 0.5
 
         if triangle["textured"]:
@@ -69,20 +71,20 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
         )  # all edges are discontinuity edges as no triangle pair share an edge
         triangles.append(triangle)
 
-    scene = {}
-    for key in [
-        "ij",
-        "depths",
-        "textured",
-        "uv",
-        "shade",
-        "colors",
-        "shaded",
-        "edgeflags",
-    ]:
-        scene[key] = np.squeeze(
-            np.vstack([np.array(triangle[key]) for triangle in triangles])
-        )
+    scene = {
+        key: np.squeeze(np.vstack([np.array(triangle[key]) for triangle in triangles]))
+        for key in [
+            "ij",
+            "depths",
+            "textured",
+            "uv",
+            "shade",
+            "colors",
+            "shaded",
+            "edgeflags",
+        ]
+    }
+
     scene["faces"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
     scene["faces_uv"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
 
@@ -104,7 +106,12 @@ def create_example_scene(n_tri=30, width=200, height=200, clockwise=False):
     return Scene2D(**scene)
 
 
-def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
+def run(
+    nb_max_iter: int = 500,
+    display: bool = True,
+    clockwise: bool = False,
+    antialiase_error: bool = False,
+) -> Tuple[List[float], List[str]]:
     print("process id=%d" % os.getpid())
 
     np.random.seed(2)
@@ -144,7 +151,7 @@ def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
         scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
     )
 
-    hashes = []
+    hashes: List[str] = []
 
     np.random.seed(2)
     scene_iter = copy.deepcopy(scene_init)
@@ -153,10 +160,10 @@ def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
     speed_uv = np.zeros((n_vertices, 2))
     speed_color = np.zeros((n_vertices, 3))
 
-    losses = []
+    losses: List[float] = []
     for niter in range(nb_max_iter):
         image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
-            sigma, antialiase_error, image_target
+            sigma=sigma, antialiase_error=antialiase_error, obs=image_target
         )
         hashes.append(hashlib.sha256(image.tobytes()).hexdigest())
         print(f"iter {niter} loss = {loss}")
@@ -172,6 +179,9 @@ def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
                 np.column_stack((image_target, image, loss_image))[:, :, ::-1],
             )
 
+        assert scene_iter.colors_b is not None
+        assert scene_iter.ij_b is not None
+        assert scene_iter.uv_b is not None
         if displacement_magnitude_ij > 0:
             speed_ij = beta_ij * speed_ij - scene_iter.ij_b * alpha_ij
             scene_iter.ij = scene_iter.ij + speed_ij
@@ -189,19 +199,19 @@ def run(nb_max_iter=500, display=True, clockwise=False, antialiase_error=False):
     return losses, hashes
 
 
-def run_with_and_without_antialiased_error(display=True):
+def run_with_and_without_antialiased_error(display: bool = True) -> None:
 
     if display:
         fig = plt.figure()
         ax = fig.add_subplot(111)
     for antialiase_error in [False, True]:
-        losses, _ = run(
-            nb_max_iter=500,
-            display=True,
-            clockwise=False,
-            antialiase_error=antialiase_error,
-        )
         if display:
+            losses, _ = run(
+                nb_max_iter=500,
+                display=True,
+                clockwise=False,
+                antialiase_error=antialiase_error,
+            )
             ax.plot(losses, label="antialiaseError=%d" % antialiase_error)
     if display:
         plt.legend()

@@ -1,1 +1,1 @@
-%~dp0/python_venv/Scripts/activate
+%~dp0/python_venv/Scripts/activate.bat
