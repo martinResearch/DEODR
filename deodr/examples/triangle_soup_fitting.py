@@ -8,7 +8,7 @@ import os
 import cv2
 
 import deodr
-from deodr import differentiable_renderer_cython
+from deodr import differentiable_renderer_cython  # type: ignore
 from deodr.differentiable_renderer import Scene2D
 
 from imageio import imread

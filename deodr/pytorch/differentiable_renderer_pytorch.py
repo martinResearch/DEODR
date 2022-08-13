@@ -5,7 +5,7 @@ import numpy as np
 
 import torch
 
-from .. import differentiable_renderer_cython
+from .. import differentiable_renderer_cython  # type: ignore
 from ..differentiable_renderer import Camera, Scene3D
 
 
@@ -45,7 +45,7 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
     """Pytorch implementation of the 2D rendering function."""
 
     @staticmethod
-    def forward(
+    def forward(  # type: ignore
         ctx: Any, ij: torch.Tensor, colors: torch.Tensor, scene: "Scene3DPytorch"
     ) -> torch.Tensor:
         nb_color_channels = colors.shape[1]
@@ -57,9 +57,8 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         scene.colors = colors.detach().numpy()
         differentiable_renderer_cython.renderScene(scene, 1, image, z_buffer)
         ctx.save_for_backward(ij, colors)
-        ctx.image = (
-            image.copy()
-        )  # making a copy to keep the antializaed image for visualization ,
+        ctx.image = image.copy()
+        # making a copy to keep the antializaed image for visualization ,
         # could be optional
         ctx.z_buffer = z_buffer
         return torch.as_tensor(image)
@@ -95,7 +94,7 @@ class Scene3DPytorch(Scene3D):
         if not (isinstance(light_directional, torch.Tensor)):
             light_directional = torch.tensor(light_directional)
         self.light_directional = light_directional
-        self.light_ambient = light_ambient
+        self.light_ambient_pytorch = light_ambient
 
     def _compute_vertices_colors_with_illumination(self) -> torch.Tensor:
         assert self.mesh is not None
@@ -103,7 +102,7 @@ class Scene3DPytorch(Scene3D):
             torch.relu(
                 -torch.sum(self.mesh.vertex_normals * self.light_directional, dim=1)
             )
-            + self.light_ambient
+            + self.light_ambient_pytorch
         )
         return self.mesh.vertices_colors * vertices_luminosity[:, None]
 

@@ -5,7 +5,7 @@ import os
 import deodr
 from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.examples.triangle_soup_fitting import create_example_scene
-from deodr import differentiable_renderer_cython
+from deodr import differentiable_renderer_cython  # type: ignore
 
 import imageio
 

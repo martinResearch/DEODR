@@ -20,6 +20,12 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from deodr.mesh_fitter import MeshRGBFitterWithPose
+from deodr.pytorch import MeshRGBFitterWithPose as PyTorchMeshRGBFitterWithPose
+from deodr.tensorflow import (
+    MeshRGBFitterWithPose as TensorflowTorchMeshRGBFitterWithPose,
+)
+
 DlLibraryType = Literal["pytorch", "tensorflow", "none"]
 
 
@@ -31,14 +37,12 @@ def run(
     max_iter: int = 100,
     n_subdivision: int = 0,
 ) -> List[float]:
-    if dl_library == "pytorch":
-        from deodr.pytorch import MeshRGBFitterWithPose
-    elif dl_library == "tensorflow":
-        from deodr.tensorflow import MeshRGBFitterWithPose
-    elif dl_library == "none":
-        from deodr.mesh_fitter import MeshRGBFitterWithPose
-    else:
-        raise BaseException(f"unknown deep learning library {dl_library}")
+
+    MeshFittersSelector = {
+        "none": MeshRGBFitterWithPose,
+        "pytorch": PyTorchMeshRGBFitterWithPose,
+        "tensorflow": TensorflowTorchMeshRGBFitterWithPose,
+    }
 
     hand_image = (
         imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
@@ -61,7 +65,7 @@ def run(
     # centering vertices
     mesh.set_vertices(mesh.vertices - translation_init[None, :])
 
-    hand_fitter = MeshRGBFitterWithPose(
+    hand_fitter: MeshRGBFitterWithPose = MeshFittersSelector[dl_library](  # type: ignore
         mesh.vertices,
         mesh.faces,
         default_color=default_color,

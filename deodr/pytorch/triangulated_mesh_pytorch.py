@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import numpy as np
 
 import torch
-from torch.sparse import DoubleTensor
+from torch.sparse import DoubleTensor  # type: ignore
 
 from ..triangulated_mesh import ColoredTriMesh, TriMeshAdjacencies
 

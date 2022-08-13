@@ -5,7 +5,7 @@ import numpy as np
 from scipy.sparse import spmatrix
 
 import torch
-from torch.sparse import DoubleTensor
+from torch.sparse import DoubleTensor  # type: ignore
 
 from ..laplacian_rigid_energy import LaplacianRigidEnergy
 from .triangulated_mesh_pytorch import ColoredTriMeshPytorch

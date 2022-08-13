@@ -5,7 +5,7 @@ import numpy as np
 
 import tensorflow as tf
 
-from .. import differentiable_renderer_cython
+from .. import differentiable_renderer_cython  # type: ignore
 from ..differentiable_renderer import Camera, Scene3D
 
 

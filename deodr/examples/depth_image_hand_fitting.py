@@ -18,6 +18,10 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from deodr.mesh_fitter import MeshDepthFitter
+from deodr.pytorch import MeshDepthFitter as PytorchMeshDepthFitter
+from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
+
 
 def run(
     dl_library: str = "none",
@@ -29,17 +33,6 @@ def run(
 ) -> List[float]:
 
     file_folder = os.path.dirname(__file__)
-
-    if dl_library == "none":
-        from deodr.mesh_fitter import MeshDepthFitter
-    elif dl_library == "pytorch":
-        from deodr.pytorch import MeshDepthFitter
-
-    elif dl_library == "tensorflow":
-        from deodr.tensorflow import MeshDepthFitter
-
-    else:
-        raise BaseException(f"unknown deep learning library {dl_library}")
 
     depth_image = np.fliplr(
         np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
@@ -60,7 +53,13 @@ def run(
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
 
-    hand_fitter = MeshDepthFitter(
+    MeshDepthFittersSelector = {
+        "none": MeshDepthFitter,
+        "pytorch": PytorchMeshDepthFitter,
+        "tensorflow": TensorFlowMeshDepthFitter,
+    }
+
+    hand_fitter: MeshDepthFitter = MeshDepthFittersSelector[dl_library](  # type: ignore
         mesh.vertices, mesh.faces, euler_init, translation_init, cregu=1000
     )
 

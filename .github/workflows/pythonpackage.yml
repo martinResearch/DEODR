@@ -25,11 +25,24 @@ jobs:
         pip install -r requirements.txt
         pip freeze
         python setup.py install
+   
+
+    - name: Black
+      run: |
+        pip install black        
+        black --check --diff .        
+ 
     - name: Lint with flake8
       run: |
         pip install flake8 pep8-naming flake8-bugbear flake8-builtins flake8-docstrings flake8-import-order
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --radon-max-cc 16
+    
+    - name: Mypy
+      run: |
+        pip install mypy        
+        mypy .
+        
     - name: Measure code complexity and maintainability
       run: |
         pip install radon
