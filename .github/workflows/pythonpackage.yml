@@ -19,6 +19,7 @@ jobs:
       run: |
         sudo apt-get install libglu1-mesa-dev
       if: matrix.os == 'ubuntu-latest'
+      
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
@@ -42,7 +43,11 @@ jobs:
       run: |
         pip install mypy        
         mypy .
-        
+   
+    - name: Install Deodr
+      run: |
+        python setup.py install
+   
     - name: Measure code complexity and maintainability
       run: |
         pip install radon
