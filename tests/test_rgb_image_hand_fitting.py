@@ -1,6 +1,6 @@
 """Test using rgb_image hand fitting."""
 
-import os
+import numpy as np
 
 from deodr.examples.rgb_image_hand_fitting import run
 
@@ -16,16 +16,15 @@ def test_rgb_image_hand_fitting_pytorch() -> None:
         save_images=False,
         max_iter=50,
     )
-    if os.name == "nt":  # windows
-        assert (abs(energies[49] - 2100.0239709048583) < 1e-10) or (
-            abs(energies[49] - 2132.9307950405196) < 1e-10
-        )
-        # 2100.0239709048583 : result on Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz 3.31GHz
-        # 2132.9307950405196 : result on Intel(R) Core(TM) i5-4210U CPU @ 1.70GHz 2.40GHz
-        # Possible explanation https://github.com/pytorch/pytorch/issues/54684
-    else:
-        assert abs(energies[49] - 2106.5436357944604) < 12
-        # google colab 2117.9946156293213
+
+    possible_results = [
+        2100.0239709048583,
+        2132.9307950405196,
+        2106.5436357944604,
+        2117.9946156293213,  # google colab
+    ]
+
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
 def test_rgb_image_hand_fitting_numpy() -> None:
@@ -38,18 +37,20 @@ def test_rgb_image_hand_fitting_numpy() -> None:
         max_iter=50,
     )
     # getting different result on python 3.6 or 3.7 in the github action, not sure why
-    if os.name == "nt":  # windows
-        assert abs(energies[49] - 2107.850380422819) < 1e-10
-    else:
-        # google colab Intel(R) Xeon(R) CPU @ 2.20GHz: 251.3164914350016
-        assert abs(energies[49] - 2107.850380422819) < 2
+    possible_results = [
+        2122.8322696714026,  # python 3.7 on github action
+        2107.850380422819,
+        2107.850380422819,  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz
+    ]
+
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
 def test_rgb_image_hand_fitting_tensorflow() -> None:
 
     tf.config.set_visible_devices(
         [], "GPU"
-    )  # Running on CPU to get determinisic results
+    )  # Running on CPU to get deterministic results
 
     energies = run(
         dl_library="tensorflow",
@@ -58,23 +59,14 @@ def test_rgb_image_hand_fitting_tensorflow() -> None:
         save_images=False,
         max_iter=50,
     )
-    if os.name == "nt":  # windows
-        assert abs(energies[49] - 2112.9566220857746) < 1e-10
-        # Running on CPU because it seems to change a lot
-        # from one run to the next when using GPU
-        # could use os.environ['TF_DETERMINISTIC_OPS'] = '1'
-        # github action 2132.9307950405196
+    possible_results = [
+        2112.9566220857746,
+        2115.9320061795634,
+        2107.962374538259,
+        2115.9974345976066,
+    ]
 
-    elif os.name == "posix":  # linux
-        assert (
-            (abs(energies[49] - 2115.9320061795634) < 1e-10)
-            or (abs(energies[49] - 2107.962374538259) < 1e-10)
-            or (abs(energies[49] - 2115.9974345976066) < 1e-10)
-        )
-        # github workflow linux 2115.9320061795634 or 2115.9974345976066
-        # google colab 2107.962374538259
-    else:
-        raise BaseException(f"No results for os.name={os.name}")
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
 if __name__ == "__main__":

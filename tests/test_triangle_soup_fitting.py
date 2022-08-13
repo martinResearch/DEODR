@@ -22,7 +22,7 @@ def check_results(
                     valid = False
         if valid:
             return
-    raise BaseException("none of the results matches")
+    raise BaseException("None of the results matches")
 
 
 def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
