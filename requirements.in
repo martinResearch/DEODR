@@ -13,7 +13,11 @@ moderngl
 pyrr
 pyrender
 pytest-xvfb
+
+# devloppement
 radon
 pip-tools
+mypy
+black
 
 
