@@ -2,28 +2,30 @@
 
 Note that pyrender does not support camera distortion.
 """
-
+from typing import Optional, Tuple
 import numpy as np
 
 import pyrender
 
 import trimesh
+from deodr.differentiable_renderer import Camera, Scene3D
+
+from deodr.triangulated_mesh import ColoredTriMesh
 
 
-def arcsinc(x):
-    if abs(x) > 1e-6:
-        return np.arcsin(x) / x
-    else:
-        return 1
+def arcsinc(x: float) -> float:
+    return np.arcsin(x) / x if abs(x) > 1e-6 else 1
 
 
-def min_rotation(vec1, vec2):
+def min_rotation(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
     """Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vec1,
                  aligns it with vec2.
     """
+    assert vec1.shape == (3,)
+    assert vec2.shape == (3,)
     a, b = (
         (vec1 / np.linalg.norm(vec1)).reshape(3),
         (vec2 / np.linalg.norm(vec2)).reshape(3),
@@ -32,15 +34,14 @@ def min_rotation(vec1, vec2):
     c = np.dot(a, b)
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    if s > 1e-6:
-        d = (1 - c) / (s ** 2)
-    else:
-        d = 0.5
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * d
-    return rotation_matrix
+    d = (1 - c) / (s**2) if s > 1e-6 else 0.5
+    return np.eye(3) + kmat + kmat.dot(kmat) * d
 
 
-def deodr_directional_light_to_pyrender(deodr_directional_light):
+def deodr_directional_light_to_pyrender(
+    deodr_directional_light: np.ndarray,
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    assert deodr_directional_light.shape == (3,)
     directional_light_intensity = np.linalg.norm(deodr_directional_light)
     if directional_light_intensity > 0:
         directional_light_direction = (
@@ -62,7 +63,9 @@ def deodr_directional_light_to_pyrender(deodr_directional_light):
     return directional_light, pose
 
 
-def deodr_mesh_to_pyrender(deodr_mesh):
+def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
+    assert deodr_mesh.uv is not None
+    assert deodr_mesh.texture is not None
 
     # trimesh and pyrender do to handle faces indices for texture
     # that are different from face indices for the 3d vertices
@@ -111,16 +114,22 @@ def deodr_mesh_to_pyrender(deodr_mesh):
     return pyrender.Mesh(primitives=[primitive])
 
 
-def render(deodr_scene, camera):
+def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray]:
+    assert (
+        deodr_scene.mesh is not None
+    ), "You need a mesh in the scene you want to render"
     """Render a deodr scene using pyrender"""
-    bg_color = deodr_scene.background[0, 0]
-    if not (np.all(deodr_scene.background == bg_color[None, None, :])):
-        raise (
-            BaseException(
-                "pyrender does not support background image, please provide a"
-                " backroundimage that correspond to a uniform color"
+    if deodr_scene.background_image is not None:
+        bg_color = deodr_scene.background_image[0, 0]
+        if not (np.all(deodr_scene.background_image == bg_color[None, None, :])):
+            raise (
+                BaseException(
+                    "pyrender does not support background image, please provide a"
+                    " background image that correspond to a uniform color"
+                )
             )
-        )
+    else:
+        bg_color = deodr_scene.background_color
     pyrender_scene = pyrender.Scene(
         ambient_light=deodr_scene.light_ambient * np.ones((3)), bg_color=bg_color
     )
@@ -136,7 +145,7 @@ def render(deodr_scene, camera):
         cy=camera.intrinsic[1, 2],
     )
 
-    # convert to pyrender directional light paramterization
+    # convert to pyrender directional light parameterization
     directional_light, directional_light_pose = deodr_directional_light_to_pyrender(
         deodr_scene.light_directional
     )
@@ -153,7 +162,7 @@ def render(deodr_scene, camera):
 
     pyrender_scene.add(cam, pose=pose_camera)
 
-    # rendner
+    # render
     width = camera.width
     height = camera.height
     r = pyrender.offscreen.OffscreenRenderer(width, height, point_size=1.0)

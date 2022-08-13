@@ -1,11 +1,11 @@
 """Examples with 3D mesh rendering using various backend and comparison with deodr."""
 
 import os
-
+from typing import Tuple
 import deodr
 from deodr import differentiable_renderer
 from deodr.triangulated_mesh import ColoredTriMesh
-
+from deodr.differentiable_renderer import Scene3D, Camera
 import imageio
 
 import matplotlib.pyplot as plt
@@ -17,15 +17,13 @@ from scipy.spatial.transform import Rotation
 import trimesh
 
 
-def run(obj_file, width=640, height=480, display=True):
-    example_rgb(
-        obj_file, width=width, height=height, display=display, display_moderngl=True
-    )
-
-
 def default_scene(
-    obj_file, width=640, height=480, use_distortion=True, integer_pixel_centers=True
-):
+    obj_file: str,
+    width: int = 640,
+    height: int = 480,
+    use_distortion: bool = True,
+    integer_pixel_centers: bool = True,
+) -> Tuple[Scene3D, Camera]:
 
     mesh_trimesh = trimesh.load(obj_file)
 
@@ -50,7 +48,9 @@ def default_scene(
     return scene, camera
 
 
-def example_rgb(display=True, save_image=False, width=640, height=480):
+def example_rgb(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> np.ndarray:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
     image = scene.render(camera)
@@ -66,17 +66,20 @@ def example_rgb(display=True, save_image=False, width=640, height=480):
     return image
 
 
-def example_channels(display=True, save_image=False, width=640, height=480):
+def normalize_unit_cube(v: np.ndarray) -> np.ndarray:
+    if v.ndim == 3 and v.shape[2] < 3:
+        nv = np.zeros((v.shape[0], v.shape[1], 3))
+        nv[:, :, : v.shape[2]] = v
+    else:
+        nv = v
+    return (nv - nv.min()) / (nv.max() - nv.min())
+
+
+def example_channels(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
-
-    def normalize(v):
-        if v.ndim == 3 and v.shape[2] < 3:
-            nv = np.zeros((v.shape[0], v.shape[1], 3))
-            nv[:, :, : v.shape[2]] = v
-        else:
-            nv = v
-        return (nv - nv.min()) / (nv.max() - nv.min())
 
     scene.sigma = 0
 
@@ -86,7 +89,7 @@ def example_channels(display=True, save_image=False, width=640, height=480):
         for i, (name, v) in enumerate(channels.items()):
             ax = plt.subplot(2, 4, i + 1)
             ax.set_title(name)
-            ax.imshow(normalize(v))
+            ax.imshow(normalize_unit_cube(v))
 
     if save_image:
         for name, v in channels.items():
@@ -94,11 +97,13 @@ def example_channels(display=True, save_image=False, width=640, height=480):
                 os.path.join(deodr.data_path, f"test/duck_{name}.png")
             )
             os.makedirs(os.path.dirname(image_file), exist_ok=True)
-            image_uint8 = (normalize(v) * 255).astype(np.uint8)
+            image_uint8 = (normalize_unit_cube(v) * 255).astype(np.uint8)
             imageio.imwrite(image_file, image_uint8)
 
 
-def example_pyrender(display=True, save_image=False, width=640, height=480):
+def example_pyrender(
+    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
+) -> None:
     import deodr.opengl.pyrender
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
@@ -106,9 +111,9 @@ def example_pyrender(display=True, save_image=False, width=640, height=480):
         obj_file, use_distortion=False, width=width, height=height
     )
     scene.sigma = 0  # removing edge overdraw antialiasing
-    image_no_antialiasing = scene.render(camera)
-    image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
     if display:
+        image_no_antialiasing = scene.render(camera)
+        image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
         plt.figure()
         ax = plt.subplot(1, 3, 1)
         ax.set_title("deodr no antialiasing")
@@ -123,7 +128,7 @@ def example_pyrender(display=True, save_image=False, width=640, height=480):
         ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
 
 
-def example_moderngl(display=True, width=640, height=480):
+def example_moderngl(display: bool = True, width: int = 640, height: int = 480) -> None:
     import deodr.opengl.moderngl
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")

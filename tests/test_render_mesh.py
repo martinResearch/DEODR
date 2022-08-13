@@ -5,7 +5,7 @@ import os
 import deodr
 from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.examples.triangle_soup_fitting import create_example_scene
-from deodr import differentiable_renderer_cython
+from deodr import differentiable_renderer_cython  # type: ignore
 
 import imageio
 
@@ -13,12 +13,12 @@ import numpy as np
 import hashlib
 
 
-def test_render_mesh_moderngl():
-    if not os.name == "nt":  # did not manage to install mesa on windows github action
+def test_render_mesh_moderngl() -> None:
+    if os.name != "nt":  # did not manage to install mesa on windows github action
         example_moderngl(display=False)
 
 
-def test_render_mesh_duck(update=False):
+def test_render_mesh_duck(update: bool = False) -> None:
     image = example_rgb(display=False, save_image=False, width=320, height=240)
     image_file = os.path.abspath(os.path.join(deodr.data_path, "test/duck.png"))
     image_uint8 = (image * 255).astype(np.uint8)
@@ -33,7 +33,7 @@ def test_render_mesh_duck(update=False):
     )
 
 
-def test_render_mesh_triangle_soup():
+def test_render_mesh_triangle_soup() -> None:
 
     np.random.seed(2)
     scene_gt = create_example_scene(clockwise=True)
@@ -64,6 +64,12 @@ def test_render_mesh_triangle_soup():
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
     differentiable_renderer_cython.renderScene(scene_gt, sigma, image, z_buffer)
 
+    filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.png")
+    # imageio.imwrite(filename,image)
+
+    image_lkg = imageio.imread(filename)
+    assert np.max(np.abs(image_lkg - image * 255)) <= 1
+
     if os.name == "nt":  # windows
         assert (
             hashlib.sha256(image.tobytes()).hexdigest()
@@ -74,19 +80,19 @@ def test_render_mesh_triangle_soup():
             == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
         )
 
-    elif os.name == "posix":  # linux
-        # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
-        assert (
-            hashlib.sha256(image.tobytes()).hexdigest()
-            == "ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6"
-        )
-        assert (
-            hashlib.sha256(z_buffer.tobytes()).hexdigest()
-            == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
-        )
+    # elif os.name == "posix":  # linux
+    #     # google colab  Intel(R) Xeon(R) CPU @ 2.20GHz
+    #     assert (
+    #         hashlib.sha256(image.tobytes()).hexdigest()
+    #         == "ee530428ecac0a11880aa942e92e40515cdebf86a5e6dd7aadc99b8dcaaf11a6"
+    #     )
+    #     assert (
+    #         hashlib.sha256(z_buffer.tobytes()).hexdigest()
+    #         == "b6f87e03c60bd820efa09d0536495b25d5852f67ecbecd2622f8bf1910d6052a"
+    #     )
 
-    else:
-        raise BaseException(f"No results for os.name={os.name}")
+    # else:
+    #     raise BaseException(f"No results for os.name={os.name}")
 
 
 if __name__ == "__main__":

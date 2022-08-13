@@ -1,5 +1,6 @@
 """example fitting a texture mesh to an image using face images"""
 
+from typing import Tuple
 import cv2
 
 from deodr.differentiable_renderer import Scene2D
@@ -14,7 +15,7 @@ import sklearn.datasets
 from sklearn import decomposition
 
 
-def main():
+def main() -> None:
     faces = sklearn.datasets.fetch_olivetti_faces()
 
     # plt.imshow(faces.images[0])
@@ -120,7 +121,9 @@ def main():
 
     rescale_factor = 10
 
-    def fun(points_deformed, pca_coefs):
+    def fun(
+        points_deformed: np.ndarray, pca_coefs: np.ndarray
+    ) -> Tuple[float, np.ndarray]:
         ij = points_deformed * 64 - 0.5
         # face=faces_pca.inverse_transform(coefs[:,None])
         face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape(
@@ -179,6 +182,8 @@ def main():
         cv2.waitKey(1)
 
         # get gradient on pca coefs
+        assert scene.texture_b is not None
+        assert scene.ij_b is not None
         coefs_grad = faces_pca.components_.dot(scene.texture_b.flatten())
         points_deformed_grad = scene.ij_b * 64
         print(np.max(np.abs(points_deformed_grad)))
@@ -197,7 +202,7 @@ def main():
 
         E, grads = fun(**variables)
         print(f"iter{niter} E={E}")
-        for name in variables.keys():
+        for name in variables:
             variables[name] = variables[name] - lambdas[name] * grads[name]
 
         variables["points_deformed"][on_border] = points[on_border]
