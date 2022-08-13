@@ -44,11 +44,11 @@ def create_example_scene(
 
         if np.linalg.det(np.vstack((tmp, np.ones((3))))) > 0:
             tmp = np.fliplr(tmp)
-        triangle = {}
-        triangle["ij"] = tmp.T
-        triangle["depths"] = np.random.rand(1) * np.ones(
-            (3, 1)
-        )  # constant depth triangles to avoid collisions
+        triangle = {
+            "ij": tmp.T,
+            "depths": (np.random.rand(1) * np.ones((3, 1))),
+        }
+
         triangle["textured"] = np.random.rand(1) > 0.5
 
         if triangle["textured"]:
@@ -71,20 +71,22 @@ def create_example_scene(
         )  # all edges are discontinuity edges as no triangle pair share an edge
         triangles.append(triangle)
 
-    scene = {}
-    for key in [
-        "ij",
-        "depths",
-        "textured",
-        "uv",
-        "shade",
-        "colors",
-        "shaded",
-        "edgeflags",
-    ]:
-        scene[key] = np.squeeze(
+    scene = {
+        key: np.squeeze(
             np.vstack([np.array(triangle[key]) for triangle in triangles])
         )
+        for key in [
+            "ij",
+            "depths",
+            "textured",
+            "uv",
+            "shade",
+            "colors",
+            "shaded",
+            "edgeflags",
+        ]
+    }
+
     scene["faces"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
     scene["faces_uv"] = np.arange(3 * n_tri).reshape(-1, 3).astype(np.uint32)
 
@@ -205,13 +207,13 @@ def run_with_and_without_antialiased_error(display: bool = True) -> None:
         fig = plt.figure()
         ax = fig.add_subplot(111)
     for antialiase_error in [False, True]:
-        losses, _ = run(
-            nb_max_iter=500,
-            display=True,
-            clockwise=False,
-            antialiase_error=antialiase_error,
-        )
         if display:
+            losses, _ = run(
+                nb_max_iter=500,
+                display=True,
+                clockwise=False,
+                antialiase_error=antialiase_error,
+            )
             ax.plot(losses, label="antialiaseError=%d" % antialiase_error)
     if display:
         plt.legend()

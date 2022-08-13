@@ -12,13 +12,14 @@ def check_results(
 ) -> None:
 
     for lkg_results in all_lkg_results:
-        valid = True
-        for key, value in lkg_results["losses"].items():
-            if not losses[key] == value:
-                valid = False
+        valid = all(
+            losses[key] == value
+            for key, value in lkg_results["losses"].items()
+        )
+
         if check_hashes:
             for key, value in lkg_results["hashes"].items():
-                if not hashes[key] == value:
+                if hashes[key] != value:
                     valid = False
         if valid:
             return

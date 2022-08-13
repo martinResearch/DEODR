@@ -111,9 +111,9 @@ def example_pyrender(
         obj_file, use_distortion=False, width=width, height=height
     )
     scene.sigma = 0  # removing edge overdraw antialiasing
-    image_no_antialiasing = scene.render(camera)
-    image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
     if display:
+        image_no_antialiasing = scene.render(camera)
+        image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
         plt.figure()
         ax = plt.subplot(1, 3, 1)
         ax.set_title("deodr no antialiasing")

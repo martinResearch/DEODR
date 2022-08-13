@@ -187,8 +187,7 @@ class Interactor:
             self.y_last = y
 
     def print_help(self) -> None:
-        help_str = ""
-        help_str += "Mouse:\n"
+        help_str = "" + "Mouse:\n"
         if self.mode == "object_centered_trackball":
 
             help_str += (
@@ -206,7 +205,6 @@ class Interactor:
             help_str += "CTRL + mouse left + vertical motion: translate object along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate object along camera x axis\n"
 
-            help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
         else:
             help_str += (
                 "mouse right + vertical motion: translate camera along its z axis\n"
@@ -220,8 +218,7 @@ class Interactor:
             )
             help_str += "CTRL + mouse left + vertical motion: translate camera along its y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate camera along its x axis\n"
-            help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
-
+        help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
         print(help_str)
 
 
@@ -454,8 +451,7 @@ class Viewer:
 
     def print_help(self) -> None:
         """Print the help message."""
-        help_str = ""
-        help_str += "-----------------\n"
+        help_str = "" + "-----------------\n"
         help_str += "DEODR Mesh Viewer\n"
         help_str += "-----------------\n"
         help_str += "Keys:\n"
@@ -497,15 +493,14 @@ class Viewer:
                     light_directional=np.array(self.light_directional),
                     light_ambient=self.light_ambient,
                 )
+        elif self.use_moderngl:
+            assert self.offscreen_renderer is not None
+            self.offscreen_renderer.set_light(
+                light_directional=(0, 0, 0),
+                light_ambient=1.0,
+            )
         else:
-            if self.use_moderngl:
-                assert self.offscreen_renderer is not None
-                self.offscreen_renderer.set_light(
-                    light_directional=(0, 0, 0),
-                    light_ambient=1.0,
-                )
-            else:
-                self.scene.set_light(light_directional=None, light_ambient=1.0)
+            self.scene.set_light(light_directional=None, light_ambient=1.0)
 
     def toggle_edge_overdraw_antialiasing(self) -> None:
         """Toggle edge overdraw anti-aliasing (DEODR rendering only)."""
@@ -514,10 +509,7 @@ class Viewer:
         else:
             self.use_antialiasing = not (self.use_antialiasing)
             print(f"use_antialiasing = {self.use_antialiasing}")
-            if self.use_antialiasing:
-                self.scene.sigma = 1.0
-            else:
-                self.scene.sigma = 0.0
+            self.scene.sigma = 1.0 if self.use_antialiasing else 0.0
 
     def pickle_scene_and_cameras(self) -> None:
         """Save scene and camera in a pickle file."""

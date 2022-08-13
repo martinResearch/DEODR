@@ -202,7 +202,7 @@ def main() -> None:
 
         E, grads = fun(**variables)
         print(f"iter{niter} E={E}")
-        for name in variables.keys():
+        for name in variables:
             variables[name] = variables[name] - lambdas[name] * grads[name]
 
         variables["points_deformed"][on_border] = points[on_border]

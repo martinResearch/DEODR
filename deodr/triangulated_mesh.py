@@ -133,10 +133,7 @@ class TriMeshAdjacencies:
         triangles = vertices[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
-        if self.clockwise:
-            n = -np.cross(u, v)
-        else:
-            n = np.cross(u, v)
+        n = -np.cross(u, v) if self.clockwise else np.cross(u, v)
         normals = normalize(n, axis=1)
         self.store_backward["compute_face_normals"] = (u, v, n)
         return normals
@@ -168,8 +165,7 @@ class TriMeshAdjacencies:
         assert normals_b.shape[1] == 3
         n = self.store_backward["compute_vertex_normals"]
         n_b = normalize_backward(n, normals_b, axis=1)
-        face_normals_b = self._vertices_faces.T * n_b
-        return face_normals_b
+        return self._vertices_faces.T * n_b
 
     def edge_on_silhouette(self, vertices_2d: np.ndarray) -> np.ndarray:
         """Compute the a boolean for each of edges of each face that is true if
@@ -180,10 +176,7 @@ class TriMeshAdjacencies:
         triangles = vertices_2d[self.faces, :]
         u = triangles[:, 1, :] - triangles[:, 0, :]
         v = triangles[:, 2, :] - triangles[:, 0, :]
-        if self.clockwise:
-            face_visible = np.cross(u, v) > 0
-        else:
-            face_visible = np.cross(u, v) < 0
+        face_visible = np.cross(u, v) > 0 if self.clockwise else np.cross(u, v) < 0
         edge_bool = (self.edges_faces_ones * face_visible) == 1
         return edge_bool[self.faces_edges]
 
@@ -354,7 +347,7 @@ class ColoredTriMesh(TriMesh):
 
         self.texture = texture
         self.vertices_colors = colors
-        self.textured = not (self.texture is None)
+        self.textured = self.texture is not None
         self.nb_colors = nb_colors
         if nb_colors is None:
             if texture is None:
@@ -517,10 +510,9 @@ class ColoredTriMesh(TriMesh):
         material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
         visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
 
-        trimesh_mesh = trimesh.Trimesh(
+        return trimesh.Trimesh(
             vertices=new_vertices, faces=new_faces, visual=visual
         )
-        return trimesh_mesh
 
     @staticmethod
     def load(filename: str) -> "ColoredTriMesh":

@@ -120,8 +120,7 @@ class MeshDepthFitter:
             self.camera,
             depth_scale=self.depthScale,
         )
-        depth = np.clip(self.depth_not_clipped, 0, self.max_depth)
-        return depth
+        return np.clip(self.depth_not_clipped, 0, self.max_depth)
 
     def render_backward(self, depth_b: np.ndarray) -> None:
         self.scene.clear_gradients()
@@ -320,8 +319,7 @@ class MeshRGBFitterWithPose:
         self.mesh.set_vertices_colors(
             np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
         )
-        image = self.scene.render(self.camera)
-        return image
+        return self.scene.render(self.camera)
 
     def render_backward(self, image_b: np.ndarray) -> None:
         assert self.scene.mesh is not None

@@ -82,23 +82,16 @@ def run(
             combined_image = np.column_stack(
                 (depth_image, synthetic_depth, 3 * diff_image)
             )
-            if display:
-                cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
-            if save_images:
-                imsave(
-                    os.path.join(iter_folder, f"depth_hand_iter_{niter}.png"),
-                    combined_image,
-                )
+        if display:
+            cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
+        if save_images:
+            imsave(
+                os.path.join(iter_folder, f"depth_hand_iter_{niter}.png"),
+                combined_image,
+            )
         cv2.waitKey(1)
 
-    with open(
-        os.path.join(
-            iter_folder,
-            "depth_image_fitting_result_%s.json"
-            % str(datetime.datetime.now()).replace(":", "_"),
-        ),
-        "w",
-    ) as f:
+    with open(os.path.join(iter_folder, f'depth_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json'), "w") as f:
         json.dump(
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",

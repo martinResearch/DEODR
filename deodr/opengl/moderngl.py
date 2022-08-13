@@ -37,7 +37,7 @@ def opencv_to_opengl_perspective(
     np.testing.assert_array_equal(
         [[fx, 0, cx], [0, fy, cy], [0, 0, 1]], camera.intrinsic
     )
-    m = np.array(
+    return np.array(
         [
             [2.0 * fx / width, 0, 0, 0],
             [0, -2.0 * fy / height, 0, 0],
@@ -50,7 +50,6 @@ def opencv_to_opengl_perspective(
             [0, 0, 2.0 * zfar * znear / (znear - zfar), 0.0],
         ]
     )
-    return m
 
 
 class OffscreenRenderer:
@@ -81,7 +80,7 @@ class OffscreenRenderer:
     def set_light(self, light_directional: np.ndarray, light_ambient: float) -> None:
         assert light_directional.shape == (3,)
         self.shader_program["light_directional"].value = tuple(light_directional)
-        self.shader_program["light_ambient"].value = float(light_ambient)
+        self.shader_program["light_ambient"].value = light_ambient
 
     def set_mesh(self, mesh: ColoredTriMesh) -> None:
         assert mesh.uv is not None
@@ -192,8 +191,6 @@ class OffscreenRenderer:
         self.texture.use()
         self.vao.render()
         data = self.fbo.read(components=3, alignment=1)
-        array_rgb = np.frombuffer(data, dtype=np.uint8).reshape(
+        return np.frombuffer(data, dtype=np.uint8).reshape(
             camera.height, camera.width, 3
         )
-
-        return array_rgb
