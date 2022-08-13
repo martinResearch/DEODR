@@ -19,7 +19,7 @@ def test_rgb_image_hand_fitting_pytorch() -> None:
 
     possible_results = [
         2103.665850588039,  # github action ubuntu python 3.7
-        2104.9656991756697, # github action ubuntu python 3.9
+        2104.9656991756697,  # github action ubuntu python 3.9
         2100.0239709048583,
         2132.9307950405196,
         2106.5436357944604,
