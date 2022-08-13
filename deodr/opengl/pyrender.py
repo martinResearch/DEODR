@@ -14,10 +14,7 @@ from deodr.triangulated_mesh import ColoredTriMesh
 
 
 def arcsinc(x: float) -> float:
-    if abs(x) > 1e-6:
-        return np.arcsin(x) / x
-    else:
-        return 1
+    return np.arcsin(x) / x if abs(x) > 1e-6 else 1
 
 
 def min_rotation(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
@@ -37,12 +34,8 @@ def min_rotation(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
     c = np.dot(a, b)
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    if s > 1e-6:
-        d = (1 - c) / (s**2)
-    else:
-        d = 0.5
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * d
-    return rotation_matrix
+    d = (1 - c) / (s**2) if s > 1e-6 else 0.5
+    return np.eye(3) + kmat + kmat.dot(kmat) * d
 
 
 def deodr_directional_light_to_pyrender(

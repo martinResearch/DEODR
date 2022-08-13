@@ -14,7 +14,7 @@ import hashlib
 
 
 def test_render_mesh_moderngl() -> None:
-    if not os.name == "nt":  # did not manage to install mesa on windows github action
+    if os.name != "nt":  # did not manage to install mesa on windows github action
         example_moderngl(display=False)
 
 

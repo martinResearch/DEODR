@@ -23,10 +23,7 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
         tris = tf.gather(vertices, self.faces)
         u = tris[::, 1] - tris[::, 0]
         v = tris[::, 2] - tris[::, 0]
-        if self.clockwise:
-            n = -tf.linalg.cross(u, v)
-        else:
-            n = tf.linalg.cross(u, v)
+        n = -tf.linalg.cross(u, v) if self.clockwise else tf.linalg.cross(u, v)
         norm = tf.sqrt(tf.reduce_sum(n**2, axis=1))
         return n / norm[:, None]
 
