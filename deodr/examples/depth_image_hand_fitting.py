@@ -91,7 +91,13 @@ def run(
             )
         cv2.waitKey(1)
 
-    with open(os.path.join(iter_folder, f'depth_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json'), "w") as f:
+    with open(
+        os.path.join(
+            iter_folder,
+            f'depth_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json',
+        ),
+        "w",
+    ) as f:
         json.dump(
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",

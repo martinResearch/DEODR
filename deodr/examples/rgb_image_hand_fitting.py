@@ -116,13 +116,17 @@ def run(
                 cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
             )
         if save_images:
-            imsave(
-                os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image
-            )
+            imsave(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
         cv2.waitKey(1)
 
     # save convergence curve
-    with open(os.path.join(iterfolder, f'rgb_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json'), "w") as f:
+    with open(
+        os.path.join(
+            iterfolder,
+            f'rgb_image_fitting_result_{str(datetime.datetime.now()).replace(":", "_")}.json',
+        ),
+        "w",
+    ) as f:
         json.dump(
             {
                 "label": f"{dl_library} {datetime.datetime.now()}",

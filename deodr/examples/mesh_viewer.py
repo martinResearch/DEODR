@@ -218,7 +218,9 @@ class Interactor:
             )
             help_str += "CTRL + mouse left + vertical motion: translate camera along its y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate camera along its x axis\n"
-        help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
+        help_str += (
+            "SHIFT + mouse left + vertical motion: change the camera field of view\n"
+        )
         print(help_str)
 
 

@@ -510,9 +510,7 @@ class ColoredTriMesh(TriMesh):
         material = trimesh.visual.material.SimpleMaterial(image=texture_pil)
         visual = trimesh.visual.texture.TextureVisuals(uv=uv, material=material)
 
-        return trimesh.Trimesh(
-            vertices=new_vertices, faces=new_faces, visual=visual
-        )
+        return trimesh.Trimesh(vertices=new_vertices, faces=new_faces, visual=visual)
 
     @staticmethod
     def load(filename: str) -> "ColoredTriMesh":

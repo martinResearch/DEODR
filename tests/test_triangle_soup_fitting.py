@@ -13,8 +13,7 @@ def check_results(
 
     for lkg_results in all_lkg_results:
         valid = all(
-            losses[key] == value
-            for key, value in lkg_results["losses"].items()
+            losses[key] == value for key, value in lkg_results["losses"].items()
         )
 
         if check_hashes:

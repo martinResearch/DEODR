@@ -72,9 +72,7 @@ def create_example_scene(
         triangles.append(triangle)
 
     scene = {
-        key: np.squeeze(
-            np.vstack([np.array(triangle[key]) for triangle in triangles])
-        )
+        key: np.squeeze(np.vstack([np.array(triangle[key]) for triangle in triangles]))
         for key in [
             "ij",
             "depths",
