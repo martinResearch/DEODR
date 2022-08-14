@@ -399,7 +399,7 @@ class ColoredTriMesh(TriMesh):
         """
         colors = None
         uv = None
-        texture = None
+        texture: Optional[np.ndarray] = None
 
         # If the trimesh visual is undefined, return none for both
 
@@ -408,7 +408,7 @@ class ColoredTriMesh(TriMesh):
             colors = mesh.visual.vertex_colors.copy()
             if colors.ndim == 2 and colors.shape[1] == 4:
                 colors = colors[:, :3]
-            colors = colors.astype(np.float) / 255
+            colors = colors.astype(np.float64) / 255
 
         # Process face colors
         elif mesh.visual.kind == "face":
@@ -422,10 +422,11 @@ class ColoredTriMesh(TriMesh):
             if mesh.visual.uv is not None:
 
                 texture = np.array(mesh.visual.material.image) / 255
-                texture.setflags(write=0)
+                texture.setflags(write=False)
 
                 if texture.shape[2] == 4:
                     texture = texture[:, :, :3]  # removing alpha channel
+                assert texture is not None  # helping mypy
 
                 uv = (
                     np.column_stack(

@@ -40,7 +40,7 @@ class LaplacianRigidEnergyPytorch:
                 self.cT_torch.matmul(diff[:, None])
             ).reshape_as(vertices)
             energy = 0.5 * diff.dot(grad_vertices.flatten())
-            return energy
+            return energy, grad_vertices, self.numpy_imp.approx_hessian
         else:
             diff = (vertices - torch.tensor(self.numpy_imp.vertices_ref)).flatten()
             # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)

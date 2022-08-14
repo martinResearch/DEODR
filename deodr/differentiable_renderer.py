@@ -1,5 +1,6 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
 
+from typing import Optional
 import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
@@ -104,9 +105,9 @@ def renderSceneB(
     z_buffer: np.ndarray,
     image_b: Optional[np.ndarray] = None,
     antialiase_error: bool = False,
-    obs: np.ndarray = None,
-    err_buffer: np.ndarray = None,
-    err_buffer_b: np.ndarray = None,
+    obs: Optional[np.ndarray] = None,
+    err_buffer: Optional[np.ndarray] = None,
+    err_buffer_b: Optional[np.ndarray] = None,
     check_valid: bool = True,
 ) -> None:
 
@@ -730,7 +731,7 @@ class Scene2D(Scene2DBase):
         mask: Optional[np.ndarray] = None,
         clear_gradients: bool = True,
         make_copies: bool = True,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
@@ -747,13 +748,13 @@ class Scene2D(Scene2DBase):
 
         if antialiase_error:
             err_buffer = err_buffer * mask
-            err = np.sum(err_buffer)
+            err = float(np.sum(err_buffer))
             err_buffer_b = copy.copy(mask)
             self.render_error_backward(err_buffer_b, make_copies=make_copies)
         else:
             diff_image = (image - obs) * mask[:, :, None]
             err_buffer = (diff_image) ** 2
-            err = np.sum(err_buffer)
+            err = float(np.sum(err_buffer))
             image_b = 2 * diff_image
             self.render_backward(image_b, make_copies=make_copies)
 
@@ -796,7 +797,9 @@ class Scene3D(Scene2DBase):
         self.texture_b = np.zeros((0, 0))
 
     def set_light(
-        self, light_directional: np.ndarray, light_ambient: np.ndarray
+        self,
+        light_directional: Union[Tuple[float, float, float], np.ndarray],
+        light_ambient: float,
     ) -> None:
         """
         light_ambient : scalar. Intensity of the ambient light
@@ -832,7 +835,9 @@ class Scene3D(Scene2DBase):
         assert background_image.ndim == 3
         self.background_image = background_image
 
-    def set_background_color(self, background_color: np.ndarray) -> None:
+    def set_background_color(
+        self, background_color: Union[Iterable[float], np.ndarray]
+    ) -> None:
         if self.background_image is not None:
             raise BaseException(
                 "you cannot provide both background image and background color"
@@ -975,7 +980,7 @@ class Scene3D(Scene2DBase):
         if self.sigma > 0:
             self.edgeflags = self.mesh.edge_on_silhouette(points_2d)
         else:
-            self.edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+            self.edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
         # construct 2D scene
         self.faces = self.mesh.faces.astype(np.uint32)
 
@@ -984,10 +989,10 @@ class Scene3D(Scene2DBase):
             assert self.mesh.texture is not None
             self.uv = self.mesh.uv
             self.faces_uv = self.mesh.faces_uv
-            self.textured = np.ones((self.mesh.nb_faces), dtype=np.bool)
+            self.textured = np.ones((self.mesh.nb_faces), dtype=bool)
             self.shade = self.compute_vertices_luminosity()
             self.shaded = np.ones(
-                (self.mesh.nb_faces), dtype=np.bool
+                (self.mesh.nb_faces), dtype=bool
             )  # could eventually be non zero if we were using texture
             self.texture = self.mesh.texture
             colors = np.zeros((self.mesh.nb_vertices, self.texture.shape[2]))
@@ -995,12 +1000,12 @@ class Scene3D(Scene2DBase):
             colors = self._compute_vertices_colors_with_illumination()
             self.faces_uv = self.faces
             self.uv = np.zeros((self.mesh.nb_vertices, 2))
-            self.textured = np.zeros((self.mesh.nb_faces), dtype=np.bool)
+            self.textured = np.zeros((self.mesh.nb_faces), dtype=bool)
             self.shade = np.zeros(
                 (self.mesh.nb_vertices), dtype=np.float
             )  # could eventually be non zero if we were using texture
             self.shaded = np.zeros(
-                (self.mesh.nb_faces), dtype=np.bool
+                (self.mesh.nb_faces), dtype=bool
             )  # could eventually be non zero if we were using texture
             self.texture = np.zeros((0, 0))
 
@@ -1048,7 +1053,7 @@ class Scene3D(Scene2DBase):
         if self.sigma > 0:
             edgeflags = self.mesh.edge_on_silhouette(points_2d)
         else:
-            edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+            edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
 
         self.faces = self.mesh.faces.astype(np.uint32)
         self.faces_uv = self.faces
@@ -1056,14 +1061,14 @@ class Scene3D(Scene2DBase):
         self.depths = depths
         self.edgeflags = edgeflags
         self.uv = np.zeros((self.mesh.nb_vertices, 2))
-        self.textured = np.zeros((self.mesh.nb_faces), dtype=np.bool)
+        self.textured = np.zeros((self.mesh.nb_faces), dtype=bool)
         self.shade = np.zeros(
-            (self.mesh.nb_vertices), dtype=np.bool
+            (self.mesh.nb_vertices), dtype=bool
         )  # eventually used when using texture
         self.height = camera.height
         self.width = camera.width
         self.shaded = np.zeros(
-            (self.mesh.nb_faces), dtype=np.bool
+            (self.mesh.nb_faces), dtype=bool
         )  # eventually used when using texture
         self.texture = np.zeros((0, 0))
         self.clockwise = self.mesh.clockwise
@@ -1113,7 +1118,7 @@ class Scene3D(Scene2DBase):
                 "Antialiasing is not supposed to be used when using deferred rendering, please use sigma==0"
             )
 
-        edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+        edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
 
         if luminosity or normal:
             self.mesh.compute_vertex_normals()
@@ -1181,13 +1186,13 @@ class Scene3D(Scene2DBase):
 
         nb_colors = colors.shape[1]
         uv_zeros = np.zeros((soup_nb_vertices, 2))
-        textured = np.zeros((soup_nb_faces), dtype=np.bool)
-        shade = np.zeros((soup_nb_vertices), dtype=np.bool)
+        textured = np.zeros((soup_nb_faces), dtype=bool)
+        shade = np.zeros((soup_nb_vertices), dtype=bool)
 
         height = camera.height
         width = camera.width
         shaded = np.zeros(
-            (soup_nb_faces), dtype=np.bool
+            (soup_nb_faces), dtype=bool
         )  # eventually used when using texture
         texture = np.zeros((0, 0))
 

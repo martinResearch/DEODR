@@ -7,7 +7,9 @@ import numpy as np
 
 
 def test_texture_coordinates() -> None:
-    texture = np.array([[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float)
+    texture = np.array(
+        [[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float64
+    )
 
     # coordinate of upper left pixel center is (0,0)
     # coordinate of the upper left texture pixel center (texel) is (0, 0)
@@ -19,10 +21,10 @@ def test_texture_coordinates() -> None:
     depths = np.array([1, 1, 1])
     shade = np.array([0, 0, 0])
     shade = np.array([1, 1, 1])
-    textured = np.array([1], dtype=np.bool)
-    shaded = np.array([1], dtype=np.bool)
+    textured = np.array([1], dtype=bool)
+    shaded = np.array([1], dtype=bool)
     colors = np.eye(3)
-    edgeflags = np.zeros((1, 3), dtype=np.bool)
+    edgeflags = np.zeros((1, 3), dtype=bool)
 
     for clockwise in [False, True]:
         if clockwise:

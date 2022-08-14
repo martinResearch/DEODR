@@ -41,10 +41,8 @@ def run(
     faces, vertices = read_obj(obj_file)
 
     default_color = np.array([0.4, 0.3, 0.25]) * 1.5
-    default_light = {
-        "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambient": np.array([0.6]),
-    }
+    default_light_directional = -np.array([0.1, 0.5, 0.4])
+    default_light_ambient = np.array([0.6])
     # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
     euler_init = np.row_stack(
@@ -60,7 +58,8 @@ def run(
         vertices,
         faces,
         default_color=default_color,
-        default_light=default_light,
+        default_light_directional=default_light_directional,
+        default_light_ambient=default_light_ambient,
         update_lights=True,
         update_color=True,
         euler_init=euler_init,
@@ -106,10 +105,8 @@ def run(
             combined_image = np.column_stack(
                 (
                     np.row_stack(hand_images),
-                    np.row_stack(image),
-                    np.tile(
-                        np.row_stack(np.minimum(diff_image, 1))[:, :, None], (1, 1, 3)
-                    ),
+                    image,
+                    np.tile(np.minimum(diff_image, 1)[:, :, None], (1, 1, 3)),
                 )
             )
         if display:

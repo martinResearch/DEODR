@@ -1,6 +1,6 @@
 """Modules containing classes to fit 3D meshes to images using differentiable rendering."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import copy
 
 import numpy as np
@@ -76,7 +76,7 @@ class MeshDepthFitter:
 
     def set_max_depth(self, max_depth: float) -> None:
         self.max_depth = max_depth
-        self.scene.set_background_color(np.array([max_depth], dtype=np.float))
+        self.scene.set_background_color(np.array([max_depth], dtype=np.float64))
 
     def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
@@ -430,7 +430,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         euler_init: np.ndarray,
         translation_init: np.ndarray,
         default_color: np.ndarray,
-        default_light: np.ndarray,
+        default_light_directional: np.ndarray,
+        default_light_ambient: np.ndarray,
         cregu: float = 2000,
         cdata: float = 1,
         inertia: float = 0.97,
@@ -450,7 +451,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.step_max_translation = 0.1
 
         self.default_color = default_color
-        self.default_light = default_light
+        self.default_light_directional = default_light_directional
+        self.default_light_ambient = default_light_ambient
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces, vertices, nb_colors=3)
@@ -488,15 +490,15 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.speed_quaternion = np.zeros(4)
 
         self.mesh_color = copy.copy(self.default_color)
-        self.light_directional = copy.copy(self.default_light["directional"])
-        self.light_ambient = copy.copy(self.default_light["ambient"])
+        self.light_directional = copy.copy(self.default_light_directional)
+        self.light_ambient = copy.copy(self.default_light_ambient)
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
     def set_images(
-        self, mesh_images: np.ndarray, focal: Optional[float] = None
+        self, mesh_images: List[np.ndarray], focal: Optional[float] = None
     ) -> None:
         self.width = mesh_images[0].shape[1]
         self.height = mesh_images[0].shape[0]

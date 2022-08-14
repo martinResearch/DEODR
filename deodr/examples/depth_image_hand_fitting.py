@@ -37,7 +37,7 @@ def run(
     depth_image = np.fliplr(
         np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
         .reshape(240, 320)
-        .astype(np.float)
+        .astype(np.float64)
     )
     depth_image = depth_image[20:-20, 60:-60]
     max_depth = 450
@@ -62,8 +62,8 @@ def run(
     hand_fitter: MeshDepthFitter = MeshDepthFittersSelector[dl_library](  # type: ignore
         mesh.vertices, mesh.faces, euler_init, translation_init, cregu=1000
     )
-
-    hand_fitter.set_image(depth_image, focal=241, distortion=[1, 0, 0, 0, 0])
+    distortion = np.array([1, 0, 0, 0, 0])
+    hand_fitter.set_image(depth_image, focal=241, distortion=distortion)
     hand_fitter.set_max_depth(1)
     hand_fitter.set_depth_scale(110 / max_depth)
     energies: List[float] = []

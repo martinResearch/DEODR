@@ -74,7 +74,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
     def set_max_depth(self, max_depth: float) -> None:
         self.max_depth = max_depth
-        self.scene.set_background_color(np.array([max_depth], dtype=np.float))
+        self.scene.set_background_color(np.array([max_depth], dtype=np.float64))
 
     def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale

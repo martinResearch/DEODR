@@ -1,6 +1,6 @@
 """example fitting a texture mesh to an image using face images"""
 
-from typing import Tuple
+from typing import Dict, Tuple
 import cv2
 
 from deodr.differentiable_renderer import Scene2D
@@ -52,12 +52,12 @@ def main() -> None:
     nb_triangles = triangles.shape[0]
     ij = points_deformed_gt * 64 - 0.5
     uv = points * 64 + 0.5
-    textured = np.ones((nb_triangles), dtype=np.bool)
-    shaded = np.ones((nb_triangles), dtype=np.bool)
+    textured = np.ones((nb_triangles), dtype=bool)
+    shaded = np.ones((nb_triangles), dtype=bool)
     depths = np.ones((nb_points))
     shade = np.ones((nb_points))
     colors = np.ones((nb_points, 1))
-    edgeflags = np.zeros((nb_triangles, 3), dtype=np.bool)
+    edgeflags = np.zeros((nb_triangles, 3), dtype=bool)
     height = 64
     width = 64
     nb_colors = 1
@@ -123,7 +123,7 @@ def main() -> None:
 
     def fun(
         points_deformed: np.ndarray, pca_coefs: np.ndarray
-    ) -> Tuple[float, np.ndarray]:
+    ) -> Tuple[float, Dict[str, np.ndarray]]:
         ij = points_deformed * 64 - 0.5
         # face=faces_pca.inverse_transform(coefs[:,None])
         face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape(
@@ -135,6 +135,7 @@ def main() -> None:
         image, z_buffer, diff_image, err = scene.render_compare_and_backward(
             obs=image_gt, sigma=1
         )
+        assert scene.ij_b is not None  # helping mypy
         print("np.max(np.abs(scene.ij_b))=%f" % np.max(np.abs(scene.ij_b)))
         print("E=%f" % err)
         print("done")

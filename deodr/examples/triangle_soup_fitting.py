@@ -1,6 +1,6 @@
 """Example with fitting a 32 triangles soup to an image."""
 
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 import copy
 import hashlib
 import os
@@ -22,7 +22,7 @@ def create_example_scene(
     n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False
 ) -> Scene2D:
 
-    material = np.double(imread(os.path.join(deodr.data_path, "trefle.jpg"))) / 255
+    material = imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
     height_material = material.shape[0]
     width_material = material.shape[1]
 
@@ -71,7 +71,7 @@ def create_example_scene(
         )  # all edges are discontinuity edges as no triangle pair share an edge
         triangles.append(triangle)
 
-    scene = {
+    scene: Dict[str, Any] = {
         key: np.squeeze(np.vstack([np.array(triangle[key]) for triangle in triangles]))
         for key in [
             "ij",
@@ -193,8 +193,8 @@ def run(
         if displacement_magnitude_uv > 0:
             speed_uv = beta_uv * speed_uv - scene_iter.uv_b * alpha_uv
             scene_iter.uv = scene_iter.uv + speed_uv
-            scene_iter.uv = max(scene_iter.uv, 0)
-            scene_iter.uv = min(scene_iter.uv, max_uv)
+            scene_iter.uv = np.maximum(scene_iter.uv, 0.0)
+            scene_iter.uv = np.maximum(scene_iter.uv, max_uv)
 
     return losses, hashes
 
