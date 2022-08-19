@@ -22,7 +22,9 @@ def create_example_scene(
     n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False
 ) -> Scene2D:
 
-    material = imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
+    material = (
+        imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
+    )
     height_material = material.shape[0]
     width_material = material.shape[1]
 

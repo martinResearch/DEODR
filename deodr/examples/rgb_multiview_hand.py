@@ -42,7 +42,7 @@ def run(
 
     default_color = np.array([0.4, 0.3, 0.25]) * 1.5
     default_light_directional = -np.array([0.1, 0.5, 0.4])
-    default_light_ambient = np.array([0.6])
+    default_light_ambient = 0.6
     # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
     euler_init = np.row_stack(

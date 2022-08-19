@@ -510,7 +510,7 @@ class Viewer:
                 light_ambient=1.0,
             )
         else:
-            self.scene.set_light(light_directional=np.ndarray((0, 0, 0)), light_ambient=1.0)
+            self.scene.set_light(light_directional=(0, 0, 0), light_ambient=1.0)
 
     def toggle_edge_overdraw_antialiasing(self) -> None:
         """Toggle edge overdraw anti-aliasing (DEODR rendering only)."""
