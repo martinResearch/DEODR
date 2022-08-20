@@ -24,6 +24,7 @@ def test_rgb_image_hand_fitting_pytorch() -> None:
         2132.9307950405196,
         2106.5436357944604,
         2117.9946156293213,  # google colab
+        2112.3014481160876,  # github action windows python 3.8
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
@@ -43,6 +44,7 @@ def test_rgb_image_hand_fitting_numpy() -> None:
         2122.8322696714026,  # python 3.7 on github action
         2107.850380422819,
         2107.850380422819,  # google colab Intel(R) Xeon(R) CPU @ 2.20GHz
+        2113.7013184079137,  # python 3.7 on windows on github action
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
@@ -68,6 +70,7 @@ def test_rgb_image_hand_fitting_tensorflow() -> None:
         2115.9974345976066,
         2115.791145850562,
         2114.564762503404,
+        2102.9991446481354,
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
