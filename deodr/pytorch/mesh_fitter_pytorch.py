@@ -1,3 +1,4 @@
+# type: ignore
 """Modules containing pytorch classes to fit 3D meshes to images using differentiable rendering."""
 
 from typing import Callable, Dict, Optional, Tuple

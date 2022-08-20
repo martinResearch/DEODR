@@ -1,3 +1,4 @@
+# type: ignore
 """Pytorch interface to deodr."""
 
 from typing import Any, List, Optional, Union, Tuple

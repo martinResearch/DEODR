@@ -495,7 +495,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.light_ambient = self.default_light_ambient
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
-        self.speed_light_ambient = 0
+        self.speed_light_ambient = 0.0
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
     def set_images(
@@ -592,7 +592,9 @@ class MeshRGBFitterWithPoseMultiFrame:
             unormalized_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangent space
 
-    def energy_data(self, vertices: np.ndarray) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
+    def energy_data(
+        self, vertices: np.ndarray
+    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
         self.vertices = vertices
         images: List[np.ndarray] = []
         diff_images: List[np.ndarray] = []
@@ -618,7 +620,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def step(
         self, check_gradient: bool = False
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
+    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
@@ -703,9 +705,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
-        step = -self.light_ambient_b * 0.0001
+        step_light_ambient = -self.light_ambient_b * 0.0001
         self.speed_light_ambient = (1 - self.damping) * (
-            self.speed_light_ambient * inertia + (1 - inertia) * step
+            self.speed_light_ambient * inertia + (1 - inertia) * step_light_ambient
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update mesh color

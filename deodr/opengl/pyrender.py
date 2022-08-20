@@ -146,6 +146,7 @@ def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray
     )
 
     # convert to pyrender directional light parameterization
+    assert deodr_scene.light_directional is not None
     directional_light, directional_light_pose = deodr_directional_light_to_pyrender(
         deodr_scene.light_directional
     )

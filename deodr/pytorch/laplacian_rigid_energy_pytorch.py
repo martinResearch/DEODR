@@ -1,3 +1,4 @@
+# type: ignore
 """Pytorch implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
 from typing import Tuple
@@ -25,7 +26,7 @@ class LaplacianRigidEnergyPytorch:
     """Pytorch class that implements an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
     def __init__(self, mesh: ColoredTriMeshPytorch, vertices: np.ndarray, cregu: float):
-        self.numpy_imp = LaplacianRigidEnergy(mesh._np, vertices, cregu)
+        self.numpy_imp = LaplacianRigidEnergy(mesh, vertices, cregu)
         self.cT_torch = scipy_sparse_to_torch(self.numpy_imp.cT)
         self.approx_hessian = scipy_sparse_to_torch(self.numpy_imp.approx_hessian)
 

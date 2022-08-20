@@ -1,6 +1,5 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
 
-from typing import Optional
 import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
