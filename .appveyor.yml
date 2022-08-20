@@ -21,8 +21,8 @@ environment:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
    TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
    CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-* cp310-* pp*
-   CIBW_BEFORE_BUILD: pip install -r requirements_build.txt
-   CIBW_BEFORE_BUILD_LINUX: pip install -r requirements_build.txt
+   CIBW_BEFORE_BUILD: pip install -r requirements.txt
+   CIBW_BEFORE_BUILD_LINUX: pip install -r requirements.txt
    TWINE_USERNAME: __token__
    TWINE_PASSWORD:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
@@ -32,7 +32,7 @@ build_script:
   # releasing pure source distribution (no binaries) as tar.gz file on pypi  
   - cmd: set PYTHON=C:\\Miniconda37-x64
   - cmd: set PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON%\\Library\\bin;%PYTHON%\\Lib\\site-packages;%PATH%;
-  - cmd: pip install -r requirements_build.txt
+  - cmd: pip install -r requirements.txt
   - cmd: python setup.py sdist 
   
   # testing the installation from source distribution
