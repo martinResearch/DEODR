@@ -47,6 +47,6 @@ setup(
     data_files=[("C++", ["C++/DifferentiableRenderer.h"])],
     ext_modules=my_modules,  # additional source file(s)),
     include_dirs=[np.get_include()],
-    setup_requires=["numpy", "scipy", "cython"],
+    setup_requires=["numpy", "cython"],
     install_requires=["numpy", "scipy"],
 )
