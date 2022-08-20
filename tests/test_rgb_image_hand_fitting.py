@@ -67,7 +67,7 @@ def test_rgb_image_hand_fitting_tensorflow() -> None:
         2107.962374538259,
         2115.9974345976066,
         2115.791145850562,
-        2114.564762503404
+        2114.564762503404,
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
