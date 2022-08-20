@@ -125,7 +125,9 @@ def example_pyrender(
 
         ax = plt.subplot(1, 3, 3)
         ax.set_title("difference")
-        ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float) / 255))
+        ax.imshow(
+            np.abs(image_no_antialiasing - image_pyrender.astype(np.float64) / 255)
+        )
 
 
 def example_moderngl(display: bool = True, width: int = 640, height: int = 480) -> None:
@@ -149,8 +151,8 @@ def example_moderngl(display: bool = True, width: int = 640, height: int = 480) 
         moderngl_renderer.set_scene(scene)
         image_moderngl = moderngl_renderer.render(camera)
         diff = np.abs(
-            image_no_antialiasing.astype(np.float) * 255
-            - image_moderngl.astype(np.float)
+            image_no_antialiasing.astype(np.float64) * 255
+            - image_moderngl.astype(np.float64)
         )
         if display:
             plt.figure()

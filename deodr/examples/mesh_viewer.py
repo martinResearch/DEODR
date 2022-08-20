@@ -113,11 +113,13 @@ class Interactor:
         if self.left_is_down and not (self.ctrl_is_down):
 
             if self.mode == "camera_centered":
-                rot_vec = [
-                    -0.3 * self.rotation_speed * (y - self.y_last),
-                    0.3 * self.rotation_speed * (x - self.x_last),
-                    0,
-                ]
+                rot_vec = np.array(
+                    [
+                        -0.3 * self.rotation_speed * (y - self.y_last),
+                        0.3 * self.rotation_speed * (x - self.x_last),
+                        0,
+                    ]
+                )
                 self.rotate(rot_vec)
 
                 # assert np.allclose(center_in_camera, self.camera.world_to_camera(self.object_center))
@@ -127,11 +129,13 @@ class Interactor:
             elif self.mode == "object_centered_trackball":
 
                 self.rotate(
-                    [
-                        self.rotation_speed * (y - self.y_last),
-                        -self.rotation_speed * (x - self.x_last),
-                        0,
-                    ]
+                    np.array(
+                        [
+                            self.rotation_speed * (y - self.y_last),
+                            -self.rotation_speed * (x - self.x_last),
+                            0,
+                        ]
+                    )
                 )
 
                 self.x_last = x
@@ -155,11 +159,13 @@ class Interactor:
                     )
                 else:
                     self.rotate(
-                        [
-                            0,
-                            0,
-                            -self.rotation_speed * (self.x_last - x),
-                        ]
+                        np.array(
+                            [
+                                0,
+                                0,
+                                -self.rotation_speed * (self.x_last - x),
+                            ]
+                        )
                     )
                 self.x_last = x
                 self.y_last = y
@@ -280,7 +286,9 @@ class Viewer:
         self.register_keys()
 
     def set_light(
-        self, light_directional: np.ndarray, light_ambient: np.ndarray
+        self,
+        light_directional: Union[Tuple[float, float, float], np.ndarray],
+        light_ambient: float,
     ) -> None:
         self.light_directional = np.array(light_directional)
         self.light_ambient = light_ambient
@@ -498,11 +506,11 @@ class Viewer:
         elif self.use_moderngl:
             assert self.offscreen_renderer is not None
             self.offscreen_renderer.set_light(
-                light_directional=(0, 0, 0),
+                light_directional=np.ndarray((0, 0, 0)),
                 light_ambient=1.0,
             )
         else:
-            self.scene.set_light(light_directional=None, light_ambient=1.0)
+            self.scene.set_light(light_directional=(0, 0, 0), light_ambient=1.0)
 
     def toggle_edge_overdraw_antialiasing(self) -> None:
         """Toggle edge overdraw anti-aliasing (DEODR rendering only)."""

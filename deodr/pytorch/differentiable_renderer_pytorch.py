@@ -1,3 +1,4 @@
+# type: ignore
 """Pytorch interface to deodr."""
 
 from typing import Any, List, Optional, Union, Tuple
@@ -49,13 +50,17 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         ctx: Any, ij: torch.Tensor, colors: torch.Tensor, scene: "Scene3DPytorch"
     ) -> torch.Tensor:
         nb_color_channels = colors.shape[1]
-        image = np.empty((scene.height, scene.width, nb_color_channels))
-        z_buffer = np.empty((scene.height, scene.width))
+        image = np.empty(
+            (scene.scene_2d.height, scene.scene_2d.width, nb_color_channels)
+        )
+        z_buffer = np.empty((scene.scene_2d.height, scene.scene_2d.width))
         ctx.scene = scene
-        scene.ij = ij.detach().numpy()  # should automatically detached according to
+        scene.scene_2d.ij = (
+            ij.detach().numpy()
+        )  # should automatically detached according to
         # https://pytorch.org/docs/master/notes/extending.html
         scene.colors = colors.detach().numpy()
-        differentiable_renderer_cython.renderScene(scene, 1, image, z_buffer)
+        differentiable_renderer_cython.renderScene(scene.scene_2d, 1, image, z_buffer)
         ctx.save_for_backward(ij, colors)
         ctx.image = image.copy()
         # making a copy to keep the antializaed image for visualization ,
@@ -68,15 +73,19 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         assert len(grad_outputs) == 1
         image_b = grad_outputs[0]
         scene = ctx.scene
-        scene.uv_b = np.zeros(scene.uv.shape)
-        scene.ij_b = np.zeros(scene.ij.shape)
-        scene.shade_b = np.zeros(scene.shade.shape)
-        scene.colors_b = np.zeros(scene.colors.shape)
-        scene.texture_b = np.zeros(scene.texture.shape)
+        scene.scene_2d.uv_b = np.zeros(scene.scene_2d.uv.shape)
+        scene.scene_2d.ij_b = np.zeros(scene.scene_2d.ij.shape)
+        scene.scene_2d.shade_b = np.zeros(scene.scene_2d.shade.shape)
+        scene.scene_2d.colors_b = np.zeros(scene.scene_2d.colors.shape)
+        scene.scene_2d.texture_b = np.zeros(scene.scene_2d.texture.shape)
         differentiable_renderer_cython.renderSceneB(
-            scene, 1, ctx.image, ctx.z_buffer, image_b.numpy()
+            scene.scene_2d, 1, ctx.image, ctx.z_buffer, image_b.numpy()
         )
-        return torch.as_tensor(scene.ij_b), torch.as_tensor(scene.colors_b), None
+        return (
+            torch.as_tensor(scene.scene_2d.ij_b),
+            torch.as_tensor(scene.scene_2d.colors_b),
+            None,
+        )
 
 
 TorchDifferentiableRender2D = TorchDifferentiableRenderer2DFunc.apply
@@ -106,8 +115,9 @@ class Scene3DPytorch(Scene3D):
         )
         return self.mesh.vertices_colors * vertices_luminosity[:, None]
 
-    def _render_2d(
-        self, ij: torch.Tensor, colors: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        self.depths = self.depths.detach()
-        return TorchDifferentiableRender2D(ij, colors, self), self.depths
+    def _render_2d(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        self.depths = self.scene_2d.depths.detach()
+        return (
+            TorchDifferentiableRender2D(self.scene_2d.ij, self.scene_2d.colors, self),
+            self.depths,
+        )

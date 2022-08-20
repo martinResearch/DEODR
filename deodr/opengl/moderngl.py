@@ -72,7 +72,7 @@ class OffscreenRenderer:
         assert deodr_scene.light_ambient is not None
         assert deodr_scene.background_color is not None
         self.bg_color = deodr_scene.background_color
-
+        assert deodr_scene.light_directional is not None, "Not supported yet"
         self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
         self.set_mesh(deodr_scene.mesh)
         self.integer_pixel_centers = deodr_scene.integer_pixel_centers

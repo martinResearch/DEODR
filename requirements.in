@@ -1,0 +1,23 @@
+numpy
+scipy
+Cython
+scikit-learn
+matplotlib
+imageio
+trimesh
+opencv-python
+torch -f https://download.pytorch.org/whl/torch_stable.html
+torchvision  -f https://download.pytorch.org/whl/torch_stable.html
+tensorflow
+moderngl
+pyrr
+pyrender
+pytest-xvfb
+
+# devloppement
+radon
+pip-tools
+mypy
+black
+
+

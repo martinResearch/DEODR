@@ -63,6 +63,7 @@ def test_depth_image_hand_fitting_tensorflow() -> None:
         251.31648932312913,
         251.3164914350016,
         251.3164891265543,
+        251.32711038915872,
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)

@@ -1,6 +1,6 @@
 """Modules containing classes to fit 3D meshes to images using differentiable rendering."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import copy
 
 import numpy as np
@@ -76,7 +76,7 @@ class MeshDepthFitter:
 
     def set_max_depth(self, max_depth: float) -> None:
         self.max_depth = max_depth
-        self.scene.set_background_color(np.array([max_depth], dtype=np.float))
+        self.scene.set_background_color(np.array([max_depth], dtype=np.float64))
 
     def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
@@ -325,6 +325,7 @@ class MeshRGBFitterWithPose:
         assert self.scene.mesh is not None
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
+        assert self.mesh.vertices_colors_b is not None  # helping mypy
         self.mesh_color_b = np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b = self.scene.light_directional_b
         self.light_ambient_b = self.scene.light_ambient_b
@@ -430,7 +431,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         euler_init: np.ndarray,
         translation_init: np.ndarray,
         default_color: np.ndarray,
-        default_light: np.ndarray,
+        default_light_directional: np.ndarray,
+        default_light_ambient: float,
         cregu: float = 2000,
         cdata: float = 1,
         inertia: float = 0.97,
@@ -450,7 +452,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.step_max_translation = 0.1
 
         self.default_color = default_color
-        self.default_light = default_light
+        self.default_light_directional = default_light_directional
+        self.default_light_ambient = default_light_ambient
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces, vertices, nb_colors=3)
@@ -488,15 +491,15 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.speed_quaternion = np.zeros(4)
 
         self.mesh_color = copy.copy(self.default_color)
-        self.light_directional = copy.copy(self.default_light["directional"])
-        self.light_ambient = copy.copy(self.default_light["ambient"])
+        self.light_directional = copy.copy(self.default_light_directional)
+        self.light_ambient = self.default_light_ambient
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
-        self.speed_light_ambient = np.zeros(self.light_ambient.shape)
+        self.speed_light_ambient = 0.0
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
     def set_images(
-        self, mesh_images: np.ndarray, focal: Optional[float] = None
+        self, mesh_images: List[np.ndarray], focal: Optional[float] = None
     ) -> None:
         self.width = mesh_images[0].shape[1]
         self.height = mesh_images[0].shape[0]
@@ -562,7 +565,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def clear_gradients(self) -> None:
         self.light_directional_b = np.zeros(self.light_directional.shape)
-        self.light_ambient_b = np.zeros(self.light_ambient.shape)
+        self.light_ambient_b = 0
         self._vertices_b = np.zeros(self.vertices.shape)
         self.transform_quaternion_b = np.zeros(self.transform_quaternion.shape)
         self.transform_translation_b = np.zeros(self.transform_translation.shape)
@@ -575,6 +578,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         idframe, unormalized_quaternion, q_normalized = self.store_backward["render"]
         self.scene.clear_gradients()
         self.scene.render_backward(image_b)
+        assert self.mesh.vertices_colors_b is not None  # helping mypy
         self.mesh_color_b += np.sum(self.mesh.vertices_colors_b, axis=0)
         self.light_directional_b += self.scene.light_directional_b
         self.light_ambient_b += self.scene.light_ambient_b
@@ -588,29 +592,35 @@ class MeshRGBFitterWithPoseMultiFrame:
             unormalized_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangent space
 
-    def energy_data(self, vertices: np.ndarray) -> Tuple[float, np.ndarray, np.ndarray]:
+    def energy_data(
+        self, vertices: np.ndarray
+    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
         self.vertices = vertices
-        image = [None] * self.nb_frames
-        diff_image = [None] * self.nb_frames
-        image_b = [None] * self.nb_frames
-        energy_datas = [None] * self.nb_frames
+        images: List[np.ndarray] = []
+        diff_images: List[np.ndarray] = []
+        energy_datas: List[float] = []
         self.clear_gradients()
         coef_data = self.cdata / self.nb_frames
         for idframe in range(self.nb_frames):
-            image[idframe] = self.render(idframe=idframe)
-            diff_image[idframe] = np.sum(
+            image = self.render(idframe=idframe)
+
+            diff_image = np.sum(
                 (image[idframe] - self.mesh_images[idframe]) ** 2, axis=2
             )
-            image_b = coef_data * 2 * (image[idframe] - self.mesh_images[idframe])
-            energy_datas[idframe] = coef_data * np.sum(diff_image[idframe])
-            self.render_backward(image_b)
-        energy_data = np.sum(energy_datas)
+            images.append(image)
+            diff_images.append(diff_image)
 
-        return energy_data, image, diff_image
+            image_b = coef_data * 2 * (image[idframe] - self.mesh_images[idframe])
+            energy_data_image = coef_data * np.sum(diff_image)
+            energy_datas.append(energy_data_image)
+            self.render_backward(image_b)
+        energy_data = float(np.sum(energy_datas))
+
+        return energy_data, images, diff_images
 
     def step(
         self, check_gradient: bool = False
-    ) -> Tuple[float, np.ndarray, np.ndarray]:
+    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
 
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
@@ -625,15 +635,15 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         if check_gradient:
 
-            def func(x: np.ndarray) -> float:
-                return self.rigid_energy.evaluate(x)[0]
+            def func(x: np.ndarray) -> np.ndarray:
+                return np.array(self.rigid_energy.evaluate(x)[0])
 
             check_jacobian_finite_differences(
                 grad_rigidity.flatten(), func, self.vertices
             )
 
-            def func(x: np.ndarray) -> float:
-                return self.energy_data(x)[0]
+            def func(x: np.ndarray) -> np.ndarray:
+                return np.array(self.energy_data(x)[0])
 
             grad_data = self._vertices_b.copy()
             check_jacobian_finite_differences(grad_data.flatten(), func, self.vertices)
@@ -695,9 +705,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         )
         self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
-        step = -self.light_ambient_b * 0.0001
+        step_light_ambient = -self.light_ambient_b * 0.0001
         self.speed_light_ambient = (1 - self.damping) * (
-            self.speed_light_ambient * inertia + (1 - inertia) * step
+            self.speed_light_ambient * inertia + (1 - inertia) * step_light_ambient
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update mesh color

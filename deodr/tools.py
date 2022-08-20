@@ -63,12 +63,13 @@ def jacobian_finite_differences(
     v0 = func(x)
     nx = x.copy()
     jacobian = np.zeros((v0.size, x.size))
+    nx_flat = nx.ravel()
     for d in range(x.size):
-        nx.flat[d] = x.flat[d] + epsilon
+        nx_flat[d] = nx_flat[d] + epsilon
         d1 = func(nx)
-        nx.flat[d] = x.flat[d] - epsilon
+        nx_flat[d] = nx_flat[d] - epsilon
         d2 = func(nx)
-        nx.flat[d] = x.flat[d]
+        nx_flat[d] = x.flat[d]
         jacobian[:, d] = (d1 - d2).flatten() / (2 * epsilon)
     v02 = func(x)
     assert v0 == v02
@@ -83,12 +84,13 @@ def check_jacobian_finite_differences(
     tol: float = 1e-4,
 ) -> None:
     nx = x.copy()
+    nx_flat = nx.ravel()
     for d in range(x.size):
-        nx.flat[d] = x.flat[d] + epsilon
+        nx_flat[d] = x.flat[d] + epsilon
         d1 = func(nx)
-        nx.flat[d] = x.flat[d] - epsilon
+        nx_flat[d] = x.flat[d] - epsilon
         d2 = func(nx)
-        nx.flat[d] = x.flat[d]
+        nx_flat[d] = x.flat[d]
         jac_cold_fd = (d1 - d2).flatten() / (2 * epsilon)
         max_diff = np.max(np.abs(jac[..., d] - jac_cold_fd))
         assert max_diff < tol

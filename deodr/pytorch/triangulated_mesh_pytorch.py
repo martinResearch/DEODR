@@ -1,3 +1,4 @@
+# type: ignore
 """Pytorch implementation of a triangulated mesh."""
 
 from typing import Callable, Optional

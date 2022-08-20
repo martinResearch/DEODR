@@ -92,7 +92,8 @@ def run(
     )
 
     background_color = np.array([0.5, 0.6, 0.7])
-    hand_fitter.set_image(hand_image, distortion=[-1, 0, 0, 0, 0])
+    distortion = np.array([-1, 0, 0, 0, 0])
+    hand_fitter.set_image(hand_image, distortion=distortion)
     hand_fitter.set_background_color(background_color)
     energies = []
     durations = []

@@ -455,4 +455,4 @@ class MeshRGBFitterWithPose:
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
-        return energy, image.numpy(), diff_image.numpy()
+        return energy, image.numpy(), diff_image.numpy()  # type: ignore

@@ -1,3 +1,4 @@
+# type: ignore
 """Pytorch implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
 from typing import Tuple
@@ -39,8 +40,6 @@ class LaplacianRigidEnergyPytorch:
             grad_vertices = self.numpy_imp.cregu * (
                 self.cT_torch.matmul(diff[:, None])
             ).reshape_as(vertices)
-            energy = 0.5 * diff.dot(grad_vertices.flatten())
-            return energy
         else:
             diff = (vertices - torch.tensor(self.numpy_imp.vertices_ref)).flatten()
             # gradV = self.cregu*(self.cT_torch.matmul(diff[:,None])).reshape_as(V)
@@ -49,6 +48,6 @@ class LaplacianRigidEnergyPytorch:
                 self.numpy_imp.cregu
                 * (self.numpy_imp.cT * (diff[:, None].numpy())).reshape(vertices.shape)
             )
-            energy = 0.5 * diff.dot(grad_vertices.flatten())
 
-            return energy, grad_vertices, self.numpy_imp.approx_hessian
+        energy = 0.5 * diff.dot(grad_vertices.flatten())
+        return energy, grad_vertices, self.numpy_imp.approx_hessian
