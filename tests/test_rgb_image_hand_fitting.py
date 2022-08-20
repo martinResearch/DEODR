@@ -25,6 +25,7 @@ def test_rgb_image_hand_fitting_pytorch() -> None:
         2106.5436357944604,
         2117.9946156293213,  # google colab
         2112.3014481160876,  # github action windows python 3.8
+        2108.0875835193865,  # github action ubuntu python 3.7
     ]
 
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
