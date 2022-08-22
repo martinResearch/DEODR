@@ -1115,6 +1115,7 @@ class Scene3D:
             backface_culling=backface_culling,
             strict_edge=True,
             background_color=self.background_color,
+            integer_pixel_centers=self.integer_pixel_centers,
         )
         self.scene_2d = scene_2d
         image, _ = self._render_2d()
@@ -1265,6 +1266,7 @@ class Scene3D:
             background_image=background_image,
             backface_culling=backface_culling,
             background_color=None,
+            integer_pixel_centers=self.integer_pixel_centers,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))
