@@ -26,12 +26,12 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
             n = -tf.linalg.cross(u, v)
         else:
             n = tf.linalg.cross(u, v)
-        norm = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
+        norm = tf.sqrt(tf.reduce_sum(n**2, axis=1))
         return n / norm[:, None]
 
     def compute_vertex_normals(self, face_normals):
         n = tf.sparse.sparse_dense_matmul(self._vertices_faces_tf, face_normals)
-        norm = tf.sqrt(tf.reduce_sum(n ** 2, axis=1))
+        norm = tf.sqrt(tf.reduce_sum(n**2, axis=1))
         return n / norm[:, None]
 
     def edge_on_silhouette(self, vertices_2d):

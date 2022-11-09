@@ -29,17 +29,17 @@ def qrot_backward(q, v, vr_b):
 
 
 def normalize(x, axis=-1):
-    n2 = np.sum(x ** 2, axis=axis)
+    n2 = np.sum(x**2, axis=axis)
     n = np.sqrt(n2)
     xn = x / np.expand_dims(n, axis)
     return xn
 
 
 def normalize_backward(x, xn_b, axis=-1):
-    n2 = np.sum(x ** 2, axis=axis)
+    n2 = np.sum(x**2, axis=axis)
     n = np.sqrt(n2)
     inv_n = 1 / n
-    n_b = -np.sum(xn_b * x, axis=axis) * (inv_n ** 2)
+    n_b = -np.sum(xn_b * x, axis=axis) * (inv_n**2)
     x_b = (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
     return x_b
 

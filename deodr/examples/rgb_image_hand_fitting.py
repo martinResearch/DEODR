@@ -8,7 +8,6 @@ import os
 import time
 
 import cv2
-import x3d
 
 import deodr
 from deodr import read_obj
@@ -107,8 +106,9 @@ def run(
                 )
         cv2.waitKey(1)
 
-
-    export_meshlab("rgb_fitted_meshlab.mlp", hand_fitter.mesh, [hand_fitter.camera], [hand_image])
+    export_meshlab(
+        "rgb_fitted_meshlab.mlp", hand_fitter.mesh, [hand_fitter.camera], [hand_image]
+    )
     # save convergence curve
     with open(
         os.path.join(

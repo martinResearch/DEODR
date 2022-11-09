@@ -33,7 +33,7 @@ def min_rotation(vec1, vec2):
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     if s > 1e-6:
-        d = (1 - c) / (s ** 2)
+        d = (1 - c) / (s**2)
     else:
         d = 0.5
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * d

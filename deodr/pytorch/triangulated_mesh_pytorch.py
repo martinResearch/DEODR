@@ -41,14 +41,14 @@ class TriMeshAdjacenciesPytorch(TriMeshAdjacencies):
             n = -torch.cross(u, v)
         else:
             n = torch.cross(u, v)
-        l2 = (n ** 2).sum(dim=1)
+        l2 = (n**2).sum(dim=1)
         norm = l2.sqrt()
         nn = n / norm[:, None]
         return nn
 
     def compute_vertex_normals(self, face_normals):
         n = self._vertices_faces_torch.mm(face_normals)
-        l2 = (n ** 2).sum(dim=1)
+        l2 = (n**2).sum(dim=1)
         norm = l2.sqrt()
         return n / norm[:, None]
 

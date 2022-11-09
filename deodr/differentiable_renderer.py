@@ -228,14 +228,13 @@ class Camera:
 
     @property
     def xfov(self):
-        assert self.intrinsic[0,2] == self.width / 2
-        return np.degrees(2 * np.arctan(self.width / (2 * self.intrinsic[0,0])))
+        assert self.intrinsic[0, 2] == self.width / 2
+        return np.degrees(2 * np.arctan(self.width / (2 * self.intrinsic[0, 0])))
 
     @property
     def yfov(self):
-        assert self.intrinsic[1,2] == self.height / 2
-        return np.degrees(2 * np.arctan(self.height / (2 * self.intrinsic[1,1])))
-
+        assert self.intrinsic[1, 2] == self.height / 2
+        return np.degrees(2 * np.arctan(self.height / (2 * self.intrinsic[1, 1])))
 
     def world_to_camera(self, points_3d):
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
@@ -266,11 +265,17 @@ class Camera:
             if store_backward is not None:
                 store_backward["project_points"] = (p_camera, depths, projected)
         else:
-            k1, k2, p1, p2, k3, = self.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
-            x2 = x ** 2
-            y2 = y ** 2
+            x2 = x**2
+            y2 = y**2
             r2 = x2 + y2
             r4 = r2 * r2
             r6 = r2 * r4
@@ -309,7 +314,13 @@ class Camera:
             p_camera, depths, projected, r2, radial_distortion = store_backward[
                 "project_points"
             ]
-            k1, k2, p1, p2, k3, = self.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = self.distortion
             x = projected[:, 0]
             y = projected[:, 1]
             distorted_b = projected_image_coordinates_b.dot(
@@ -327,7 +338,7 @@ class Camera:
             x_b += tangential_distortion_y_b * 2 * p2 * y
             y_b += tangential_distortion_y_b * (2 * p2 * x + p1 * 4 * y)
             r2_b = tangential_distortion_x_b * p2 + tangential_distortion_y_b * p1
-            r2_b += radial_distortion_b * (k1 + 2 * k2 * r2 + 3 * k3 * r2 ** 2)
+            r2_b += radial_distortion_b * (k1 + 2 * k2 * r2 + 3 * k3 * r2**2)
             x_b += r2_b * 2 * x
             y_b += r2_b * 2 * y
             projected_b = np.column_stack((x_b, y_b))
@@ -335,7 +346,7 @@ class Camera:
         p_camera_b = np.column_stack(
             (
                 projected_b / depths[:, None],
-                -np.sum(projected_b * p_camera[:, :2], axis=1) / (depths ** 2),
+                -np.sum(projected_b * p_camera[:, :2], axis=1) / (depths**2),
             )
         )
         if depths_b is not None:

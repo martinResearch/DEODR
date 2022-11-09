@@ -136,7 +136,13 @@ class OffscreenRenderer:
         if camera.distortion is None:
             k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
         else:
-            k1, k2, p1, p2, k3, = camera.distortion
+            (
+                k1,
+                k2,
+                p1,
+                p2,
+                k3,
+            ) = camera.distortion
         self.shader_program["k1"].value = k1
         self.shader_program["k2"].value = k2
         self.shader_program["k3"].value = k3
