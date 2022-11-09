@@ -102,8 +102,12 @@ moderngl==5.7.2
     # via -r requirements.ini
 multipledispatch==0.6.0
     # via pyrr
+mypy==0.990
+    # via -r requirements.ini
 mypy-extensions==0.4.3
-    # via black
+    # via
+    #   black
+    #   mypy
 networkx==2.8.8
     # via pyrender
 numpy==1.23.4
@@ -232,6 +236,7 @@ tomli==2.0.1
     # via
     #   black
     #   build
+    #   mypy
     #   pep517
     #   pytest
 torch==1.13.0
@@ -242,6 +247,7 @@ trimesh==3.16.0
     #   pyrender
 typing-extensions==4.4.0
     # via
+    #   mypy
     #   tensorflow
     #   torch
 urllib3==1.26.12
