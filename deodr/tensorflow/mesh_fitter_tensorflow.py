@@ -219,7 +219,7 @@ class MeshDepthFitter:
         self.transform_translation = self.transform_translation + self.speed_translation
 
         self.iter += 1
-        return energy, depth[:, :, 0].numpy(), diff_image.numpy()
+        return energy, depth[:, :, 0].numpy(), diff_image.numpy() # type: ignore
 
 
 class MeshRGBFitterWithPose:
