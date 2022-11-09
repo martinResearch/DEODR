@@ -57,11 +57,8 @@ def run(
     )
 
     default_color = np.array([0.4, 0.3, 0.25])
-    default_light = {
-        "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambient": np.array([0.6]),
-    }
-
+    default_light_directional = -np.array([0.1, 0.5, 0.4])
+    default_light_ambient = 0.6
     euler_init = np.array([0, 0, 0])
     translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
@@ -71,7 +68,8 @@ def run(
         mesh.vertices,
         mesh.faces,
         default_color=default_color,
-        default_light=default_light,
+        default_light_directional=default_light_directional,
+        default_light_ambient=default_light_ambient,
         update_lights=True,
         update_color=True,
         euler_init=euler_init,

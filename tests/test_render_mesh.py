@@ -25,12 +25,7 @@ def test_render_mesh_duck(update: bool = False) -> None:
     if update:
         imageio.imwrite(image_file, image_uint8)
     image_prev = imageio.imread(image_file)
-    assert np.max(np.abs(image_prev - image_uint8)) == 0
-
-    assert (
-        hashlib.sha256(image.tobytes()).hexdigest()
-        == "2f22e5402cd5a396bb09b4378ff5d619b47d8886209869111c148e4f97a8778e"
-    )
+    assert np.max(np.abs(image_prev.astype(int) - image_uint8.astype(int))) == 0
 
 
 def test_render_mesh_triangle_soup() -> None:
