@@ -234,8 +234,8 @@ class MeshRGBFitterWithPose:
         self.step_max_translation = 0.1
 
         self.default_color = default_color
-        self.default_light_directional=default_light_directional
-        self.default_light_ambient=default_light_ambient
+        self.default_light_directional = default_light_directional
+        self.default_light_ambient = default_light_ambient
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3)
