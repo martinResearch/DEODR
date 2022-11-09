@@ -1,12 +1,21 @@
 import os
+from typing import List
 
 from xml.dom import minidom
 from .obj import save_obj
 from imageio import imwrite
 import numpy as np
+from .triangulated_mesh import ColoredTriMesh
+from .differentiable_renderer import Camera
 
 
-def export_meshlab(filename, mesh, cameras, images, obj_name="mesh.obj"):
+def export_meshlab(
+    filename: str,
+    mesh: ColoredTriMesh,
+    cameras: List[Camera],
+    images: List[np.ndarray],
+    obj_name: str = "mesh.obj",
+) -> None:
 
     root = minidom.Document()
     xml = root.createElement("MeshLabProject")

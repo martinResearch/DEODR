@@ -14,7 +14,7 @@ import deodr
 from deodr import read_obj
 from deodr import ColoredTriMesh
 
-from imageio import imread, imsave
+from imageio.v3 import imread, imwrite
 from deodr.meshlab_io import export_meshlab
 
 import matplotlib.pyplot as plt
@@ -119,11 +119,14 @@ def run(
                 cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
             )
         if save_images:
-            imsave(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
+            imwrite(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
         cv2.waitKey(1)
 
     export_meshlab(
-        "rgb_fitted_meshlab.mlp", hand_fitter.mesh, [hand_fitter.camera], [hand_image]
+        "iterations/rgb_fitted_meshlab.mlp",
+        hand_fitter.mesh,
+        [hand_fitter.camera],
+        [hand_image],
     )
     # save convergence curve
     with open(

@@ -11,7 +11,7 @@ import deodr
 from deodr import differentiable_renderer_cython  # type: ignore
 from deodr.differentiable_renderer import Scene2D
 
-from imageio import imread
+from imageio.v3 import imread
 
 import matplotlib.pyplot as plt
 
@@ -169,7 +169,7 @@ def run(
         )
         hashes.append(hashlib.sha256(image.tobytes()).hexdigest())
         print(f"iter {niter} loss = {loss}")
-        # imsave(os.path.join(iterfolder,f'soup_{niter}.png'), combinedIMage)
+        # imwrite(os.path.join(iterfolder,f'soup_{niter}.png'), combinedIMage)
 
         losses.append(loss)
         if loss_image.ndim == 2:

@@ -7,7 +7,7 @@ from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.examples.triangle_soup_fitting import create_example_scene
 from deodr import differentiable_renderer_cython  # type: ignore
 
-import imageio
+import imageio.v3 as imageio
 
 import numpy as np
 import hashlib
@@ -24,7 +24,7 @@ def test_render_mesh_duck(update: bool = False) -> None:
     image_uint8 = (image * 255).astype(np.uint8)
     if update:
         imageio.imwrite(image_file, image_uint8)
-    image_prev = imageio.v3.imread(image_file)
+    image_prev = imageio.imread(image_file)
     assert np.max(np.abs(image_prev - image_uint8)) == 0
 
     assert (
@@ -67,7 +67,7 @@ def test_render_mesh_triangle_soup() -> None:
     filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.png")
     # imageio.imwrite(filename,image)
 
-    image_lkg = imageio.v3.imread(filename)
+    image_lkg = imageio.imread(filename)
     assert np.max(np.abs(image_lkg - image * 255)) <= 1
 
     if os.name == "nt":  # windows
