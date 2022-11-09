@@ -1,6 +1,7 @@
+# type: ignore
 """Modules containing pytorch classes to fit 3D meshes to images using differentiable rendering."""
 
-
+from typing import Callable, Dict, Optional, Tuple
 import copy
 
 import numpy as np
@@ -12,20 +13,19 @@ import torch
 
 from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
 from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
-from .triangulated_mesh_pytorch import TriMeshPytorch as TriMesh
 from .. import LaplacianRigidEnergy
 
 
-def print_grad(name):
+def print_grad(name: str) -> Callable[[torch.Tensor], None]:
     # to visualize the gradient of a variable use
     # variable_name.register_hook(print_grad('variable_name'))
-    def hook(grad):
+    def hook(grad: torch.Tensor) -> None:
         print(f"grad {name} = {grad}")
 
     return hook
 
 
-def qrot(q, v):
+def qrot(q: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     qr = q[None, :].repeat(v.shape[0], 1)
     qvec = qr[:, :-1]
     uv = torch.cross(qvec, v, dim=1)
@@ -36,10 +36,19 @@ def qrot(q, v):
 class MeshDepthFitterEnergy(torch.nn.Module):
     """Pytorch module to fit a deformable mesh to a depth image."""
 
-    def __init__(self, vertices, faces, euler_init, translation_init, cregu=2000):
+    def __init__(
+        self,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        cregu: float = 2000,
+    ):
         super(MeshDepthFitterEnergy, self).__init__()
-        self.mesh = TriMesh(
-            faces[:, ::-1].copy(), vertices
+        self.mesh = ColoredTriMesh(
+            faces=faces[:, ::-1].copy(),
+            vertices=vertices,
+            colors=np.zeros((vertices.shape[0], 0)),
         )  # we do a copy to avoid negative stride not supported by pytorch
         object_center = vertices.mean(axis=0)
         object_radius = np.max(np.std(vertices, axis=0))
@@ -64,20 +73,23 @@ class MeshDepthFitterEnergy(torch.nn.Module):
             torch.tensor(self.transform_translation_init, dtype=torch.float64)
         )
 
-    def set_max_depth(self, max_depth):
-        self.scene.max_depth = max_depth
-        self.scene.set_background(
-            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
-        )
+    def set_max_depth(self, max_depth: float) -> None:
+        self.max_depth = max_depth
+        self.scene.set_background_color(np.array([max_depth], dtype=np.float64))
 
-    def set_depth_scale(self, depth_scale):
+    def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 2
-        self.hand_image = hand_image
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 2
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -88,11 +100,15 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         )
         extrinsic = np.column_stack((rot, t))
         self.camera = CameraPytorch(
-            extrinsic=extrinsic, intrinsic=intrinsic, distortion=distortion
+            extrinsic=extrinsic,
+            intrinsic=intrinsic,
+            distortion=distortion,
+            height=mesh_image.shape[0],
+            width=mesh_image.shape[1],
         )
         self.iter = 0
 
-    def forward(self):
+    def forward(self) -> torch.Tensor:
         q_normalized = self.quaternion / self.quaternion.norm()
         print(self.quaternion.norm())
         vertices_centered = self._vertices - torch.mean(self._vertices, dim=0)[None, :]
@@ -100,21 +116,19 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         self.mesh.set_vertices(v_transformed)
         depth_scale = 1 * self.depthScale
         depth = self.scene.render_depth(
-            self.CameraMatrix,
-            width=self.width,
-            height=self.height,
+            self.camera,
             depth_scale=depth_scale,
         )
-        depth = torch.clamp(depth, 0, self.scene.max_depth)
+        depth = torch.clamp(depth, 0, self.max_depth)
         diff_image = torch.sum(
-            (depth - torch.tensor(self.hand_image[:, :, None])) ** 2, dim=2
+            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
         )
         self.depth = depth
         self.diff_image = diff_image
         energy_data = torch.sum(diff_image)
         energy_rigid = self.rigid_energy.evaluate(
-            self._vertices, return_grad=False, return_hessian=False
-        )
+            self._vertices,
+        )[0]
         energy = energy_data + energy_rigid
         self.loss = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -125,7 +139,13 @@ class MeshDepthFitterPytorchOptim:
     """Pytorch optimizer to fit a deformable mesh to an image."""
 
     def __init__(
-        self, vertices, faces, euler_init, translation_init, cregu=2000, lr=0.8
+        self,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        cregu: float = 2000,
+        lr: float = 0.8,
     ):
         self.energy = MeshDepthFitterEnergy(
             vertices, faces, euler_init, translation_init, cregu
@@ -140,17 +160,17 @@ class MeshDepthFitterPytorchOptim:
         #   eps=1e-6,  weight_decay=0)
         # self.optimizer = torch.optim.Adagrad(self.energy.parameters(), lr=0.02)
 
-    def set_image(self, depth_image, focal):
+    def set_image(self, depth_image: np.ndarray, focal: float) -> None:
         self.energy.set_image(depth_image, focal=focal)
 
-    def set_max_depth(self, max_depth):
+    def set_max_depth(self, max_depth: float) -> None:
         self.energy.set_max_depth(max_depth)
 
-    def set_depth_scale(self, depth_scale):
+    def set_depth_scale(self, depth_scale: float) -> None:
         self.energy.set_depth_scale(depth_scale)
 
-    def step(self):
-        def closure():
+    def step(self) -> Tuple[torch.Tensor, np.ndarray, np.ndarray]:
+        def closure() -> float:
             self.optimizer.zero_grad()
             loss = self.energy()
             loss.backward()
@@ -158,11 +178,16 @@ class MeshDepthFitterPytorchOptim:
 
         self.optimizer.step(closure)
         # self.iter += 1
+
         return (
             self.energy.loss,
-            self.energy.Depth[:, :, 0].detach().numpy(),
-            self.energy.diffImage.detach().numpy(),
+            self.energy.depth[:, :, 0].detach().numpy(),
+            self.energy.diff_image.detach().numpy(),
         )
+
+
+def mult_and_clamp(x: np.ndarray, a: float, t: float) -> np.ndarray:
+    return np.minimum(np.maximum(x * a, -t), t)
 
 
 class MeshDepthFitter:
@@ -170,13 +195,13 @@ class MeshDepthFitter:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
     ):
         self.cregu = cregu
         self.inertia = inertia
@@ -188,8 +213,10 @@ class MeshDepthFitter:
         self.step_factor_translation = 0.00005
         self.step_max_translation = 0.1
 
-        self.mesh = TriMesh(
-            faces.copy()
+        self.mesh = ColoredTriMesh(
+            faces=faces.copy(),
+            vertices=vertices,
+            colors=np.zeros((vertices.shape[0], 0)),
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0) + translation_init
         object_radius = np.max(np.std(vertices, axis=0))
@@ -204,13 +231,15 @@ class MeshDepthFitter:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices_init.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -218,20 +247,23 @@ class MeshDepthFitter:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-    def set_max_depth(self, max_depth):
-        self.scene.max_depth = max_depth
-        self.scene.set_background(
-            np.full((self.height, self.width, 1), max_depth, dtype=np.float)
-        )
+    def set_max_depth(self, max_depth: float) -> None:
+        self.max_depth = max_depth
+        self.scene.set_background_color([max_depth])
 
-    def set_depth_scale(self, depth_scale):
+    def set_depth_scale(self, depth_scale: float) -> None:
         self.depthScale = depth_scale
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 2
-        self.hand_image = hand_image
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 2
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -250,7 +282,7 @@ class MeshDepthFitter:
         )
         self.iter = 0
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
         # vertices_with_grad = self.vertices.clone().requires_grad(True)
         vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)
@@ -266,7 +298,7 @@ class MeshDepthFitter:
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_with_grad_transformed = (
             qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
         )
@@ -275,10 +307,10 @@ class MeshDepthFitter:
 
         depth_scale = 1 * self.depthScale
         depth = self.scene.render_depth(self.camera, depth_scale=depth_scale)
-        depth = torch.clamp(depth, 0, self.scene.max_depth)
+        depth = torch.clamp(depth, 0, self.max_depth)
 
         diff_image = torch.sum(
-            (depth - torch.tensor(self.hand_image[:, :, None])) ** 2, dim=2
+            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
         )
         loss = torch.sum(diff_image)
 
@@ -290,16 +322,13 @@ class MeshDepthFitter:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices.numpy())
         energy = energy_data + energy_rigid
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
 
         # update v
         grad = grad_data + grad_rigidity
-
-        def mult_and_clamp(x, a, t):
-            return np.minimum(np.maximum(x * a, -t), t)
 
         # update vertices
         step_vertices = mult_and_clamp(
@@ -344,17 +373,17 @@ class MeshRGBFitterWithPose:
 
     def __init__(
         self,
-        vertices,
-        faces,
-        euler_init,
-        translation_init,
-        default_color,
-        default_light,
-        cregu=2000,
-        inertia=0.96,
-        damping=0.05,
-        update_lights=True,
-        update_color=True,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        euler_init: np.ndarray,
+        translation_init: np.ndarray,
+        default_color: np.ndarray,
+        default_light: Dict[str, np.ndarray],
+        cregu: float = 2000,
+        inertia: float = 0.96,
+        damping: float = 0.05,
+        update_lights: bool = True,
+        update_color: bool = True,
     ):
         self.cregu = cregu
 
@@ -372,7 +401,9 @@ class MeshRGBFitterWithPose:
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(
-            faces.copy()
+            faces=faces.copy(),
+            vertices=vertices,
+            colors=np.zeros((vertices.shape[0], 0)),
         )  # we do a copy to avoid negative stride not support by pytorch
         object_center = vertices.mean(axis=0) + translation_init
         object_radius = np.max(np.std(vertices, axis=0))
@@ -387,18 +418,18 @@ class MeshRGBFitterWithPose:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_background_color(self, background_color):
-        self.scene.set_background(
-            np.tile(background_color[None, None, :], (self.height, self.width, 1))
-        )
+    def set_background_color(self, background_color: np.ndarray) -> None:
+        self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(self, euler, translation):
+    def set_mesh_transform_init(
+        self, euler: np.ndarray, translation: np.ndarray
+    ) -> None:
         self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
             "zyx", euler
         ).as_quat()
         self.transform_translation_init = translation
 
-    def reset(self):
+    def reset(self) -> None:
         self.vertices = copy.copy(self.vertices_init)
         self.speed_vertices = np.zeros(self.vertices.shape)
         self.transform_quaternion = copy.copy(self.transform_quaternion_init)
@@ -406,19 +437,24 @@ class MeshRGBFitterWithPose:
         self.speed_translation = np.zeros(3)
         self.speed_quaternion = np.zeros(4)
 
-        self.hand_color = copy.copy(self.default_color)
+        self.mesh_color = copy.copy(self.default_color)
         self.light_directional = copy.copy(self.default_light["directional"])
         self.light_ambient = copy.copy(self.default_light["ambient"])
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
         self.speed_light_ambient = np.zeros(self.light_ambient.shape)
-        self.speed_hand_color = np.zeros(self.hand_color.shape)
+        self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_image(self, hand_image, focal=None, distortion=None):
-        self.width = hand_image.shape[1]
-        self.height = hand_image.shape[0]
-        assert hand_image.ndim == 3
-        self.hand_image = hand_image
+    def set_image(
+        self,
+        mesh_image: np.ndarray,
+        focal: Optional[float] = None,
+        distortion: Optional[np.ndarray] = None,
+    ) -> None:
+        self.width = mesh_image.shape[1]
+        self.height = mesh_image.shape[0]
+        assert mesh_image.ndim == 3
+        self.mesh_image = mesh_image
         if focal is None:
             focal = 2 * self.width
 
@@ -437,7 +473,7 @@ class MeshRGBFitterWithPose:
         )
         self.iter = 0
 
-    def step(self):
+    def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
         vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)
         vertices_with_grad_centered = (
@@ -456,13 +492,13 @@ class MeshRGBFitterWithPose:
         light_ambient_with_grad = torch.tensor(
             self.light_ambient, dtype=torch.float64, requires_grad=True
         )
-        hand_color_with_grad = torch.tensor(
-            self.hand_color, dtype=torch.float64, requires_grad=True
+        mesh_color_with_grad = torch.tensor(
+            self.mesh_color, dtype=torch.float64, requires_grad=True
         )
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
-        )  # that will lead to a gradient that is in the tangeant space
+        )  # that will lead to a gradient that is in the tangent space
         vertices_with_grad_transformed = (
             qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
         )
@@ -473,12 +509,12 @@ class MeshRGBFitterWithPose:
             light_ambient=light_ambient_with_grad,
         )
         self.mesh.set_vertices_colors(
-            hand_color_with_grad.repeat([self.mesh.nb_vertices, 1])
+            mesh_color_with_grad.repeat([self.mesh.nb_vertices, 1])
         )
 
         image = self.scene.render(self.camera)
 
-        diff_image = torch.sum((image - torch.tensor(self.hand_image)) ** 2, dim=2)
+        diff_image = torch.sum((image - torch.tensor(self.mesh_image)) ** 2, dim=2)
         loss = torch.sum(diff_image)
 
         loss.backward()
@@ -496,9 +532,6 @@ class MeshRGBFitterWithPose:
 
         # update v
         grad = grad_data + grad_rigidity
-
-        def mult_and_clamp(x, a, t):
-            return np.minimum(np.maximum(x * a, -t), t)
 
         inertia = self.inertia
 
@@ -546,12 +579,12 @@ class MeshRGBFitterWithPose:
             self.speed_light_ambient * inertia + (1 - inertia) * step
         )
         self.light_ambient = self.light_ambient + self.speed_light_ambient
-        # update hand color
-        step = -hand_color_with_grad.grad.numpy() * 0.00001
-        self.speed_hand_color = (1 - self.damping) * (
-            self.speed_hand_color * inertia + (1 - inertia) * step
+        # update mesh color
+        step = -mesh_color_with_grad.grad.numpy() * 0.00001
+        self.speed_mesh_color = (1 - self.damping) * (
+            self.speed_mesh_color * inertia + (1 - inertia) * step
         )
-        self.hand_color = self.hand_color + self.speed_hand_color
+        self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
         return energy, image.detach().numpy(), diff_image.detach().numpy()

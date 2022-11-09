@@ -1,9 +1,13 @@
 """Test using depth image hand fitting."""
 
+import numpy as np
+
 from deodr.examples.depth_image_hand_fitting import run
 
+import tensorflow as tf
 
-def test_depth_image_hand_fitting_pytorch():
+
+def test_depth_image_hand_fitting_pytorch() -> None:
 
     energies = run(
         dl_library="pytorch",
@@ -12,13 +16,17 @@ def test_depth_image_hand_fitting_pytorch():
         save_images=False,
         max_iter=50,
     )
-    expected = 253.03801096040416
-    assert (
-        abs(energies[49] - expected) < 1e-5
-    ), f"Getting {energies[49]} instead of {expected}"
+
+    possible_results = [
+        251.32711067513003,
+        251.31652686512888,
+        251.31652686495823,
+    ]
+
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
-def test_depth_image_hand_fitting_numpy():
+def test_depth_image_hand_fitting_numpy() -> None:
 
     energies = run(
         dl_library="none",
@@ -28,13 +36,20 @@ def test_depth_image_hand_fitting_numpy():
         max_iter=50,
     )
 
-    expected = 253.03801111458935
-    assert (
-        abs(energies[49] - expected) < 1e-5
-    ), f"Getting {energies[49]} instead of {expected}"
+    possible_results = [
+        251.32711113732933,
+        251.32711113730954,
+        251.3271111242092,
+    ]
+
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
-def test_depth_image_hand_fitting_tensorflow():
+def test_depth_image_hand_fitting_tensorflow() -> None:
+
+    tf.config.set_visible_devices(
+        [], "GPU"
+    )  # Running on CPU to get determinisic results
 
     energies = run(
         dl_library="tensorflow",
@@ -44,14 +59,18 @@ def test_depth_image_hand_fitting_tensorflow():
         max_iter=50,
     )
 
-    expected = 253.03801088397518
-    assert (
-        abs(energies[49] - expected) < 1e-5
-    ), f"Getting {energies[49]} instead of {expected}"
+    possible_results = [
+        251.31648932312913,
+        251.3164914350016,
+        251.3164891265543,
+        251.32711038915872,
+    ]
+
+    assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
 if __name__ == "__main__":
-
     test_depth_image_hand_fitting_pytorch()
     test_depth_image_hand_fitting_numpy()
+
     test_depth_image_hand_fitting_tensorflow()

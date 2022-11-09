@@ -2,30 +2,42 @@
 
 This is used to have a reference implementation using OpenGL shaders that produce identical images to deodr
 """
-
 import moderngl
 
 import numpy as np
 
 from pyrr import Matrix44
 
+from deodr.triangulated_mesh import ColoredTriMesh
+
 from . import shaders as opengl_shaders
+from deodr.differentiable_renderer import Camera, Scene3D
 
 
-def opencv_to_opengl_perspective(camera, znear, zfar):
+def opencv_to_opengl_perspective(
+    camera: Camera, znear: float, zfar: float, integer_pixel_centers: bool
+) -> np.ndarray:
     # https://blog.noctua-software.com/opencv-opengl-projection-matrix.html
     fx = camera.intrinsic[0, 0]
     fy = camera.intrinsic[1, 1]
     cx = camera.intrinsic[0, 2]
     cy = camera.intrinsic[1, 2]
-    cx2 = cx + 0.5  # half a pixel offset to be consistent with deodr convention
-    cy2 = cy + 0.5  # half a pixel offset to be consistent with deodr convention
+
+    if integer_pixel_centers:
+        # If integer_pixel_centers is False, then deodr rendering is cnot onsistent with opengl without an 0.5 offset here
+        cx2 = cx + 0.5
+        cy2 = cy + 0.5
+    else:
+        # If integer_pixel_centers is False, then deodr rendering is consistent with opengl without need for an offset here
+        cx2 = cx
+        cy2 = cy
+
     width = camera.width
     height = camera.height
     np.testing.assert_array_equal(
         [[fx, 0, cx], [0, fy, cy], [0, 0, 1]], camera.intrinsic
     )
-    m = np.array(
+    return np.array(
         [
             [2.0 * fx / width, 0, 0, 0],
             [0, -2.0 * fy / height, 0, 0],
@@ -38,13 +50,12 @@ def opencv_to_opengl_perspective(camera, znear, zfar):
             [0, 0, 2.0 * zfar * znear / (znear - zfar), 0.0],
         ]
     )
-    return m
 
 
 class OffscreenRenderer:
     """Class to perform offscreen rendering of deodr scenes using moderngl."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.ctx = moderngl.create_standalone_context()
 
         # Shaders
@@ -54,29 +65,26 @@ class OffscreenRenderer:
         )
         self.fbo = None
         self.texture = None
+        self.texture_id: int = 0
 
-    def set_scene(self, deodr_scene):
-
-        self.bg_color = deodr_scene.background[0, 0]
-        if False and not (
-            np.all(deodr_scene.background == self.bg_color[None, None, :])
-        ):
-            raise (
-                BaseException(
-                    "does not support background image yet, please provide a backround\
-                     image that correspond to a uniform color"
-                )
-            )
-
-        self.shader_program["light_directional"].value = tuple(
-            deodr_scene.light_directional
-        )
-        self.shader_program["light_ambient"].value = deodr_scene.light_ambient
-
+    def set_scene(self, deodr_scene: Scene3D) -> None:
+        assert deodr_scene.mesh is not None
+        assert deodr_scene.light_ambient is not None
+        assert deodr_scene.background_color is not None
+        self.bg_color = deodr_scene.background_color
+        assert deodr_scene.light_directional is not None, "Not supported yet"
+        self.set_light(deodr_scene.light_directional, deodr_scene.light_ambient)
         self.set_mesh(deodr_scene.mesh)
+        self.integer_pixel_centers = deodr_scene.integer_pixel_centers
 
-    def set_mesh(self, mesh):
+    def set_light(self, light_directional: np.ndarray, light_ambient: float) -> None:
+        assert light_directional.shape == (3,)
+        self.shader_program["light_directional"].value = tuple(light_directional)
+        self.shader_program["light_ambient"].value = light_ambient
 
+    def set_mesh(self, mesh: ColoredTriMesh) -> None:
+        assert mesh.uv is not None
+        assert mesh.texture is not None
         self.set_texture(mesh.texture)
         # create triangles soup
 
@@ -107,9 +115,10 @@ class OffscreenRenderer:
             ],
         )
 
-    def set_texture(self, texture):
+    def set_texture(self, texture: np.ndarray) -> None:
         # Texture
         assert not texture.flags["WRITEABLE"]
+        assert texture.ndim == 3
         texture_id = id(texture)
         if self.texture is None or self.texture_id != texture_id:
             self.texture_id = id(texture)
@@ -120,12 +129,17 @@ class OffscreenRenderer:
             )
         # texture.build_mipmaps()
 
-    def set_camera(self, camera):
+    def set_camera(self, camera: Camera) -> None:
         extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
 
         intrinsic = Matrix44(
             np.diag([1, -1, -1, 1]).dot(
-                opencv_to_opengl_perspective(camera, self.znear, self.zfar)
+                opencv_to_opengl_perspective(
+                    camera,
+                    self.znear,
+                    self.zfar,
+                    integer_pixel_centers=self.integer_pixel_centers,
+                )
             )
         )
 
@@ -134,7 +148,7 @@ class OffscreenRenderer:
         self.shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         self.shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:
-            k1, k2, p1, p2, k3 = (0, 0, 0, 0, 0)
+            k1, k2, p1, p2, k3 = (0.0, 0.0, 0.0, 0.0, 0.0)
         else:
             (
                 k1,
@@ -149,7 +163,7 @@ class OffscreenRenderer:
         self.shader_program["p1"].value = p1
         self.shader_program["p2"].value = p2
 
-    def render(self, camera):
+    def render(self, camera: Camera) -> np.ndarray:
         ctx = self.ctx
         self.zfar = camera.world_to_camera(self.bounding_box_corners)[:, 2].max()
         self.znear = 1e-3 * self.zfar
@@ -160,12 +174,16 @@ class OffscreenRenderer:
         # of the xyz point cloud using unit8 opengl type
 
         # Framebuffers
-        if self.fbo is None:
+        if (
+            (self.fbo is None)
+            or (self.fbo.height != camera.height)
+            or (self.fbo.width != camera.width)
+        ):
             self.fbo = ctx.framebuffer(
                 ctx.renderbuffer((camera.width, camera.height)),
                 ctx.depth_renderbuffer((camera.width, camera.height)),
             )
-
+        assert self.fbo is not None
         # Rendering the RGB image
         self.fbo.use()
         ctx.enable(moderngl.DEPTH_TEST)
@@ -173,8 +191,6 @@ class OffscreenRenderer:
         self.texture.use()
         self.vao.render()
         data = self.fbo.read(components=3, alignment=1)
-        array_rgb = np.frombuffer(data, dtype=np.uint8).reshape(
+        return np.frombuffer(data, dtype=np.uint8).reshape(
             camera.height, camera.width, 3
         )
-
-        return array_rgb

@@ -71,12 +71,15 @@ add the decompressed folder in your matlab path
 ## Iterative Mesh fitting in Python 
  
 Example of fitting a hand mesh to a depth sensor image [*deodr/examples/depth_image_hand_fitting.py*](deodr/examples/depth_image_hand_fitting.py)
+
  ![animation](./images/python_depth_hand.gif)
 
 Example of fitting a hand mesh to a RGB sensor image [*deodr/examples/rgb_image_hand_fitting.py*](deodr/examples/rgb_image_hand_fitting.py)
+
  ![animation](./images/python_rgb_hand.gif)
 
 Example of fitting a hand mesh to several RGB sensor images [*deodr/examples/rgb_multiview_hand.py*](deodr/examples/rgb_multiview_hand.py)
+
  ![animation](./images/multiview.gif)
 
 
@@ -136,6 +139,32 @@ Our code provides two methods to handle discontinuities at the occlusion boundar
 The choice of the method is done through the Boolean parameter *antialiaseError*. Both approaches lead to a differentiable error function after summation of the residuals over the pixels and both lead to similar gradients. The difference is subtle and is only noticeable at the borders after convergence on synthetic antialiased data. The first methods can potentially provide more flexibility for the design of the error function as one can for example use a non-local image loss by comparing image moments instead of comparing pixel per pixel.
 
 **Note:** In order to keep the code minimal and well documented, I decided not to provide here the Matlab code to model the articulated hand and the code to update the texture image from observation used in [1]. The hand fitting example provided here does not relies on a underlying skeleton but on a regularization term that penalizes non-rigid deformations. Some Matlab code for Linear Blend Skinning can be found [here](http://uk.mathworks.com/matlabcentral/fileexchange/43039-linear-blend-skinning/). Using a Matlab implementation of the skinning equations would allow the use of the Matlab automatic differentiation toolbox provided [here](https://github.com/martinResearch/MatlabAutoDiff) to compute the Jacobian of the vertices positions with respect to the hand pose parameters.
+
+# Conventions
+
+## Pixel coordinates: 
+ 
+If integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
+* upper left at (0, 0)
+* upper right at (width - 1, 0)
+* lower left at (0, height - 1)
+* lower right at  (width - 1, height - 1)
+
+If integer_pixel_centers is False, then pixel centers are at half-integer coordinates with
+* upper left at (0.5, 0.5)
+* upper right at (width - 0.5, 0.5)
+* lower left at (0.5, height - 0.5)
+* lower right at  (width -0.5, height - 0.5)
+  
+According to [this page](https://www.realtimerendering.com/blog/the-center-of-the-pixel-is-0-50-5/), OpengGL has always used upper left pixel center at (0.5, 0.5) while Direct3D was using pixel center at (0,0) before version 10 and switched to (0.5,0.5) at version 10.
+
+## Texel coordinates: 
+
+Unlike in OpenGL Texel (texture pixel) center are at integer coordinates and origin in in the upper left corner of the texture image.
+The coordinate of the upper left texture pixel center (texel) is (0, 0). The color of the texture bilinearly sampled at float position (0.0,0.0) is texture[0, 0].
+The value of the texture bilinearly sampled at float position (0.5,0.5) is equal to the average (texture[0, 0] + texture[0, 1] + texture[1, 0] + texture[1, 1])/4
+
+
 # TO DO
 
 * add support for multiple meshes in the scene
@@ -204,6 +233,7 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
 
 * [**DIST**](https://github.com/B1ueber2y/DIST-Renderer)[16] Differentiable Implicit surface rendering using signed distance functions. The depth discontinuity along the object/background boundary is taken into account in the computation of the silhouette mask only, and is not taken into account in the rendered color, depth or normal images. This could hamper convergence of the surface fitting methods that uses these images in the loss for concave objects that exhibit self occlusion in the chosen camera view point(s). 
 
+* [**Nvdiffrast**](https://github.com/NVlabs/nvdiffrast)[17] Fast and modular differentiable renderer implemented using OpenGL and cuda with Pytorch and tensoflow interfaces. The method uses deferred rendering which yields great flexibility for the user by allowing the user to write a custom pixel shader using pytorch . An antialiasing step is applied after deferred rendering in order to blend the colors along self-occlusion edges using weights that depend on the distance of the adjacent pixel centers to the line segment. The colors used for blending of along the self occlusion edges  are extracted from the nearest points with integer coordinates in the adjacent triangles. This is not a continuous operation and thus may result in small temporal color jumps along the self-occlusion when the edges line segment crosses a pixel center. This may degrade the quality of the gradients as a first order approximations of the change in the loss function w.r.t scene parameters. Moreover the method used to detect self occlusion edges is done in the image space using faces indices which is not very reliable when triangles are small, which introduces noise in the gradient that might be biased. In contrast, our anti-aliasing method uses the color of the nearest point on the occlusing triangle edge (euclidean projection), which does not lead to discontinuity when edges cross pixel centers, and our silhouette edges detection is done in the object space and thus is reliable regardless of the triangles size during rasterization.
 # References
 [1] *Model-based 3D Hand Pose Estimation from Monocular Video.* M. de la Gorce, N. Paragios and David Fleet. PAMI 2011 [paper](http://www.cs.toronto.edu/~fleet/research/Papers/deLaGorcePAMI2011.pdf)
 
@@ -239,3 +269,5 @@ Wenzheng Chen, Jun Gao, Huan Ling, Edward J. Smith, Jaakko Lehtinen, Alec Jacobs
 [15] *SDFDiff: Differentiable Rendering of Signed Distance Fields for 3D Shape Optimization*. Yue Jiang, Dantong Ji, Zhizhong Han, Matthias Zwicker. CVPR 2020. [code](https://github.com/YueJiang-nj/CVPR2020-SDFDiff)
  
 [16] *DIST: Rendering Deep Implicit Signed Distance Function with Differentiable Sphere Tracing*. Shaohui Liu1, Yinda Zhang, Songyou Peng, Boxin Shi, Marc Pollefeys, Zhaopeng Cui. CVPR 2020. [code](https://github.com/B1ueber2y/DIST-Renderer)
+
+[17] *Modular Primitives for High-Performance Differentiable Rendering*. Samuli Laine, Janne Hellsten, Tero Karras, Yeongho Seol, Jaakko Lehtinen, Timo Aila. [paper](https://arxiv.org/abs/2011.03277). 

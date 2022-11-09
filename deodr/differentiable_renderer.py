@@ -1,29 +1,70 @@
 """Module to do differentiable rendering of 2D and 3D scenes."""
+
 import copy
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
+from typing_extensions import Literal
+import warnings
 
 import numpy as np
 
-from . import differentiable_renderer_cython
+from deodr.triangulated_mesh import ColoredTriMesh
+
+from . import differentiable_renderer_cython  # type: ignore
+
+
+@dataclass
+class Scene2DBase:
+    """Class representing the structure representing the 2.5
+    scene expected by the C++ code
+    """
+
+    faces: np.ndarray
+    faces_uv: np.ndarray
+    ij: np.ndarray
+    depths: np.ndarray
+    textured: np.ndarray
+    uv: np.ndarray
+    shade: np.ndarray
+    colors: np.ndarray
+    shaded: np.ndarray
+    edgeflags: np.ndarray
+    height: int
+    width: int
+    nb_colors: int
+    texture: np.ndarray
+    background_image: Optional[np.ndarray] = None
+    background_color: Optional[np.ndarray] = None
+    uv_b: Optional[np.ndarray] = None
+    ij_b: Optional[np.ndarray] = None
+    shade_b: Optional[np.ndarray] = None
+    colors_b: Optional[np.ndarray] = None
+    texture_b: Optional[np.ndarray] = None
+    clockwise: bool = False
+    backface_culling: bool = True
+    strict_edge: bool = True
+    perspective_correct: bool = False
+    integer_pixel_centers: bool = True
 
 
 def renderScene(
-    scene,
+    scene: Scene2DBase,
     sigma: float,
     image: np.ndarray,
     z_buffer: np.ndarray,
-    antialiase_error: bool = 0,
-    obs: np.ndarray = None,
-    err_buffer: np.ndarray = None,
+    antialiase_error: bool = False,
+    obs: Optional[np.ndarray] = None,
+    err_buffer: Optional[np.ndarray] = None,
     check_valid: bool = True,
-):
+) -> None:
 
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
-        # when installed from a wheel. this also make inderactive debugginh easier
+        # when installed from a wheel. this also make interactive debugging easier
         # for the library user
 
-        assert not (image is None)
-        assert not (z_buffer is None)
+        assert image is not None
+        assert z_buffer is not None
         height = image.shape[0]
         width = image.shape[1]
         nb_colors = image.shape[2]
@@ -54,10 +95,24 @@ def renderScene(
         assert scene.edgeflags.shape[1] == 3
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
+
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
+
+        if scene.background_image is not None:
+            assert scene.background_image.ndim == 3
+            assert scene.background_image.shape[0] == height
+            assert scene.background_image.shape[1] == width
+            assert scene.background_image.shape[2] == nb_colors
+            assert (
+                scene.background_color is None
+            ), "You need to provide either background_image or background_color"
+        else:
+            assert (
+                scene.background_color is not None
+            ), "You need to provide background_image or background_color"
+            assert scene.background_color.shape[0] == nb_colors
 
         if scene.texture.size > 0:
             assert scene.texture.ndim == 3
@@ -69,6 +124,8 @@ def renderScene(
         assert z_buffer.shape[1] == width
 
         if antialiase_error:
+            assert err_buffer is not None, "You need to provide err_buffer"
+            assert obs is not None, "You need to provide obs"
             assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
             assert obs.shape[0] == height
@@ -81,25 +138,25 @@ def renderScene(
 
 
 def renderSceneB(
-    scene,
+    scene: Scene2DBase,
     sigma: float,
-    image,
-    z_buffer,
-    image_b=None,
-    antialiase_error=0,
-    obs=None,
-    err_buffer=None,
-    err_buffer_b=None,
-    check_valid=True,
-):
+    image: np.ndarray,
+    z_buffer: np.ndarray,
+    image_b: Optional[np.ndarray] = None,
+    antialiase_error: bool = False,
+    obs: Optional[np.ndarray] = None,
+    err_buffer: Optional[np.ndarray] = None,
+    err_buffer_b: Optional[np.ndarray] = None,
+    check_valid: bool = True,
+) -> None:
 
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
-        # when installed from a wheel. this also make inderactive debugginh easier
+        # when installed from a wheel. this also make interactive debugging easier
         # for the library user
 
-        assert not (image is None)
-        assert not (z_buffer is None)
+        assert image is not None
+        assert z_buffer is not None
 
         height = image.shape[0]
         width = image.shape[1]
@@ -135,10 +192,30 @@ def renderSceneB(
         assert scene.edgeflags.shape[1] == 3
         assert scene.textured.shape[0] == nb_triangles
         assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
+
+        assert (scene.background_image is not None) != (
+            scene.background_color is not None
+        )
+
+        if scene.background_image is not None:
+            assert scene.background_image.ndim == 3
+            assert scene.background_image.shape[0] == height
+            assert scene.background_image.shape[1] == width
+            assert scene.background_image.shape[2] == nb_colors
+            assert (
+                scene.background_color is None
+            ), "You need to provide either background_image or background_color"
+        else:
+            assert (
+                scene.background_color is not None
+            ), "You need to provide background_image or background_color"
+            assert scene.background_color.shape[0] == nb_colors
+
+        assert scene.uv_b is not None
+        assert scene.ij_b is not None
+        assert scene.shade_b is not None
+        assert scene.uv_b is not None
+        assert scene.colors_b is not None
 
         assert scene.uv_b.ndim == 2
         assert scene.ij_b.ndim == 2
@@ -153,16 +230,9 @@ def renderSceneB(
         assert scene.shade_b.shape[0] == nb_vertices
         assert scene.colors_b.shape[0] == nb_vertices
         assert scene.colors_b.shape[1] == nb_colors
-        assert scene.edgeflags.shape[0] == nb_triangles
-        assert scene.edgeflags.shape[1] == 3
-        assert scene.textured.shape[0] == nb_triangles
-        assert scene.shaded.shape[0] == nb_triangles
-        assert scene.background.ndim == 3
-        assert scene.background.shape[0] == height
-        assert scene.background.shape[1] == width
-        assert scene.background.shape[2] == nb_colors
 
         if scene.texture.size > 0:
+            assert scene.texture_b is not None
             assert scene.texture.ndim == 3
             assert scene.texture_b.ndim == 3
             assert scene.texture.shape[0] > 0
@@ -173,12 +243,14 @@ def renderSceneB(
             assert scene.texture_b.shape[2] == nb_colors
 
         if antialiase_error:
+            assert err_buffer is not None
+            assert obs is not None
             assert err_buffer.shape[0] == height
             assert err_buffer.shape[1] == width
             assert obs.shape[0] == height
             assert obs.shape[1] == width
         else:
-            assert not (image_b is None)
+            assert image_b is not None
             assert image_b.shape[0] == height
             assert image_b.shape[1] == width
 
@@ -196,17 +268,17 @@ def renderSceneB(
 
 
 class Camera:
-    """Camera class with the same distortion parameterization as opencv."""
+    """Camera class with the same distortion parameterization as OpenCV."""
 
     def __init__(
         self,
-        extrinsic,
-        intrinsic,
-        height,
-        width,
-        distortion=None,
-        checks=True,
-        tol=1e-6,
+        extrinsic: np.ndarray,
+        intrinsic: np.ndarray,
+        height: int,
+        width: int,
+        distortion: Union[Optional[np.ndarray], Iterable[float]] = None,
+        checks: bool = True,
+        tol: float = 1e-6,
     ):
 
         if checks:
@@ -217,8 +289,10 @@ class Camera:
                 np.linalg.norm(extrinsic[:3, :3].T.dot(extrinsic[:3, :3]) - np.eye(3))
                 < tol
             )
+
             if distortion is not None:
-                assert len(distortion) == 5
+                distortion = np.array(distortion)
+                assert distortion.shape == (5,)
 
         self.extrinsic = extrinsic
         self.intrinsic = intrinsic
@@ -227,19 +301,20 @@ class Camera:
         self.width = width
 
     @property
-    def xfov(self):
+    def xfov(self) -> float:
         assert self.intrinsic[0, 2] == self.width / 2
         return np.degrees(2 * np.arctan(self.width / (2 * self.intrinsic[0, 0])))
 
     @property
-    def yfov(self):
+    def yfov(self) -> float:
         assert self.intrinsic[1, 2] == self.height / 2
         return np.degrees(2 * np.arctan(self.height / (2 * self.intrinsic[1, 1])))
 
-    def world_to_camera(self, points_3d):
+    def world_to_camera(self, points_3d: np.ndarray) -> np.ndarray:
+        assert points_3d.shape[-1] == 3
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
 
-    def camera_to_world_mtx_4x4(self):
+    def camera_to_world_mtx_4x4(self) -> np.ndarray:
         return np.row_stack(
             (
                 np.column_stack((self.extrinsic[:, :3].T, self.get_center())),
@@ -247,15 +322,58 @@ class Camera:
             )
         )
 
-    def left_mul_intrinsic(self, projected):
+    def left_mul_intrinsic(self, projected: np.ndarray) -> np.ndarray:
+        assert projected.ndim == 2
+        assert projected.shape[-1] == 2
         return projected.dot(self.intrinsic[:2, :2].T) + self.intrinsic[:2, 2]
 
-    def column_stack(self, values):
+    def column_stack(
+        self, values: Union[List[np.ndarray], Tuple[np.ndarray, ...]]
+    ) -> np.ndarray:
         return np.column_stack(values)
 
+    @overload
     def project_points(
-        self, points_3d, get_jacobians=False, store_backward=None, return_depths=True
-    ):  # similar to cv2.project_points
+        self,
+        points_3d: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def project_points(
+        self,
+        points_3d: np.ndarray,
+        *,
+        store_backward: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def project_points(
+        self,
+        points_3d: np.ndarray,
+        return_depths: Literal[True],
+        store_backward: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def project_points(
+        self,
+        points_3d: np.ndarray,
+        return_depths: Literal[False],
+        store_backward: Optional[Dict[str, Any]] = None,
+    ) -> np.ndarray:
+        ...
+
+    def project_points(
+        self,
+        points_3d: np.ndarray,
+        return_depths: bool = True,
+        store_backward: Optional[Dict[str, Any]] = None,
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray], np.ndarray
+    ]:  # similar to cv2.project_points
         p_camera = self.world_to_camera(points_3d)
         depths = p_camera[:, 2]
         projected = p_camera[:, :2] / depths[:, None]
@@ -301,8 +419,11 @@ class Camera:
             return projected_image_coordinates
 
     def project_points_backward(
-        self, projected_image_coordinates_b, store_backward, depths_b=None
-    ):
+        self,
+        projected_image_coordinates_b: np.ndarray,
+        store_backward: Dict[str, Any],
+        depths_b: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
 
         if self.distortion is None:
             p_camera, depths, projected = store_backward["project_points"]
@@ -351,18 +472,34 @@ class Camera:
         )
         if depths_b is not None:
             p_camera_b[:, 2] += depths_b
-        points_3d_b = p_camera_b.dot(self.extrinsic[:3, :3].T)
+        return p_camera_b.dot(self.extrinsic[:3, :3].T)
 
-        return points_3d_b
-
-    def get_center(self):
+    def get_center(self) -> np.ndarray:
         return -self.extrinsic[:3, :3].T.dot(self.extrinsic[:, 3])
+
+    def __repr__(self) -> str:
+        return (
+            f"<Camera>\n"
+            f"width:\n{str(self.width)}\n"
+            f"height:\n{str(self.height)}\n"
+            f"extrinsic:\n{str(self.extrinsic)}\n"
+            f"intrinsic:\n{str(self.intrinsic)}\n"
+            f"distortion:\n{str(self.distortion)}\n"
+        )
 
 
 class PerspectiveCamera(Camera):
     """Camera with perspective projection."""
 
-    def __init__(self, width, height, fov, camera_center, rot=None, distortion=None):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        fov: float,
+        camera_center: np.ndarray,
+        rot: Optional[np.ndarray] = None,
+        distortion: Optional[np.ndarray] = None,
+    ):
         """Perspective camera constructor.
 
         - width: width of the camera in pixels
@@ -373,8 +510,14 @@ class PerspectiveCamera(Camera):
             default to identity
         - distortion: distortion parameters
         """
+        assert camera_center.shape == (3,)
         if rot is None:
             rot = np.eye(3)
+        else:
+            # check it is indeed a rotation matrix
+            assert rot.shape == (3, 3)
+            assert np.allclose(rot.T.dot(rot), np.eye(3), 1e-6)
+            assert np.linalg.det(rot) > 0
         focal = 0.5 * width / np.tan(0.5 * fov * np.pi / 180)
         focal_x = focal
         pixel_aspect_ratio = 1
@@ -393,7 +536,14 @@ class PerspectiveCamera(Camera):
         )
 
 
-def default_camera(width, height, fov, vertices, rot=None, distortion=None):
+def default_camera(
+    width: int,
+    height: int,
+    fov: float,
+    vertices: np.ndarray,
+    rot: np.ndarray,
+    distortion: Optional[np.ndarray] = None,
+) -> Camera:
     """Compute the position of the camera center so that the entire mesh is visible
     and covers most or the image.
     """
@@ -414,54 +564,6 @@ def default_camera(width, height, fov, vertices, rot=None, distortion=None):
     return PerspectiveCamera(width, height, fov, camera_center, rot, distortion)
 
 
-class Scene2DBase:
-    """Class representing the structure representing the 2.5
-    scene expect by the C++ code
-    """
-
-    def __init__(
-        self,
-        faces,
-        faces_uv,
-        ij,
-        depths,
-        textured,
-        uv,
-        shade,
-        colors,
-        shaded,
-        edgeflags,
-        height,
-        width,
-        nb_colors,
-        texture,
-        background,
-        clockwise=False,
-        backface_culling=True,
-        strict_edge=True,
-        perspective_correct=False,
-    ):
-        self.faces = faces
-        self.faces_uv = faces_uv
-        self.ij = ij
-        self.depths = depths
-        self.textured = textured
-        self.uv = uv
-        self.shade = shade
-        self.colors = colors
-        self.shaded = shaded
-        self.edgeflags = edgeflags
-        self.height = height
-        self.width = width
-        self.nb_colors = nb_colors
-        self.texture = texture
-        self.background = background
-        self.clockwise = clockwise
-        self.backface_culling = backface_culling
-        self.strict_edge = strict_edge
-        self.perspective_correct = perspective_correct
-
-
 class Scene2D(Scene2DBase):
     """Class representing a 2.5D scene. It contains a set of 2D vertices with
     associated depths and a list of faces that are triplets of vertices indexes.
@@ -469,26 +571,42 @@ class Scene2D(Scene2DBase):
 
     def __init__(
         self,
-        faces,
-        faces_uv,
-        ij,
-        depths,
-        textured,
-        uv,
-        shade,
-        colors,
-        shaded,
-        edgeflags,
-        height,
-        width,
-        nb_colors,
-        texture,
-        background,
-        clockwise=False,
-        backface_culling=False,
-        strict_edge=True,
-        perspective_correct=False,
+        faces: np.ndarray,
+        faces_uv: np.ndarray,
+        ij: np.ndarray,
+        depths: np.ndarray,
+        textured: np.ndarray,
+        uv: np.ndarray,
+        shade: np.ndarray,
+        colors: np.ndarray,
+        shaded: np.ndarray,
+        edgeflags: np.ndarray,
+        height: int,
+        width: int,
+        nb_colors: int,
+        texture: np.ndarray,
+        background_image: Optional[np.ndarray] = None,
+        background_color: Optional[np.ndarray] = None,
+        clockwise: bool = False,
+        backface_culling: bool = False,
+        strict_edge: bool = True,
+        perspective_correct: bool = False,
+        integer_pixel_centers: bool = True,
     ):
+        """
+        Conventions:
+        If integer_pixel_centers is True (default) then pixel centers are at integer coordinates with
+            upper left at (0, 0)
+            upper right at (width - 1, 0)
+            lower left at (0, height - 1)
+            lower right at  (width - 1, height - 1)
+        if integer_pixel_centers is False, then pixel centers are at half integer coordinates with
+            upper left at (0.5, 0.5)
+            upper right at (width - 0.5, 0.5)
+            lower left at (0.5, height - 0.5)
+            lower right at  (width -0.5, height - 0.5)
+        """
+
         self.faces = faces
         self.faces_uv = faces_uv
         self.ij = ij
@@ -503,11 +621,13 @@ class Scene2D(Scene2DBase):
         self.width = width
         self.nb_colors = nb_colors
         self.texture = texture
-        self.background = background
+        self.background_image = background_image
+        self.background_color = background_color
         self.clockwise = clockwise
         self.backface_culling = backface_culling
         self.strict_edge = strict_edge
         self.perspective_correct = perspective_correct
+        self.integer_pixel_centers = integer_pixel_centers
 
         # fields to store gradients
         self.uv_b = np.zeros(self.uv.shape)
@@ -515,15 +635,24 @@ class Scene2D(Scene2DBase):
         self.shade_b = np.zeros(self.shade.shape)
         self.colors_b = np.zeros(self.colors.shape)
         self.texture_b = np.zeros(self.texture.shape)
+        self.store_backward: Tuple
 
-    def clear_gradients(self):
+    def clear_gradients(self) -> None:
+        assert self.uv_b is not None
+        assert self.ij_b is not None
+        assert self.shade_b is not None
+        assert self.colors_b is not None
+        assert self.texture_b is not None
+
         self.uv_b.fill(0)
         self.ij_b.fill(0)
         self.shade_b.fill(0)
         self.colors_b.fill(0)
         self.texture_b.fill(0)
 
-    def render_error(self, obs, sigma=1):
+    def render_error(
+        self, obs: np.ndarray, sigma: float = 1
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         image = np.zeros((self.height, self.width, self.nb_colors))
         z_buffer = np.zeros((self.height, self.width))
         err_buffer = np.empty((self.height, self.width))
@@ -532,7 +661,7 @@ class Scene2D(Scene2DBase):
         self.store_backward = (sigma, obs, image, z_buffer, err_buffer)
         return image, z_buffer, err_buffer
 
-    def render(self, sigma=1):
+    def render(self, sigma: float = 1) -> Tuple[np.ndarray, np.ndarray]:
         image = np.zeros((self.height, self.width, self.nb_colors))
         z_buffer = np.zeros((self.height, self.width))
         antialiase_error = False
@@ -540,10 +669,17 @@ class Scene2D(Scene2DBase):
         self.store_backward = (sigma, image, z_buffer)
         return image, z_buffer
 
-    def render_error_backward(self, err_buffer_b, make_copies=True):
+    def render_error_backward(
+        self, err_buffer_b: np.ndarray, make_copies: bool = True
+    ) -> None:
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
+            )
+
+        if not self.backface_culling:
+            raise BaseException(
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge anti-aliasing."
             )
         sigma, obs, image, z_buffer, err_buffer = self.store_backward
         antialiase_error = True
@@ -572,10 +708,14 @@ class Scene2D(Scene2DBase):
                 err_buffer_b,
             )
 
-    def render_backward(self, image_b, make_copies=True):
+    def render_backward(self, image_b: np.ndarray, make_copies: bool = True) -> None:
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
+            )
+        if not self.backface_culling:
+            raise BaseException(
+                "use backface_culling=True if you use gradient backpropagation to get valid gradient through edge anti-aliasing."
             )
         sigma, image, z_buffer = self.store_backward
         antialiase_error = False
@@ -609,13 +749,13 @@ class Scene2D(Scene2DBase):
 
     def render_compare_and_backward(
         self,
-        sigma=1,
-        antialiase_error=False,
-        obs=None,
-        mask=None,
-        clear_gradients=True,
-        make_copies=True,
-    ):
+        obs: np.ndarray,
+        sigma: float = 1,
+        antialiase_error: bool = False,
+        mask: Optional[np.ndarray] = None,
+        clear_gradients: bool = True,
+        make_copies: bool = True,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
@@ -632,13 +772,13 @@ class Scene2D(Scene2DBase):
 
         if antialiase_error:
             err_buffer = err_buffer * mask
-            err = np.sum(err_buffer)
+            err = float(np.sum(err_buffer))
             err_buffer_b = copy.copy(mask)
             self.render_error_backward(err_buffer_b, make_copies=make_copies)
         else:
             diff_image = (image - obs) * mask[:, :, None]
             err_buffer = (diff_image) ** 2
-            err = np.sum(err_buffer)
+            err = float(np.sum(err_buffer))
             image_b = 2 * diff_image
             self.render_backward(image_b, make_copies=make_copies)
 
@@ -651,27 +791,42 @@ class Scene3D:
     antialiasing edge overdraw.
     """
 
-    def __init__(self, sigma=1, perspective_correct=False):
-        self.mesh = None
-        self.light_directional = None
-        self.light_ambient = None
+    def __init__(
+        self,
+        sigma: float = 1,
+        perspective_correct: bool = False,
+        integer_pixel_centers: bool = True,
+    ):
+        self.mesh: Optional[ColoredTriMesh] = None
+
+        self.light_directional: Optional[np.ndarray] = None
+        self.light_ambient: float = 0
         self.sigma = sigma
         self.perspective_correct = perspective_correct
+        self.background_image: Optional[np.ndarray] = None
+        self.background_color: Optional[np.ndarray] = None
+        self.integer_pixel_centers = integer_pixel_centers
+        self.colors: Optional[np.ndarray] = None
 
-    def clear_gradients(self):
+        self.store_backward_current: Optional[Dict[str, Any]] = None
+        self.vertices_b: Optional[np.ndarray] = None
+        self.scene2D: Optional[Scene2D] = None
+
+    def clear_gradients(self) -> None:
         # fields to store gradients
-        self.uv_b = np.zeros((self.mesh.nb_vertices, 2))
-        self.ij_b = np.zeros((self.mesh.nb_vertices, 2))
-        self.shade_b = np.zeros((self.mesh.nb_vertices))
-        self.colors_b = np.zeros(self.colors.shape)
-        self.texture_b = np.zeros((0, 0))
+        assert self.mesh is not None
+        self.scene_2d.clear_gradients()
 
-    def set_light(self, light_directional, light_ambient):
+    def set_light(
+        self,
+        light_directional: Union[Tuple[float, float, float], np.ndarray],
+        light_ambient: float,
+    ) -> None:
         """
-        light_ambient : scalar. Instensity of the ambient light
+        light_ambient : scalar. Intensity of the ambient light
         light_directional : 3d vector. Directional light are at an infinite distance and thus
         there is no position.  The light_directional vector corresponds to the  direction
-        multiplied by the intensity (instead of a nomalized direction and a scalar intensity).
+        multiplied by the intensity (instead of a normalized direction and a scalar intensity).
         This  parameterization has been chosen because it makes it easier to do gradient
         descent  as there is not normalization constraint. However it does not support colored lights.
         """
@@ -681,14 +836,40 @@ class Scene3D:
             self.light_directional = None
         self.light_ambient = light_ambient
 
-    def set_mesh(self, mesh):
+    def set_mesh(self, mesh: ColoredTriMesh) -> None:
         self.mesh = mesh
 
-    def set_background(self, background_image):
-        assert background_image.dtype == np.double
-        self.background = background_image
+    def set_background(self, background_image: np.ndarray) -> None:
+        warnings.warn(
+            "This will be deprecated, please use set_background_image or set_background_color",
+            UserWarning,
+        )
+        self.set_background_image(background_image)
 
-    def compute_vertices_luminosity(self):
+    def set_background_image(self, background_image: np.ndarray) -> None:
+        if self.background_color is not None:
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
+        background_image = np.asanyarray(background_image)
+        assert background_image.dtype == np.double
+        assert background_image.ndim == 3
+        self.background_image = background_image
+
+    def set_background_color(
+        self, background_color: Union[Iterable[float], np.ndarray]
+    ) -> None:
+        if self.background_image is not None:
+            raise BaseException(
+                "you cannot provide both background image and background color"
+            )
+        background_color = np.asanyarray(background_color, dtype=np.float64)
+        assert background_color.dtype == np.double
+        assert background_color.ndim == 1
+        self.background_color = background_color
+
+    def compute_vertices_luminosity(self) -> np.ndarray:
+        assert self.mesh is not None
         if self.light_directional is not None:
             directional = np.maximum(
                 0, -np.sum(self.mesh.vertex_normals * self.light_directional, axis=1)
@@ -697,11 +878,10 @@ class Scene3D:
             directional = np.zeros((self.mesh.nb_vertices))
         if self.store_backward_current is not None:
             self.store_backward_current["compute_vertices_luminosity"] = directional
-        vertices_luminosity = directional + self.light_ambient
-        return vertices_luminosity
+        return directional + self.light_ambient
 
-    def _compute_vertices_colors_with_illumination(self):
-
+    def _compute_vertices_colors_with_illumination(self) -> np.ndarray:
+        assert self.mesh is not None
         vertices_luminosity = self.compute_vertices_luminosity()
         colors = self.mesh.vertices_colors * vertices_luminosity[:, None]
         if self.store_backward_current is not None:
@@ -710,8 +890,12 @@ class Scene3D:
             ] = vertices_luminosity
         return colors
 
-    def _compute_vertices_colors_with_illumination_backward(self, colors_b):
-        vertices_luminosity = self.store_backward_current[
+    def _compute_vertices_colors_with_illumination_backward(
+        self, colors_b: np.ndarray
+    ) -> None:
+        assert self.mesh is not None
+        assert self.store_backward_current is not None
+        vertices_luminosity: np.ndarray = self.store_backward_current[
             "_compute_vertices_colors_with_illumination"
         ]
         vertices_luminosity_b = np.sum(self.mesh.vertices_colors * colors_b, axis=1)
@@ -719,8 +903,14 @@ class Scene3D:
 
         self.compute_vertices_luminosity_backward(vertices_luminosity_b)
 
-    def compute_vertices_luminosity_backward(self, vertices_luminosity_b):
-        directional = self.store_backward_current["compute_vertices_luminosity"]
+    def compute_vertices_luminosity_backward(
+        self, vertices_luminosity_b: np.ndarray
+    ) -> None:
+        assert self.mesh is not None
+        assert self.store_backward_current is not None
+        directional: np.ndarray = self.store_backward_current[
+            "compute_vertices_luminosity"
+        ]
         if self.light_directional is not None:
             self.light_directional_b = -np.sum(
                 ((vertices_luminosity_b * (directional > 0))[:, None])
@@ -733,35 +923,71 @@ class Scene3D:
             )
         self.light_ambient_b = np.sum(vertices_luminosity_b)
 
-    def _render_2d(self, ij, colors):
-        nb_color_chanels = colors.shape[1]
-        image = np.empty((self.height, self.width, nb_color_chanels))
-        z_buffer = np.empty((self.height, self.width))
-        self.ij = np.array(ij)
-        self.colors = np.array(colors)
-        renderScene(self, self.sigma, image, z_buffer)
+    def _render_2d(self) -> Tuple[np.ndarray, np.ndarray]:
+        nb_color_channels = self.scene_2d.nb_colors
+        image = np.empty((self.scene_2d.height, self.scene_2d.width, nb_color_channels))
+        z_buffer = np.empty((self.scene_2d.height, self.scene_2d.width))
+
+        renderScene(self.scene_2d, self.sigma, image, z_buffer)
 
         if self.store_backward_current is not None:
-            self.store_backward_current["render_2d"] = (ij, colors, image, z_buffer)
+            self.store_backward_current["render_2d"] = (image, z_buffer)
 
         return image, z_buffer
 
-    def _render_2d_backward(self, image_b):
+    def _render_2d_backward(self, image_b: np.ndarray) -> None:
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
-        ij, colors, image, z_buffer = self.store_backward_current["render_2d"]
-        self.ij = np.array(ij)
-        self.colors = np.array(colors)
-        renderSceneB(self, self.sigma, image.copy(), z_buffer, image_b)
-        return self.ij_b, self.colors_b
+        assert self.store_backward_current is not None
+        image, z_buffer = self.store_backward_current["render_2d"]
+        # self.ij = np.array(ij)
+        # self.colors = np.array(colors)
+        renderSceneB(self.scene_2d, self.sigma, image.copy(), z_buffer, image_b)
+        self.scene_2D = None
 
-    def render(self, camera, return_z_buffer=False, backface_culling=True):
+    @overload
+    def render(
+        self,
+        camera: Camera,
+    ) -> np.ndarray:
+        ...
+
+    @overload
+    def render(
+        self,
+        camera: Camera,
+        return_z_buffer: Literal[True],
+        backface_culling: bool = True,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @overload
+    def render(
+        self,
+        camera: Camera,
+        return_z_buffer: Literal[False],
+        backface_culling: bool = True,
+    ) -> np.ndarray:
+        ...
+
+    def render(
+        self,
+        camera: Camera,
+        return_z_buffer: bool = False,
+        backface_culling: bool = True,
+    ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
+        assert self.mesh is not None, "You need to provide a mesh first."
         self.store_backward_current = {}
 
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals()
+
+        if (self.background_image is None) == (self.background_color is None):
+            raise BaseException(
+                "You need to provide either a background image or background color"
+            )
 
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -769,69 +995,102 @@ class Scene3D:
 
         # compute silhouette edges
         if self.sigma > 0:
-            self.edgeflags = self.mesh.edge_on_silhouette(points_2d)
+            edgeflags = self.mesh.edge_on_silhouette(points_2d)
         else:
-            self.edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+            edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
         # construct 2D scene
-        self.faces = self.mesh.faces.astype(np.uint32)
+        faces = self.mesh.faces.astype(np.uint32)
 
-        self.depths = depths
         if self.mesh.uv is not None:
-            self.uv = self.mesh.uv
-            self.faces_uv = self.mesh.faces_uv
-            self.textured = np.ones((self.mesh.nb_faces), dtype=np.bool)
-            self.shade = self.compute_vertices_luminosity()
-            self.shaded = np.ones(
-                (self.mesh.nb_faces), dtype=np.bool
+            assert self.mesh.texture is not None
+            uv = self.mesh.uv
+            faces_uv = self.mesh.faces_uv
+            textured = np.ones((self.mesh.nb_faces), dtype=bool)
+            shade = self.compute_vertices_luminosity()
+            shaded = np.ones(
+                (self.mesh.nb_faces), dtype=bool
             )  # could eventually be non zero if we were using texture
-            self.texture = self.mesh.texture
-            colors = np.zeros((self.mesh.nb_vertices, self.texture.shape[2]))
+            texture = self.mesh.texture
+            nb_colors = texture.shape[2]
+            colors = np.zeros((self.mesh.nb_vertices, nb_colors))
         else:
             colors = self._compute_vertices_colors_with_illumination()
-            self.faces_uv = self.faces
-            self.uv = np.zeros((self.mesh.nb_vertices, 2))
-            self.textured = np.zeros((self.mesh.nb_faces), dtype=np.bool)
-            self.shade = np.zeros(
-                (self.mesh.nb_vertices), dtype=np.float
+            nb_colors = colors.shape[1]
+            faces_uv = faces
+            uv = np.zeros((self.mesh.nb_vertices, 2))
+            textured = np.zeros((self.mesh.nb_faces), dtype=bool)
+            shade = np.zeros(
+                (self.mesh.nb_vertices), dtype=np.float64
             )  # could eventually be non zero if we were using texture
-            self.shaded = np.zeros(
-                (self.mesh.nb_faces), dtype=np.bool
+            shaded = np.zeros(
+                (self.mesh.nb_faces), dtype=bool
             )  # could eventually be non zero if we were using texture
-            self.texture = np.zeros((0, 0))
+            texture = np.zeros((0, 0))
 
-        self.height = camera.height
-        self.width = camera.width
-        self.strict_edge = True
+        height = camera.height
+        width = camera.width
+        strict_edge = True
 
-        self.clockwise = self.mesh.clockwise
-        self.backface_culling = backface_culling
-        image, z_buffer = self._render_2d(points_2d, colors)
+        clockwise = self.mesh.clockwise
+
+        assert faces_uv is not None  # helping mypy
+
+        scene_2d = Scene2D(
+            faces=faces,
+            faces_uv=faces_uv,
+            ij=points_2d,
+            depths=depths,
+            textured=textured,
+            uv=uv,
+            shade=shade,
+            colors=colors,
+            shaded=shaded,
+            edgeflags=edgeflags,
+            height=height,
+            width=width,
+            nb_colors=nb_colors,
+            texture=texture,
+            background_image=self.background_image,
+            background_color=self.background_color,
+            clockwise=clockwise,
+            backface_culling=backface_culling,
+            strict_edge=strict_edge,
+            perspective_correct=self.perspective_correct,
+            integer_pixel_centers=self.integer_pixel_centers,
+        )
+        self.scene_2d = scene_2d
+
+        image, z_buffer = self._render_2d()
         if self.store_backward_current is not None:
             self.store_backward_current["render"] = (
                 camera,
-                self.edgeflags,
+                edgeflags,
             )  # store this field as it could be overwritten when
             # rendering several views
-        if return_z_buffer:
-            return image, z_buffer
-        else:
-            return image
+        return (image, z_buffer) if return_z_buffer else image
 
-    def render_backward(self, image_b):
+    def render_backward(self, image_b: np.ndarray) -> None:
+        assert self.scene_2d is not None
+        assert self.scene_2d.colors_b is not None
+        assert self.mesh is not None
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
+        assert self.store_backward_current is not None
         camera, self.edgeflags = self.store_backward_current["render"]
-        points_2d_b, colors_b = self._render_2d_backward(image_b)
-        self._compute_vertices_colors_with_illumination_backward(colors_b)
-        self.mesh.vertices_b = camera.project_points_backward(
-            points_2d_b, store_backward=self.store_backward_current
+        self._render_2d_backward(image_b)
+        self._compute_vertices_colors_with_illumination_backward(self.scene_2d.colors_b)
+        self.mesh._vertices_b = camera.project_points_backward(
+            self.scene_2d.ij_b, store_backward=self.store_backward_current
         )
         if self.light_directional is not None:
             self.mesh.compute_vertex_normals_backward(self.vertex_normals_b)
 
-    def render_depth(self, camera, depth_scale=1, backface_culling=True):
+    def render_depth(
+        self, camera: Camera, depth_scale: float = 1, backface_culling: bool = True
+    ) -> np.ndarray:
+        assert self.mesh is not None
         self.store_backward_current = {}
         points_2d, depths = camera.project_points(
             self.mesh.vertices, store_backward=self.store_backward_current
@@ -841,59 +1100,70 @@ class Scene3D:
         if self.sigma > 0:
             edgeflags = self.mesh.edge_on_silhouette(points_2d)
         else:
-            edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+            edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
 
-        self.faces = self.mesh.faces.astype(np.uint32)
-        self.faces_uv = self.faces
-        colors = depths[:, None] * depth_scale
-        self.depths = depths
-        self.edgeflags = edgeflags
-        self.uv = np.zeros((self.mesh.nb_vertices, 2))
-        self.textured = np.zeros((self.mesh.nb_faces), dtype=np.bool)
-        self.shade = np.zeros(
-            (self.mesh.nb_vertices), dtype=np.bool
-        )  # eventually used when using texture
-        self.height = camera.height
-        self.width = camera.width
-        self.shaded = np.zeros(
-            (self.mesh.nb_faces), dtype=np.bool
-        )  # eventually used when using texture
-        self.texture = np.zeros((0, 0))
-        self.clockwise = self.mesh.clockwise
-        self.backface_culling = backface_culling
-        self.strict_edge = True
-        image, _ = self._render_2d(points_2d, colors)
+        scene_2d = Scene2D(
+            ij=points_2d,
+            nb_colors=1,
+            faces=self.mesh.faces.astype(np.uint32),
+            faces_uv=self.mesh.faces,
+            colors=depths[:, None] * depth_scale,
+            depths=depths,
+            edgeflags=edgeflags,
+            uv=np.zeros((self.mesh.nb_vertices, 2)),
+            textured=np.zeros((self.mesh.nb_faces), dtype=bool),
+            shade=np.zeros(
+                (self.mesh.nb_vertices), dtype=bool
+            ),  # eventually used when using texture
+            height=camera.height,
+            width=camera.width,
+            shaded=np.zeros(
+                (self.mesh.nb_faces), dtype=bool
+            ),  # eventually used when using texture
+            texture=np.zeros((0, 0)),
+            clockwise=self.mesh.clockwise,
+            backface_culling=backface_culling,
+            strict_edge=True,
+            background_color=self.background_color,
+            integer_pixel_centers=self.integer_pixel_centers,
+        )
+        self.scene_2d = scene_2d
+        image, _ = self._render_2d()
         if self.store_backward_current is not None:
             self.store_backward_current["render_depth"] = (camera, depth_scale)
         return image
 
-    def render_depth_backward(self, depth_b):
+    def render_depth_backward(self, depth_b: np.ndarray) -> None:
+        assert self.store_backward_current is not None
+        assert self.mesh is not None
         if self.perspective_correct:
             raise BaseException(
                 "perspective_correct not supported yet for gradient back propagation"
             )
         camera, depth_scale = self.store_backward_current["render_depth"]
-        ij_b, colors_b = self._render_2d_backward(depth_b)
-        depths_b = np.squeeze(colors_b * depth_scale, axis=1)
-        self.mesh.vertices_b = camera.project_points_backward(
-            ij_b, depths_b=depths_b, store_backward=self.store_backward_current
+        self._render_2d_backward(depth_b)
+        depths_b = np.squeeze(self.scene_2d.colors_b * depth_scale, axis=1)
+        self.mesh._vertices_b = camera.project_points_backward(
+            self.scene_2d.ij_b,
+            depths_b=depths_b,
+            store_backward=self.store_backward_current,
         )
 
     def render_deferred(
         self,
-        camera,
-        depth_scale=1,
-        color=True,
-        depth=True,
-        face_id=True,
-        barycentric=True,
-        normal=True,
-        luminosity=True,
-        uv=True,
-        xyz=True,
-        backface_culling=True,
-    ):
-
+        camera: Camera,
+        depth_scale: float = 1,
+        color: bool = True,
+        depth: bool = True,
+        face_id: bool = True,
+        barycentric: bool = True,
+        normal: bool = True,
+        luminosity: bool = True,
+        uv: bool = True,
+        xyz: bool = True,
+        backface_culling: bool = True,
+    ) -> Dict[str, np.ndarray]:
+        assert self.mesh is not None, "You need to provide a mesh first"
         points_2d, depths = camera.project_points(self.mesh.vertices)
 
         # compute silhouette edges
@@ -904,7 +1174,7 @@ class Scene3D:
                 "Antialiasing is not supposed to be used when using deferred rendering, please use sigma==0"
             )
 
-        edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=np.bool)
+        edgeflags = np.zeros((self.mesh.nb_faces, 3), dtype=bool)
 
         if luminosity or normal:
             self.mesh.compute_vertex_normals()
@@ -952,6 +1222,7 @@ class Scene3D:
 
         if self.mesh.uv is None:
             if color:
+                assert self.mesh.vertices_colors is not None
                 soup_vertices_colors = self.mesh.vertices_colors[
                     self.mesh.faces
                 ].reshape(soup_nb_vertices, 3)
@@ -971,19 +1242,21 @@ class Scene3D:
 
         nb_colors = colors.shape[1]
         uv_zeros = np.zeros((soup_nb_vertices, 2))
-        textured = np.zeros((soup_nb_faces), dtype=np.bool)
-        shade = np.zeros((soup_nb_vertices), dtype=np.bool)
+        textured = np.zeros((soup_nb_faces), dtype=bool)
+        shade = np.zeros((soup_nb_vertices), dtype=bool)
 
         height = camera.height
         width = camera.width
         shaded = np.zeros(
-            (soup_nb_faces), dtype=np.bool
+            (soup_nb_faces), dtype=bool
         )  # eventually used when using texture
         texture = np.zeros((0, 0))
 
-        background = np.zeros((height, width, nb_colors))
+        background_image = np.zeros((height, width, nb_colors))
         if "depth" in channels:
-            background[:, :, ranges["depth"][0] : ranges["depth"][1]] = depths.max()
+            background_image[
+                :, :, ranges["depth"][0] : ranges["depth"][1]
+            ] = depths.max()
 
         scene_2d = Scene2DBase(
             faces=soup_faces,
@@ -1000,14 +1273,16 @@ class Scene3D:
             width=width,
             nb_colors=nb_colors,
             texture=texture,
-            background=background,
+            background_image=background_image,
             backface_culling=backface_culling,
+            background_color=None,
+            integer_pixel_centers=self.integer_pixel_centers,
         )
         buffers = np.empty((camera.height, camera.width, nb_colors))
         z_buffer = np.empty((camera.height, camera.width))
         renderScene(scene_2d, 0, buffers, z_buffer)
 
-        output = {}
+        output: Dict[str, np.ndarray] = {}
         for k in channels.keys():
             output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
 
