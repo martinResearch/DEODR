@@ -219,7 +219,7 @@ class MeshDepthFitter:
         self.transform_translation = self.transform_translation + self.speed_translation
 
         self.iter += 1
-        return energy, depth[:, :, 0].numpy(), diff_image.numpy()
+        return energy, depth[:, :, 0].numpy(), diff_image.numpy()  # type: ignore
 
 
 class MeshRGBFitterWithPose:
@@ -232,7 +232,8 @@ class MeshRGBFitterWithPose:
         euler_init: np.ndarray,
         translation_init: np.ndarray,
         default_color: np.ndarray,
-        default_light: np.ndarray,
+        default_light_directional: np.ndarray,
+        default_light_ambient: float,
         cregu: float = 2000,
         inertia: float = 0.96,
         damping: float = 0.05,
@@ -251,7 +252,8 @@ class MeshRGBFitterWithPose:
         self.step_max_translation = 0.1
 
         self.default_color = default_color
-        self.default_light = default_light
+        self.default_light_directional = default_light_directional
+        self.default_light_ambient = default_light_ambient
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(
@@ -292,11 +294,11 @@ class MeshRGBFitterWithPose:
         self.speed_quaternion = np.zeros(4)
 
         self.mesh_color = copy.copy(self.default_color)
-        self.light_directional = copy.copy(self.default_light["directional"])
-        self.light_ambient = copy.copy(self.default_light["ambient"])
+        self.light_directional = copy.copy(self.default_light_directional)
+        self.light_ambient = self.default_light_ambient
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
-        self.speed_light_ambient = np.zeros(self.light_ambient.shape)
+        self.speed_light_ambient = 0.0
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
     def set_image(
@@ -336,7 +338,9 @@ class MeshRGBFitterWithPose:
             translation_with_grad = tf.constant(self.transform_translation)
 
             light_directional_with_grad = tf.constant(self.light_directional)
-            light_ambient_with_grad = tf.constant(self.light_ambient)
+            light_ambient_with_grad = tf.constant(
+                [self.light_ambient], dtype=np.float64
+            )
             mesh_color_with_grad = tf.constant(self.mesh_color)
 
             tape.watch(vertices_with_grad)
@@ -446,7 +450,7 @@ class MeshRGBFitterWithPose:
         self.speed_light_ambient = (1 - self.damping) * (
             self.speed_light_ambient * inertia + (1 - inertia) * step
         )
-        self.light_ambient = self.light_ambient + self.speed_light_ambient
+        self.light_ambient = self.light_ambient + self.speed_light_ambient.numpy()[0]  # type: ignore
         # update mesh color
         step = -mesh_color_grad * 0.00001
         self.speed_mesh_color = (1 - self.damping) * (

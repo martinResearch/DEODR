@@ -13,7 +13,7 @@ import deodr
 from deodr import read_obj
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
 
-from imageio import imread, imsave
+from imageio import imread, imwrite
 
 import matplotlib.pyplot as plt
 
@@ -115,7 +115,7 @@ def run(
                 cv2.resize(combined_image[:, :, ::-1], None, fx=1, fy=1),
             )
         if save_images:
-            imsave(
+            imwrite(
                 os.path.join(iter_folder, f"hand_iter_{niter}.png"),
                 (combined_image * 255).astype(np.uint8),
             )

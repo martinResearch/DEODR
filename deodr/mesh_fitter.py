@@ -214,7 +214,8 @@ class MeshRGBFitterWithPose:
         euler_init: np.ndarray,
         translation_init: np.ndarray,
         default_color: np.ndarray,
-        default_light: np.ndarray,
+        default_light_directional: np.ndarray,
+        default_light_ambient: float,
         cregu: float = 2000,
         inertia: float = 0.96,
         damping: float = 0.05,
@@ -233,7 +234,8 @@ class MeshRGBFitterWithPose:
         self.step_max_translation = 0.1
 
         self.default_color = default_color
-        self.default_light = default_light
+        self.default_light_directional = default_light_directional
+        self.default_light_ambient = default_light_ambient
         self.update_lights = update_lights
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3)
@@ -270,11 +272,11 @@ class MeshRGBFitterWithPose:
         self.speed_quaternion = np.zeros(4)
 
         self.mesh_color = copy.copy(self.default_color)
-        self.light_directional = copy.copy(self.default_light["directional"])
-        self.light_ambient = copy.copy(self.default_light["ambient"])
+        self.light_directional = copy.copy(self.default_light_directional)
+        self.light_ambient = copy.copy(self.default_light_ambient)
 
         self.speed_light_directional = np.zeros(self.light_directional.shape)
-        self.speed_light_ambient = np.zeros(self.light_ambient.shape)
+        self.speed_light_ambient = 0.0
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
     def set_image(
@@ -458,8 +460,8 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.update_color = update_color
         self.mesh = ColoredTriMesh(faces, vertices, nb_colors=3)
         object_center = vertices.mean(axis=0)
-        object_radius = np.max(np.std(vertices, axis=0))
-        self.camera_center = object_center + np.array([0, 0, 6]) * object_radius
+        self.object_radius = np.max(np.std(vertices, axis=0))
+        self.camera_center = object_center + np.array([0, 0, 6]) * self.object_radius
 
         self.scene = Scene3D()
         self.scene.set_mesh(self.mesh)

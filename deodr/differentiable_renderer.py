@@ -300,6 +300,16 @@ class Camera:
         self.height = height
         self.width = width
 
+    @property
+    def xfov(self) -> float:
+        assert self.intrinsic[0, 2] == self.width / 2
+        return np.degrees(2 * np.arctan(self.width / (2 * self.intrinsic[0, 0])))
+
+    @property
+    def yfov(self) -> float:
+        assert self.intrinsic[1, 2] == self.height / 2
+        return np.degrees(2 * np.arctan(self.height / (2 * self.intrinsic[1, 1])))
+
     def world_to_camera(self, points_3d: np.ndarray) -> np.ndarray:
         assert points_3d.shape[-1] == 3
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
@@ -873,12 +883,11 @@ class Scene3D:
     def _compute_vertices_colors_with_illumination(self) -> np.ndarray:
         assert self.mesh is not None
         vertices_luminosity = self.compute_vertices_luminosity()
-        colors = self.mesh.vertices_colors * vertices_luminosity[:, None]
         if self.store_backward_current is not None:
             self.store_backward_current[
                 "_compute_vertices_colors_with_illumination"
             ] = vertices_luminosity
-        return colors
+        return self.mesh.vertices_colors * vertices_luminosity[:, None]
 
     def _compute_vertices_colors_with_illumination_backward(
         self, colors_b: np.ndarray
@@ -898,10 +907,10 @@ class Scene3D:
     ) -> None:
         assert self.mesh is not None
         assert self.store_backward_current is not None
-        directional: np.ndarray = self.store_backward_current[
-            "compute_vertices_luminosity"
-        ]
         if self.light_directional is not None:
+            directional: np.ndarray = self.store_backward_current[
+                "compute_vertices_luminosity"
+            ]
             self.light_directional_b = -np.sum(
                 ((vertices_luminosity_b * (directional > 0))[:, None])
                 * self.mesh.vertex_normals,
@@ -1272,8 +1281,8 @@ class Scene3D:
         z_buffer = np.empty((camera.height, camera.width))
         renderScene(scene_2d, 0, buffers, z_buffer)
 
-        output: Dict[str, np.ndarray] = {}
-        for k in channels.keys():
-            output[k] = buffers[:, :, ranges[k][0] : ranges[k][1]]
+        output: Dict[str, np.ndarray] = {
+            k: buffers[:, :, ranges[k][0] : ranges[k][1]] for k in channels
+        }
 
         return output

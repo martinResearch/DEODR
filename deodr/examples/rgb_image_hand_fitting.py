@@ -14,7 +14,8 @@ import deodr
 from deodr import read_obj
 from deodr import ColoredTriMesh
 
-from imageio import imread, imsave
+from imageio.v3 import imread, imwrite
+from deodr.meshlab_io import export_meshlab
 
 import matplotlib.pyplot as plt
 
@@ -47,6 +48,7 @@ def run(
     hand_image = (
         imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
     )
+
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
@@ -55,11 +57,8 @@ def run(
     )
 
     default_color = np.array([0.4, 0.3, 0.25])
-    default_light = {
-        "directional": -np.array([0.1, 0.5, 0.4]),
-        "ambient": np.array([0.6]),
-    }
-
+    default_light_directional = -np.array([0.1, 0.5, 0.4])
+    default_light_ambient = 0.6
     euler_init = np.array([0, 0, 0])
     translation_init = np.mean(mesh.vertices, axis=0)
     # centering vertices
@@ -69,7 +68,8 @@ def run(
         mesh.vertices,
         mesh.faces,
         default_color=default_color,
-        default_light=default_light,
+        default_light_directional=default_light_directional,
+        default_light_ambient=default_light_ambient,
         update_lights=True,
         update_color=True,
         euler_init=euler_init,
@@ -117,9 +117,15 @@ def run(
                 cv2.resize(combined_image[:, :, ::-1], None, fx=2, fy=2),
             )
         if save_images:
-            imsave(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
+            imwrite(os.path.join(iterfolder, f"hand_iter_{niter}.png"), combined_image)
         cv2.waitKey(1)
 
+    export_meshlab(
+        "iterations/rgb_fitted_meshlab.mlp",
+        hand_fitter.mesh,
+        [hand_fitter.camera],
+        [hand_image],
+    )
     # save convergence curve
     with open(
         os.path.join(
