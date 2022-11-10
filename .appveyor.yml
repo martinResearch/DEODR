@@ -20,7 +20,7 @@ environment:
    encrypted_pypi_api_token:
       secure: fNsmdisSE4Xu6Z7tsGXuPlwqeGdI9AyuVEDC2+nD1H+rBBzXC6Adc1wjoFpOhdkGUXU3aWwgN6uvTZdv1SfIqKmNRcaIRtrmVyRMkg10D6pWzhI+y5NqL9Ki13HP+gCCtc3gaoHT6ZrVGNMViaZcvOnoDRdZx6kxIzyvsjyI6jtvZNHpQUOlUeSUf+ER6YnKhfgM+b4TCXWKWrhtjTd4JR7Vao6Pv6n8LuquYnT9LOc=
    TWINE_REPOSITORY_URL:  https://upload.pypi.org/legacy/
-   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-* cp37-* cp310-* cp311-* pp*
+   CIBW_SKIP: cp27-* cp33-* cp34-* cp35-* cp36-* cp37-* cp310-* cp311-* pp* *-win32 *-manylinux_i686"
    CIBW_BEFORE_BUILD: pip install -r requirements_build.txt
    CIBW_BEFORE_BUILD_LINUX: pip install -r requirements_build.txt
    TWINE_USERNAME: __token__
