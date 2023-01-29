@@ -204,6 +204,12 @@ Model-based 3D Hand Pose Estimation from Monocular Video. M. de la Gorce, N. Par
      address = {Washington, DC, USA},
     } 
 
+## Projects that use DEODR
+
+* [TraceArmature](https://github.com/WilliamRodriguez42/TraceArmature).  Set of python scripts that allow for high fidelity motion capture through the use of AI pose estimation (using METRABS), fiducial markers, VR body trackers, and optional hand annotations.
+
+Please let me know if you found DEODR useful by adding a comment in [here](https://github.com/martinResearch/DEODR/issues/240).
+
 # Alternatives 
 
 * [**SoftRas**](https://github.com/ShichenLiu/SoftRas) (MIT Licence). Method published in [9]. This method consists in a differentiable render with a differentiable forward pass. To my knowledge, this is at the moment the only method besides ours that has a differentiable forward pass and that computes the exact gradient of the forward pass in the backward pass. 
