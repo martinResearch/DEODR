@@ -6,8 +6,8 @@ matplotlib
 imageio
 trimesh
 opencv-python
-torch -f https://download.pytorch.org/whl/torch_stable.html
-torchvision  -f https://download.pytorch.org/whl/torch_stable.html
+torch -f https://download.pytorch.org/whl/cu117
+torchvision  -f https://download.pytorch.org/whl/cu117
 tensorflow
 moderngl
 pyrr
@@ -19,5 +19,6 @@ radon
 pip-tools
 mypy
 black
+flake8
 
 

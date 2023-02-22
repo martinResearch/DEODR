@@ -12,7 +12,7 @@ import cv2
 import deodr
 from deodr import ColoredTriMesh
 
-from imageio import imsave
+from imageio.v3 import imwrite
 
 import matplotlib.pyplot as plt
 
@@ -85,7 +85,7 @@ def run(
         if display:
             cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
         if save_images:
-            imsave(
+            imwrite(
                 os.path.join(iter_folder, f"depth_hand_iter_{niter}.png"),
                 combined_image,
             )

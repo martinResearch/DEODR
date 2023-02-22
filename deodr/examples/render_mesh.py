@@ -6,7 +6,7 @@ import deodr
 from deodr import differentiable_renderer
 from deodr.triangulated_mesh import ColoredTriMesh
 from deodr.differentiable_renderer import Scene3D, Camera
-import imageio
+import imageio.v3 as imageio
 
 import matplotlib.pyplot as plt
 

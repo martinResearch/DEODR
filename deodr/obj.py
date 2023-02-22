@@ -48,3 +48,11 @@ def read_obj(filename: str) -> Tuple[np.ndarray, np.ndarray]:
     faces_np = np.row_stack(faces)
     vertices_np = np.row_stack(vertices)
     return faces_np, vertices_np
+
+
+def save_obj(filename: str, vertices: np.ndarray, faces: np.ndarray) -> None:
+    with open(filename, "w") as f:
+        for vertex in vertices:
+            f.write(f"v {vertex[0]:08f} {vertex[1]:08f} {vertex[2]:08f}\n")
+        for face in faces:
+            f.write(f"f {face[0]+1} {face[1]+1} {face[2]+1}\n")
