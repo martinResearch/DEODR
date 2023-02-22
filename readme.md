@@ -103,20 +103,20 @@ It renders a set of triangles with either a texture that is bilinearly interpola
 
 This can be used to do efficient analysis-by-synthesis computer vision by minimizing the function E that corresponds to the sum or the squared pixel intensities differences between a rendered image and a reference observed image I<sub>o</sub> with respect to the scene parameters we aim to estimate.
 
-![latex: \large~~~~~~~~~~~~~~ $E(V)=\sum_{ij} (I(i,j,V)-I_o(i,j))^2$](./images/error_function.svg)
+$$E(V)=\sum_{ij} (I(i,j,V)-I_o(i,j))^2$$
 
 
 Using D(i,j) as the *adjoint* i.e. derivative of the error (for example the squared residual) between observed pixel intensity and synthetized pixel intensity at location (i,j) 
 
-![latex: \large~~~~~~~~~~~~~~ $ D(i,j)=\partial E/\partial I(i,j))$](./images/adjoint.svg)
+$$ D(i,j)=\partial E/\partial I(i,j))$$
 
 We can use DEODR to obtain the gradient with respect to the 2D vertices locations  and their colors i.e :
  
-![latex: \large ~~~~~~~~~~~~~~$\partial E/\partial V_k =\sum_{ij} D(i,j)(\partial I(i,j)/\partial V_k)$](./images/backoperator1.svg)
+$$\partial E/\partial V_k =\sum_{ij} D(i,j)(\partial I(i,j)/\partial V_k)$$
  
 and 
 
-![latex: \large ~~~~~~~~~~~~~~$\partial E/\partial C_k = \sum_{ij} D(i,j)(\partial I(i,j)/\partial C_k)$](./images/backoperator2.svg)
+$$\partial E/\partial C_k = \sum_{ij} D(i,j)(\partial I(i,j)/\partial C_k)$$
 
 
 In combination with an automatic differentiation tool, this core function allows one to obtain the gradient of 

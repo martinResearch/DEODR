@@ -19,7 +19,7 @@ import numpy as np
 
 
 def create_example_scene(
-    n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False
+    n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False, textured_ratio:float=0.5
 ) -> Scene2D:
 
     material = (
@@ -51,7 +51,7 @@ def create_example_scene(
             "depths": (np.random.rand(1) * np.ones((3, 1))),
         }
 
-        triangle["textured"] = np.random.rand(1) > 0.5
+        triangle["textured"] = np.random.rand(1) > (1-textured_ratio)
 
         if triangle["textured"]:
             triangle["uv"] = (
