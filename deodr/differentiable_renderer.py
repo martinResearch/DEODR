@@ -183,10 +183,9 @@ def renderSceneFragments(
     if check_valid:
         _check_scene_2d(scene)
 
-    fragments = differentiable_renderer_cython.renderSceneFragments(
+    return differentiable_renderer_cython.renderSceneFragments(
         scene, sigma, z_buffer
     )
-    return fragments
 
 
 def renderSceneB(
@@ -647,8 +646,7 @@ class Scene2D(Scene2DBase):
 
     def render_fragments(self, sigma: float = 1) -> Any:
         z_buffer = np.zeros((self.height, self.width))
-        fragments = renderSceneFragments(self, sigma, z_buffer)
-        return fragments
+        return renderSceneFragments(self, sigma, z_buffer)
 
     def render_error_backward(
         self, err_buffer_b: np.ndarray, make_copies: bool = True
@@ -982,8 +980,7 @@ class Scene3D:
             return_z_buffer=return_z_buffer,
             backface_culling=backface_culling,
         )
-        fragments = self.scene_2d.render_fragments()
-        return fragments
+        return self.scene_2d.render_fragments()
 
     def _generate_scene_2d(
         self,
