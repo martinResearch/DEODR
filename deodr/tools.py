@@ -59,20 +59,20 @@ def cross_backward(
 def jacobian_finite_differences(
     func: Callable[[np.ndarray], np.ndarray], x: np.ndarray, epsilon: float = 1e-6
 ) -> np.ndarray:
-
     v0 = func(x)
     nx = x.copy()
     jacobian = np.zeros((v0.size, x.size))
     nx_flat = nx.ravel()
     for d in range(x.size):
-        nx_flat[d] = nx_flat[d] + epsilon
+        v = nx_flat[d]
+        nx_flat[d] = v + epsilon
         d1 = func(nx)
-        nx_flat[d] = nx_flat[d] - epsilon
+        nx_flat[d] = v - epsilon
         d2 = func(nx)
-        nx_flat[d] = x.flat[d]
+        nx_flat[d] = v
         jacobian[:, d] = (d1 - d2).flatten() / (2 * epsilon)
     v02 = func(x)
-    assert v0 == v02
+    assert np.allclose(v0, v02), "The value of the function changed. The function has a state or is non deterministic"
     return jacobian
 
 
