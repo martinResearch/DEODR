@@ -5,6 +5,7 @@ See http://www.fileformat.info/format/wavefrontobj/.
 At the moment only v and f keywords are supported
 """
 from typing import List, Tuple
+
 import numpy as np
 
 

@@ -1,9 +1,9 @@
 """Test texture coordinates regarding 0.5 texel shift."""
 
 
-from deodr.differentiable_renderer import Scene2D
-
 import numpy as np
+
+from deodr.differentiable_renderer import Scene2D
 
 
 def test_texture_coordinates() -> None:

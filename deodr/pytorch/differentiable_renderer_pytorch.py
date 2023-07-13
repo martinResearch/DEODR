@@ -1,9 +1,9 @@
 # type: ignore
 """Pytorch interface to deodr."""
 
-from typing import Any, List, Optional, Union, Tuple
-import numpy as np
+from typing import Any, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 
 from .. import differentiable_renderer_cython  # type: ignore

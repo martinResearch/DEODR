@@ -1,5 +1,7 @@
 # distutils: language=c++
 from libcpp cimport bool
+
+
 cdef extern from "../C++/DifferentiableRenderer.h":
 	ctypedef struct Scene:
 		unsigned int* faces;

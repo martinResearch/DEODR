@@ -1,27 +1,21 @@
 """Example with fitting a colored hand mesh model to an image."""
-from typing import List
-from typing_extensions import Literal
-
 import datetime
 import glob
 import json
 import os
 import time
+from typing import List
 
 import cv2
+from imageio.v3 import imread, imwrite
+import matplotlib.pyplot as plt
+import numpy as np
+from typing_extensions import Literal
 
 import deodr
-from deodr import read_obj
-from deodr import ColoredTriMesh
-
-from imageio.v3 import imread, imwrite
-from deodr.meshlab_io import export_meshlab
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
+from deodr import ColoredTriMesh, read_obj
 from deodr.mesh_fitter import MeshRGBFitterWithPose
+from deodr.meshlab_io import export_meshlab
 from deodr.pytorch import MeshRGBFitterWithPose as PyTorchMeshRGBFitterWithPose
 from deodr.tensorflow import (
     MeshRGBFitterWithPose as TensorflowTorchMeshRGBFitterWithPose,

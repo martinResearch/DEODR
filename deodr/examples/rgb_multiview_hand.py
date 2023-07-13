@@ -1,6 +1,4 @@
 """Example with fitting a colored hand mesh model to multiple images."""
-from typing_extensions import Literal
-
 import datetime
 import glob
 import json
@@ -8,16 +6,14 @@ import os
 import time
 
 import cv2
+from imageio import imread, imwrite
+import matplotlib.pyplot as plt
+import numpy as np
+from typing_extensions import Literal
 
 import deodr
 from deodr import read_obj
 from deodr.mesh_fitter import MeshRGBFitterWithPoseMultiFrame
-
-from imageio import imread, imwrite
-
-import matplotlib.pyplot as plt
-
-import numpy as np
 
 dl_library_type = Literal["pytorch", "tensorflow", "none"]
 

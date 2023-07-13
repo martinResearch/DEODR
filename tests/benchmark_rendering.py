@@ -1,11 +1,9 @@
+import time
+
 import numpy as np
 
-
-from deodr.examples.triangle_soup_fitting import create_example_scene
 from deodr import differentiable_renderer_cython  # type: ignore
-import matplotlib.pyplot as plt
-
-import time
+from deodr.examples.triangle_soup_fitting import create_example_scene
 
 
 def benchmark_render_mesh_triangle_soup() -> None:
@@ -26,8 +24,6 @@ def benchmark_render_mesh_triangle_soup() -> None:
         elapsed = time.perf_counter_ns() - start
         durations.append(elapsed)
     print(np.median(durations) / 1e9)
-    # plt.imshow(image)
-    # plt.show()
 
 
 if __name__ == "__main__":

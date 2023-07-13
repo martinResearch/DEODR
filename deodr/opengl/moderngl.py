@@ -1,17 +1,17 @@
+# type: ignore
 """Module to render deodr scenes using OpenGL through moderngl.
 
 This is used to have a reference implementation using OpenGL shaders that produce identical images to deodr
 """
+
 import moderngl
-
 import numpy as np
-
 from pyrr import Matrix44
 
+from deodr.differentiable_renderer import Camera, Scene3D
 from deodr.triangulated_mesh import ColoredTriMesh
 
 from . import shaders as opengl_shaders
-from deodr.differentiable_renderer import Camera, Scene3D
 
 
 def opencv_to_opengl_perspective(
@@ -79,7 +79,9 @@ class OffscreenRenderer:
 
     def set_light(self, light_directional: np.ndarray, light_ambient: float) -> None:
         assert light_directional.shape == (3,)
-        self.shader_program["light_directional"].value = tuple(light_directional)
+        self.shader_program["light_directional"].value = tuple(
+            light_directional
+        )  # type :ignore
         self.shader_program["light_ambient"].value = light_ambient
 
     def set_mesh(self, mesh: ColoredTriMesh) -> None:

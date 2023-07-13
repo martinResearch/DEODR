@@ -44,7 +44,6 @@ import shutil
 import sys
 import tempfile
 
-
 for arg in sys.argv:
     print(arg)
 

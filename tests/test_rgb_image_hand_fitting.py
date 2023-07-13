@@ -1,10 +1,9 @@
 """Test using rgb_image hand fitting."""
 
 import numpy as np
+import tensorflow as tf
 
 from deodr.examples.rgb_image_hand_fitting import run
-
-import tensorflow as tf
 
 
 def test_rgb_image_hand_fitting_pytorch() -> None:

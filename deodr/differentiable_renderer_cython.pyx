@@ -1,12 +1,13 @@
 # distutils: language = c++
+cimport _differentiable_renderer
 from libcpp cimport bool
-cimport _differentiable_renderer 
 
 import cython
+
 # import both numpy and the Cython declarations for numpy
 import numpy as np
-cimport numpy as np
 
+cimport numpy as np
 
 
 @cython.boundscheck(False)

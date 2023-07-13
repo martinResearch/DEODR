@@ -1,10 +1,7 @@
 """Implementation of triangulated meshes."""
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
-from typing import Dict
-
-
 from scipy import sparse
 
 from .tools import cross_backward, normalize, normalize_backward

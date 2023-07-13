@@ -22,6 +22,7 @@ __all__ = [
 ]
 
 import os
+
 from .differentiable_renderer import Camera, Scene2D, Scene3D
 from .laplacian_rigid_energy import LaplacianRigidEnergy
 from .obj import read_obj

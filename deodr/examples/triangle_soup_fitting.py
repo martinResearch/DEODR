@@ -1,21 +1,18 @@
 """Example with fitting a 32 triangles soup to an image."""
 
-from typing import Any, Dict, List, Tuple
 import copy
 import hashlib
 import os
+from typing import Any, Dict, List, Tuple
 
 import cv2
+from imageio.v3 import imread
+import matplotlib.pyplot as plt
+import numpy as np
 
 import deodr
 from deodr import differentiable_renderer_cython  # type: ignore
 from deodr.differentiable_renderer import Scene2D
-
-from imageio.v3 import imread
-
-import matplotlib.pyplot as plt
-
-import numpy as np
 
 
 def create_example_scene(

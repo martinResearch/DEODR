@@ -3,13 +3,12 @@
 Note that pyrender does not support camera distortion.
 """
 from typing import Optional, Tuple
+
 import numpy as np
-
 import pyrender
-
 import trimesh
-from deodr.differentiable_renderer import Camera, Scene3D
 
+from deodr.differentiable_renderer import Camera, Scene3D
 from deodr.triangulated_mesh import ColoredTriMesh
 
 

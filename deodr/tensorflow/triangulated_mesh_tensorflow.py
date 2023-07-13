@@ -1,10 +1,11 @@
 """Tensorflow implementation of a triangulated mesh."""
-import numpy as np
-import tensorflow as tf
 from typing import Optional
 
-from .tools import scipy_sparse_matrix_to_tensorflow
+import numpy as np
+import tensorflow as tf
+
 from ..triangulated_mesh import ColoredTriMesh, TriMeshAdjacencies
+from .tools import scipy_sparse_matrix_to_tensorflow
 
 
 class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):

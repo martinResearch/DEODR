@@ -1,20 +1,19 @@
 """Modules containing classes to fit 3D meshes to images using differentiable rendering."""
 
-from typing import Any, Dict, List, Optional, Tuple
 import copy
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 
 from . import Camera, ColoredTriMesh, LaplacianRigidEnergy, Scene3D
 from .tools import (
+    check_jacobian_finite_differences,
     normalize,
     normalize_backward,
     qrot,
     qrot_backward,
-    check_jacobian_finite_differences,
 )
 
 

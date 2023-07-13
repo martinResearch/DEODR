@@ -1,12 +1,13 @@
 import os
 from typing import List
-
 from xml.dom import minidom
-from .obj import save_obj
+
 from imageio import imwrite
 import numpy as np
-from .triangulated_mesh import ColoredTriMesh
+
 from .differentiable_renderer import Camera
+from .obj import save_obj
+from .triangulated_mesh import ColoredTriMesh
 
 
 def export_meshlab(

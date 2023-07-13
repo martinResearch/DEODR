@@ -1,19 +1,17 @@
 # type: ignore
 """Modules containing pytorch classes to fit 3D meshes to images using differentiable rendering."""
 
-from typing import Callable, Optional, Tuple
 import copy
+from typing import Callable, Optional, Tuple
 
 import numpy as np
-
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
-
 import torch
 
 from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
-from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
 from .. import LaplacianRigidEnergy
+from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
 
 
 def print_grad(name: str) -> Callable[[torch.Tensor], None]:

@@ -2,8 +2,8 @@
 """Pytorch implementation of a triangulated mesh."""
 
 from typing import Callable, Optional
-import numpy as np
 
+import numpy as np
 import torch
 from torch.sparse import DoubleTensor  # type: ignore
 

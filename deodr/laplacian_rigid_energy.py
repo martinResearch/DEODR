@@ -1,8 +1,8 @@
 """Implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
-from typing import Tuple
-import numpy as np
-
 import copy
+from typing import Tuple
+
+import numpy as np
 import scipy
 import scipy.sparse
 

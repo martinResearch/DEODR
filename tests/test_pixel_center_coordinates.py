@@ -1,8 +1,9 @@
 """Test using rgb mesh rendering."""
 
 
-from deodr.differentiable_renderer import Scene2D
 import numpy as np
+
+from deodr.differentiable_renderer import Scene2D
 
 
 def test_upper_left_pixel_center_coordinates() -> None:

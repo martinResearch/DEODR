@@ -1,8 +1,8 @@
 """Tensorflow interface to deodr."""
 
 from typing import Callable, Iterable, Optional, Tuple
-import numpy as np
 
+import numpy as np
 import tensorflow as tf
 
 from .. import differentiable_renderer_cython  # type: ignore

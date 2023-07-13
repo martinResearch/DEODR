@@ -1,6 +1,7 @@
 """Tooling functions for 3D geometry processing with their backward derivatives implementations."""
 
 from typing import Callable, Tuple
+
 import numpy as np
 
 

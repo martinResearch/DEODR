@@ -1,18 +1,15 @@
 """example fitting a texture mesh to an image using face images"""
 
 from typing import Dict, Tuple
+
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial import Delaunay
+from sklearn import decomposition
+import sklearn.datasets
 
 from deodr.differentiable_renderer import Scene2D
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
-from scipy.spatial import Delaunay
-
-import sklearn.datasets
-from sklearn import decomposition
 
 
 def main() -> None:

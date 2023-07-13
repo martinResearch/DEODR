@@ -1,22 +1,15 @@
 """Modules containing Tensorflow classes to fit 3D meshes to images using differentiable rendering."""
+import copy
 from typing import Optional, Tuple, Union
 
-import copy
-
 import numpy as np
-
 import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
-
 import tensorflow as tf
 
-from . import (
-    CameraTensorflow,
-    LaplacianRigidEnergyTensorflow,
-    Scene3DTensorflow,
-)
-from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
+from . import CameraTensorflow, LaplacianRigidEnergyTensorflow, Scene3DTensorflow
 from .. import LaplacianRigidEnergy
+from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 
 
 def qrot(q: tf.Tensor, v: tf.Tensor) -> tf.Tensor:

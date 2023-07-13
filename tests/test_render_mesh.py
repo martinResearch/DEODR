@@ -1,16 +1,15 @@
 """Test using rgb mesh rendering."""
 
+import hashlib
 import os
 
+import imageio.v3 as imageio
+import numpy as np
+
 import deodr
+from deodr import differentiable_renderer_cython  # type: ignore
 from deodr.examples.render_mesh import example_moderngl, example_rgb
 from deodr.examples.triangle_soup_fitting import create_example_scene
-from deodr import differentiable_renderer_cython  # type: ignore
-
-import imageio.v3 as imageio
-
-import numpy as np
-import hashlib
 
 
 def test_render_mesh_moderngl() -> None:

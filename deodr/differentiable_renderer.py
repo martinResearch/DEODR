@@ -2,11 +2,11 @@
 
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, overload
-from typing_extensions import Literal
+from typing import Any, Dict, Iterable, List, Optional, overload, Tuple, Union
 import warnings
 
 import numpy as np
+from typing_extensions import Literal
 
 from deodr.triangulated_mesh import ColoredTriMesh
 

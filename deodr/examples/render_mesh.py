@@ -2,19 +2,17 @@
 
 import os
 from typing import Tuple
+
+import imageio.v3 as imageio
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.transform import Rotation
+import trimesh
+
 import deodr
 from deodr import differentiable_renderer
+from deodr.differentiable_renderer import Camera, Scene3D
 from deodr.triangulated_mesh import ColoredTriMesh
-from deodr.differentiable_renderer import Scene3D, Camera
-import imageio.v3 as imageio
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
-from scipy.spatial.transform import Rotation
-
-import trimesh
 
 
 def default_scene(
@@ -130,7 +128,7 @@ def example_pyrender(
 
 
 def example_moderngl(display: bool = True, width: int = 640, height: int = 480) -> None:
-    import deodr.opengl.moderngl
+    from deodr.opengl.moderngl import OffscreenRenderer  # type: ignore
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     for integer_pixel_centers in [True, False]:
@@ -146,7 +144,7 @@ def example_moderngl(display: bool = True, width: int = 640, height: int = 480) 
         camera.extrinsic[1, 1] = camera.extrinsic[1, 1] * 0.9
 
         image_no_antialiasing = scene.render(camera)
-        moderngl_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        moderngl_renderer = OffscreenRenderer()
         moderngl_renderer.set_scene(scene)
         image_moderngl = moderngl_renderer.render(camera)
         diff = np.abs(

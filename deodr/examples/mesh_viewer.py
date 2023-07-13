@@ -1,28 +1,23 @@
 """Example of interactive 3D mesh visualization using DEODR and OpenCV."""
 
-from typing import Any
-
 import argparse
 import os
-import time
 import pickle
-from typing import Callable, Dict, Optional, Tuple, Union
-from typing_extensions import Literal
+import time
+from typing import Any, Callable, Dict, Optional, Tuple, Union
+
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.transform import Rotation
+import trimesh
+from typing_extensions import Literal
 
 import deodr
 from deodr import differentiable_renderer
 from deodr.differentiable_renderer import Camera
+from deodr.opengl.moderngl import OffscreenRenderer  # type: ignore
 from deodr.triangulated_mesh import ColoredTriMesh
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
-from scipy.spatial.transform import Rotation
-
-import trimesh
-
 
 InteractorModeType = Literal["camera_centered", "object_centered_trackball"]
 
@@ -274,9 +269,7 @@ class Viewer:
         self.set_light(light_directional, light_ambient)
         self.recenter_camera()
 
-        self.offscreen_renderer: Optional[
-            "deodr.opengl.moderngl.OffscreenRenderer"
-        ] = None
+        self.offscreen_renderer: Optional[OffscreenRenderer] = None
         if use_moderngl:
             self.setup_moderngl()
 
@@ -294,9 +287,7 @@ class Viewer:
         )
 
     def setup_moderngl(self) -> None:
-        import deodr.opengl.moderngl
-
-        self.offscreen_renderer = deodr.opengl.moderngl.OffscreenRenderer()
+        self.offscreen_renderer = OffscreenRenderer()
         assert self.scene.mesh is not None
         self.scene.mesh.compute_vertex_normals()
         self.offscreen_renderer.set_scene(self.scene)
@@ -374,7 +365,7 @@ class Viewer:
         self.fps = 0
         cv2.namedWindow(self.windowname, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowname, self.width, self.height)
-        cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)
+        cv2.setMouseCallback(self.windowname, self.interactor.mouse_callback)  # type: ignore
         if loop:
             while cv2.getWindowProperty(self.windowname, 0) >= 0:
                 self.refresh()
@@ -549,7 +540,7 @@ class Viewer:
 
             self.video_writer = cv2.VideoWriter(
                 filename,
-                cv2.VideoWriter_fourcc(*self.video_format),
+                cv2.VideoWriter_fourcc(*self.video_format),  # type: ignore
                 30,
                 (self.width, self.height),
             )

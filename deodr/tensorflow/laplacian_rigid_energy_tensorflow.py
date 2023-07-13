@@ -4,8 +4,8 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 
-from .tools import scipy_sparse_matrix_to_tensorflow
 from ..laplacian_rigid_energy import LaplacianRigidEnergy
+from .tools import scipy_sparse_matrix_to_tensorflow
 from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow
 
 

@@ -8,16 +8,12 @@ import time
 from typing import List
 
 import cv2
+from imageio.v3 import imwrite
+import matplotlib.pyplot as plt
+import numpy as np
 
 import deodr
 from deodr import ColoredTriMesh
-
-from imageio.v3 import imwrite
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
 from deodr.mesh_fitter import MeshDepthFitter
 from deodr.pytorch import MeshDepthFitter as PytorchMeshDepthFitter
 from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
