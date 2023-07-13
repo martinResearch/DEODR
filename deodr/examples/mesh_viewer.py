@@ -111,7 +111,6 @@ class Interactor:
         self.shift_is_down = flags & cv2.EVENT_FLAG_SHIFTKEY
 
         if self.left_is_down and not (self.ctrl_is_down):
-
             if self.mode == "camera_centered":
                 rot_vec = np.array(
                     [
@@ -127,7 +126,6 @@ class Interactor:
                 self.y_last = y
 
             elif self.mode == "object_centered_trackball":
-
                 self.rotate(
                     np.array(
                         [
@@ -195,7 +193,6 @@ class Interactor:
     def print_help(self) -> None:
         help_str = "" + "Mouse:\n"
         if self.mode == "object_centered_trackball":
-
             help_str += (
                 "mouse left + vertical motion: rotate object along camera x axis\n"
             )

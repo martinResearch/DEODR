@@ -29,7 +29,6 @@ def run(
     display: bool = True,
     max_iter: int = 400,
 ) -> None:
-
     file_folder = os.path.dirname(__file__)
     hand_images = [
         imread(file).astype(np.double) / 255
@@ -97,7 +96,6 @@ def run(
         os.makedirs(iter_folder)
 
     for niter in range(max_iter):
-
         energy, image, diff_image = hand_fitter.step(check_gradient=False)
         energies.append(energy)
         durations.append(time.time() - start)

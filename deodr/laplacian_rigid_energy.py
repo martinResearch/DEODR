@@ -13,7 +13,6 @@ class LaplacianRigidEnergy:
     """Class that implements an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
     def __init__(self, mesh: TriMesh, vertices: np.ndarray, cregu: float):
-
         self.cT = scipy.sparse.kron(
             mesh.adjacencies.laplacian.T * mesh.adjacencies.laplacian,
             scipy.sparse.eye(3),
@@ -38,7 +37,6 @@ class LaplacianRigidEnergy:
         self,
         vertices: np.ndarray,
     ) -> Tuple[float, np.ndarray, scipy.sparse.csr_matrix]:
-
         diff = (vertices - self.vertices_ref).flatten()
         grad_vertices = self.cregu * (self.cT * diff).reshape((vertices.shape[0], 3))
         energy = 0.5 * diff.dot(grad_vertices.flatten())

@@ -16,7 +16,6 @@ def export_meshlab(
     images: List[np.ndarray],
     obj_name: str = "mesh.obj",
 ) -> None:
-
     root = minidom.Document()
     xml = root.createElement("MeshLabProject")
     root.appendChild(xml)

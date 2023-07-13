@@ -140,7 +140,6 @@ class MeshDepthFitter:
         )  # that will lead to a gradient that is in the tangeant space
 
     def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
-
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
         depth = self.render()
 
@@ -623,7 +622,6 @@ class MeshRGBFitterWithPoseMultiFrame:
     def step(
         self, check_gradient: bool = False
     ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
-
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
         self.nb_frames = len(self.mesh_images)

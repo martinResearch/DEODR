@@ -29,7 +29,6 @@ def test_render_mesh_duck(update: bool = False) -> None:
 
 
 def test_render_mesh_triangle_soup() -> None:
-
     np.random.seed(2)
     scene_gt = create_example_scene(clockwise=True)
 

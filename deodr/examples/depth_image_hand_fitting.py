@@ -31,7 +31,6 @@ def run(
     max_iter: int = 300,
     n_subdivision: int = 0,
 ) -> List[float]:
-
     file_folder = os.path.dirname(__file__)
 
     depth_image = np.fliplr(

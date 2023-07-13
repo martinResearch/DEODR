@@ -420,7 +420,6 @@ class ColoredTriMesh(TriMesh):
         elif mesh.visual.kind == "texture":
             # Configure UV coordinates
             if mesh.visual.uv is not None:
-
                 texture = np.array(mesh.visual.material.image) / 255
                 texture.setflags(write=False)
 

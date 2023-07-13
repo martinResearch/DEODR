@@ -119,7 +119,6 @@ class Scene3DTensorflow(Scene3D):
         return self.mesh.vertices_colors * vertices_luminosity[:, None]
 
     def _render_2d(self) -> tf.Tensor:
-
         return (
             TensorflowDifferentiableRender2D(
                 self.scene_2d.ij, self.scene_2d.colors, self

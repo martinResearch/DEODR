@@ -38,7 +38,6 @@ def run(
     max_iter: int = 100,
     n_subdivision: int = 0,
 ) -> List[float]:
-
     MeshFittersSelector = {
         "none": MeshRGBFitterWithPose,
         "pytorch": PyTorchMeshRGBFitterWithPose,
@@ -175,7 +174,6 @@ def run(
 
 
 def main() -> None:
-
     display = True
     save_images = False
     n_subdivision = 1

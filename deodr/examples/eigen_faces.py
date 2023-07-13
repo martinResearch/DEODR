@@ -200,7 +200,6 @@ def main() -> None:
     lambdas = {"points_deformed": 0.0001, "pca_coefs": 0.5}
 
     for niter in range(nb_iter):
-
         E, grads = fun(**variables)
         print(f"iter{niter} E={E}")
         for name in variables:

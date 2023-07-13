@@ -127,7 +127,6 @@ class MeshDepthFitter:
         )  # centervertices because we have another paramter to control translations
 
         with tf.GradientTape() as tape:
-
             vertices_with_grad = tf.constant(self.vertices)
             quaternion_with_grad = tf.constant(self.transform_quaternion)
             translation_with_grad = tf.constant(self.transform_translation)
@@ -330,9 +329,7 @@ class MeshRGBFitterWithPose:
         self.iter = 0
 
     def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
-
         with tf.GradientTape() as tape:
-
             vertices_with_grad = tf.constant(self.vertices)
             quaternion_with_grad = tf.constant(self.transform_quaternion)
             translation_with_grad = tf.constant(self.transform_translation)

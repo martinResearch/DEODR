@@ -24,7 +24,6 @@ def default_scene(
     use_distortion: bool = True,
     integer_pixel_centers: bool = True,
 ) -> Tuple[Scene3D, Camera]:
-
     mesh_trimesh = trimesh.load(obj_file)
 
     mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)

@@ -1,6 +1,18 @@
 [build-system]
-requires = ["setuptools", "wheel", "numpy>=1.22.0", "Cython"]
+requires = ["setuptools", "wheel", "numpy>=1.22.0", "Cython>=0.29"]
 build-backend = "setuptools.build_meta"
 
 [project]
+name = "DEODR"
+version = "0.2.0"
+description = "A differentiable 3D mesh renderer"
+authors = [  { name = "Martin de La Gorce", email = "martin.delgorce@gmail.com" }]
 requires-python = ">=3.8"
+license = { text = "BSD" }
+
+dependencies = [
+  "numpy>=1.22.0", "scipy"
+]
+
+[tool.setuptools]
+package-data = {"deodr"= ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}

@@ -19,7 +19,6 @@ def read_obj(filename: str) -> Tuple[np.ndarray, np.ndarray]:
     fid = open(filename, "r")
     node_counter = 0
     while True:
-
         line = fid.readline()
         if line == "":
             break

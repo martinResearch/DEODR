@@ -57,7 +57,6 @@ def renderScene(
     err_buffer: Optional[np.ndarray] = None,
     check_valid: bool = True,
 ) -> None:
-
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
         # when installed from a wheel. this also make interactive debugging easier
@@ -149,7 +148,6 @@ def renderSceneB(
     err_buffer_b: Optional[np.ndarray] = None,
     check_valid: bool = True,
 ) -> None:
-
     if check_valid:
         # doing checks here as it seems the debugger in not able to find the pyx file
         # when installed from a wheel. this also make interactive debugging easier
@@ -280,7 +278,6 @@ class Camera:
         checks: bool = True,
         tol: float = 1e-6,
     ):
-
         if checks:
             assert extrinsic.shape == (3, 4)
             assert intrinsic.shape == (3, 3)
@@ -424,7 +421,6 @@ class Camera:
         store_backward: Dict[str, Any],
         depths_b: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-
         if self.distortion is None:
             p_camera, depths, projected = store_backward["project_points"]
             projected_b = projected_image_coordinates_b.dot(

@@ -10,7 +10,6 @@ def check_results(
     hashes: List[str],
     check_hashes: bool,
 ) -> None:
-
     for lkg_results in all_lkg_results:
         valid = all(
             losses[key] == value for key, value in lkg_results["losses"].items()
@@ -26,7 +25,6 @@ def check_results(
 
 
 def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
-
     losses, hashes = run(
         nb_max_iter=50, display=False, clockwise=False, antialiase_error=False
     )

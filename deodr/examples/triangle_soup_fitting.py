@@ -19,9 +19,12 @@ import numpy as np
 
 
 def create_example_scene(
-    n_tri: int = 30, width: int = 200, height: int = 200, clockwise: bool = False, textured_ratio:float=0.5
+    n_tri: int = 30,
+    width: int = 200,
+    height: int = 200,
+    clockwise: bool = False,
+    textured_ratio: float = 0.5,
 ) -> Scene2D:
-
     material = (
         imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
     )
@@ -33,7 +36,6 @@ def create_example_scene(
 
     triangles = []
     for _ in range(n_tri):
-
         tmp = scale_matrix.dot(
             np.random.rand(2, 1).dot(np.ones((1, 3)))
             + 0.5 * (-0.5 + np.random.rand(2, 3))
@@ -51,7 +53,7 @@ def create_example_scene(
             "depths": (np.random.rand(1) * np.ones((3, 1))),
         }
 
-        triangle["textured"] = np.random.rand(1) > (1-textured_ratio)
+        triangle["textured"] = np.random.rand(1) > (1 - textured_ratio)
 
         if triangle["textured"]:
             triangle["uv"] = (
@@ -202,7 +204,6 @@ def run(
 
 
 def run_with_and_without_antialiased_error(display: bool = True) -> None:
-
     if display:
         fig = plt.figure()
         ax = fig.add_subplot(111)

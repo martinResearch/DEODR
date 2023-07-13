@@ -32,7 +32,6 @@ def test_upper_left_pixel_center_coordinates() -> None:
 
     clockwise = True
     for integer_pixel_centers in [False, True]:
-
         if integer_pixel_centers:
             points_coordinates = [
                 (0.0, 0.0),  # upper left

@@ -72,7 +72,9 @@ def jacobian_finite_differences(
         nx_flat[d] = v
         jacobian[:, d] = (d1 - d2).flatten() / (2 * epsilon)
     v02 = func(x)
-    assert np.allclose(v0, v02), "The value of the function changed. The function has a state or is non deterministic"
+    assert np.allclose(
+        v0, v02
+    ), "The value of the function changed. The function has a state or is non deterministic"
     return jacobian
 
 

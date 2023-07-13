@@ -8,7 +8,6 @@ import tensorflow as tf
 
 
 def test_depth_image_hand_fitting_pytorch() -> None:
-
     energies = run(
         dl_library="pytorch",
         plot_curves=False,
@@ -27,7 +26,6 @@ def test_depth_image_hand_fitting_pytorch() -> None:
 
 
 def test_depth_image_hand_fitting_numpy() -> None:
-
     energies = run(
         dl_library="none",
         plot_curves=False,
@@ -46,7 +44,6 @@ def test_depth_image_hand_fitting_numpy() -> None:
 
 
 def test_depth_image_hand_fitting_tensorflow() -> None:
-
     tf.config.set_visible_devices(
         [], "GPU"
     )  # Running on CPU to get determinisic results
