@@ -16,3 +16,4 @@ dependencies = [
 
 [tool.setuptools]
 package-data = {"deodr"= ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}
+packages = ["deodr"]
