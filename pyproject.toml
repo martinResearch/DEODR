@@ -19,4 +19,4 @@ line-length = 88
 
 [tool.setuptools]
 package-data = {"deodr"= ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}
-packages = ["deodr"]
+packages = ["deodr", "deodr.examples", "deodr.opengl", "deodr.pytorch", "deodr.tensorflow"]
