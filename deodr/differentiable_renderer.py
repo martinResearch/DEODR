@@ -131,7 +131,7 @@ def renderScene(
             assert obs.shape[1] == width
             assert obs.shape[2] == nb_colors
 
-    differentiable_renderer_cython.renderScene(
+    differentiable_renderer_cython.renderSceneCpp(
         scene, sigma, image, z_buffer, antialiase_error, obs, err_buffer
     )
 
@@ -252,7 +252,7 @@ def renderSceneB(
             assert image_b.shape[0] == height
             assert image_b.shape[1] == width
 
-    differentiable_renderer_cython.renderSceneB(
+    differentiable_renderer_cython.renderSceneBCpp(
         scene,
         sigma,
         image,

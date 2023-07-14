@@ -1,5 +1,4 @@
 # distutils: language = c++
-cimport _differentiable_renderer
 from libcpp cimport bool
 
 import cython
@@ -48,7 +47,7 @@ cdef extern from "../C++/DifferentiableRenderer.h":
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def renderScene(scene, 
+def renderSceneCpp(scene, 
 		double sigma,
 		np.ndarray[double,ndim = 3,mode = "c"] image, 
 		np.ndarray[double,ndim = 2,mode = "c"] z_buffer,
@@ -57,7 +56,7 @@ def renderScene(scene,
 		np.ndarray[double,ndim = 2,mode = "c"] err_buffer = None, 
 		bool check_valid = 1):
  
-	cdef _differentiable_renderer.Scene scene_c 
+	cdef Scene scene_c 
 
 	if check_valid:
 		assert (not(image is None))
@@ -200,11 +199,11 @@ def renderScene(scene,
 			raise BaseException('obs_ptr is NULL')
 	
 
-	_differentiable_renderer.renderScene( scene_c,image_ptr, z_buffer_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr)
+	renderScene( scene_c,image_ptr, z_buffer_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr)
 	
 @cython.boundscheck(False)
 @cython.wraparound(False)	
-def renderSceneB(scene, 
+def renderSceneBCpp(scene, 
 		double sigma,
 		np.ndarray[double,ndim = 3,mode = "c"] image, 
 		np.ndarray[double,ndim = 2,mode = "c"] z_buffer,
@@ -215,7 +214,7 @@ def renderSceneB(scene,
 		np.ndarray[double,ndim = 2,mode = "c"] err_buffer_b = None,
 		bool check_valid=1):
 
-	cdef _differentiable_renderer.Scene scene_c 
+	cdef Scene scene_c 
 
 	if check_valid:
 		assert (not(image is None))
@@ -403,7 +402,7 @@ def renderSceneB(scene,
 		if image_b_ptr  ==  NULL:
 			raise BaseException('image_b_ptr is NULL')
 	
-	_differentiable_renderer.renderScene_B( scene_c, image_ptr, z_buffer_ptr, image_b_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr, err_buffer_b_ptr)
+	renderScene_B( scene_c, image_ptr, z_buffer_ptr, image_b_ptr, sigma, antialiase_error ,obs_ptr, err_buffer_ptr, err_buffer_b_ptr)
 	scene.uv_b = uv_b_c.reshape(scene.uv_b.shape)
 	scene.ij_b = ij_b_c.reshape(scene.ij_b.shape)
 	scene.shade_b = shade_b_c.reshape(scene.shade_b.shape)
