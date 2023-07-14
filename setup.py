@@ -5,12 +5,13 @@ import re
 
 import numpy as np
 from Cython.Build import cythonize
-from setuptools import setup
+from setuptools import Extension, setup
 
-extensions = "deodr/differentiable_renderer_cython.pyx"
-
-my_modules = cythonize(extensions, annotate=True, language="c++")
-
+extension = Extension(
+    name="deodr.differentiable_renderer_cython",
+    sources=["deodr/differentiable_renderer_cython.pyx"],
+    include_dirs=["deodr",np.get_include()],
+)
 
 with open(os.path.join(os.path.dirname(__file__), "deodr", "__init__.py")) as fp:
     for line in fp:
@@ -21,10 +22,11 @@ with open(os.path.join(os.path.dirname(__file__), "deodr", "__init__.py")) as fp
     else:
         raise RuntimeError("Unable to find own __version__ string")
 print(f"version = {version}")
+
 setup(
     version=version,
     url="https://github.com/martinResearch/DEODR",
     data_files=[("C++", ["C++/DifferentiableRenderer.h"])],
-    ext_modules=my_modules,  # additional source file(s)),
+    ext_modules=cythonize([extension], annotate=True, build_dir="build"),
     include_dirs=[np.get_include()],
 )
