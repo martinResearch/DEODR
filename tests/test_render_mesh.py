@@ -55,7 +55,7 @@ def test_render_mesh_triangle_soup() -> None:
     sigma = 1
     image = np.zeros((scene_gt.height, scene_gt.width, scene_gt.nb_colors))
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
-    differentiable_renderer_cython.renderScene(scene_gt, sigma, image, z_buffer)
+    differentiable_renderer_cython.renderSceneCpp(scene_gt, sigma, image, z_buffer)
 
     filename = os.path.join(os.path.dirname(__file__), "data", "triangle_soup.png")
     # imageio.imwrite(filename,image)

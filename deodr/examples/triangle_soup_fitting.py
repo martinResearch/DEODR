@@ -122,7 +122,7 @@ def run(
     image_target = np.zeros((scene_gt.height, scene_gt.width, scene_gt.nb_colors))
 
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
-    differentiable_renderer_cython.renderScene(scene_gt, sigma, image_target, z_buffer)
+    differentiable_renderer_cython.renderSceneCpp(scene_gt, sigma, image_target, z_buffer)
 
     n_vertices = len(scene_gt.depths)
 

@@ -20,7 +20,7 @@ def benchmark_render_mesh_triangle_soup() -> None:
         image.fill(0)
         z_buffer.fill(0)
         start = time.perf_counter_ns()
-        differentiable_renderer_cython.renderScene(scene_gt, sigma, image, z_buffer)
+        differentiable_renderer_cython.renderSceneCpp(scene_gt, sigma, image, z_buffer)
         elapsed = time.perf_counter_ns() - start
         durations.append(elapsed)
     print(np.median(durations) / 1e9)
