@@ -10,7 +10,7 @@ from setuptools import Extension, setup
 extension = Extension(
     name="deodr.differentiable_renderer_cython",
     sources=["deodr/differentiable_renderer_cython.pyx"],
-    include_dirs=["deodr",np.get_include()],
+    include_dirs=["deodr", np.get_include()],
 )
 
 with open(os.path.join(os.path.dirname(__file__), "deodr", "__init__.py")) as fp:
