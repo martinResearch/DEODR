@@ -60,7 +60,9 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         )  # should automatically detached according to
         # https://pytorch.org/docs/master/notes/extending.html
         scene.colors = colors.detach().numpy()
-        differentiable_renderer_cython.renderSceneCpp(scene.scene_2d, 1, image, z_buffer)
+        differentiable_renderer_cython.renderSceneCpp(
+            scene.scene_2d, 1, image, z_buffer
+        )
         ctx.save_for_backward(ij, colors)
         ctx.image = image.copy()
         # making a copy to keep the antializaed image for visualization ,
