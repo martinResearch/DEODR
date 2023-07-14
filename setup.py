@@ -5,7 +5,7 @@ import re
 
 import numpy as np
 from Cython.Build import cythonize
-from setuptools import Extension, setup
+from setuptools import Extension, find_packages, setup
 
 extension = Extension(
     name="deodr.differentiable_renderer_cython",
@@ -29,4 +29,5 @@ setup(
     data_files=[("C++", ["C++/DifferentiableRenderer.h"])],
     ext_modules=cythonize([extension], annotate=True, build_dir="build"),
     include_dirs=[np.get_include()],
+    packages=find_packages(),
 )
