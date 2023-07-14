@@ -7,7 +7,7 @@ name = "DEODR"
 version = "0.2.0"
 description = "A differentiable 3D mesh renderer"
 authors = [  { name = "Martin de La Gorce", email = "martin.delgorce@gmail.com" }]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "BSD" }
 
 dependencies = [
