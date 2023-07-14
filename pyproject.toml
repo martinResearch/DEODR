@@ -16,6 +16,3 @@ dependencies = [
 
 [tool.black]
 line-length = 88
-
-[tool.setuptools]
-package-data = {"deodr"= ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}
