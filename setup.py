@@ -30,5 +30,5 @@ setup(
     ext_modules=cythonize([extension], annotate=True, build_dir="build"),
     include_dirs=[np.get_include()],
     packages=find_packages(),
-    data = {"deodr"= ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}
+    data = {"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]}
 )
