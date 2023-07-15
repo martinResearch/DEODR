@@ -35,10 +35,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build sdist
-        run: pipx run build --sdist
+      run: pipx run build --sdist
     - uses: actions/upload-artifact@v2
-        with:
-        path: dist/*.tar.gz
+      with:
+      path: dist/*.tar.gz
             
             
   upload_pypi:
@@ -47,9 +47,9 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
     - uses: actions/download-artifact@v2
-        with:
-        name: artifact
-        path: dist
+      with:
+      name: artifact
+      path: dist
 
     - name: Publish
       env:
