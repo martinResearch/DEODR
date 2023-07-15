@@ -72,7 +72,7 @@ def export_meshlab(
         plane.setAttribute("semantic", "1")
         ml_raster.appendChild(plane)
 
-        imwrite(image_file, image)
+        imwrite(image_file, image.astype(np.uint8))
         ml_mesh.setAttribute("label", image_file)
         render_group.appendChild(ml_raster)
 
