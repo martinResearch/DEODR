@@ -2,7 +2,7 @@ import os
 from typing import List
 from xml.dom import minidom
 
-from imageio import imwrite
+from imageio.v3 import imwrite
 import numpy as np
 
 from .differentiable_renderer import Camera
