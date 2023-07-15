@@ -68,7 +68,7 @@ def TensorflowDifferentiableRender2D(
         scene.scene_2d.colors = np.array(colors)
 
         scene.scene_2d.depths = np.array(scene.scene_2d.depths)
-        differentiable_renderer_cython.renderScene(scene.scene_2d, 1, image, z_buffer)
+        differentiable_renderer_cython.renderSceneCpp(scene.scene_2d, 1, image, z_buffer)
 
         def backward(image_b: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             assert scene.scene_2d.colors is not None
@@ -82,7 +82,7 @@ def TensorflowDifferentiableRender2D(
             )  # making a copy to avoid removing antialiasing on the image returned by
             # the forward pass (the c++ back-propagation undoes antialiasing), could be
             # optional if we don't care about getting aliased images
-            differentiable_renderer_cython.renderSceneB(
+            differentiable_renderer_cython.renderSceneBCpp(
                 scene.scene_2d, 1, image_copy, z_buffer, image_b.numpy()
             )
             return tf.constant(scene.scene_2d.ij_b), tf.constant(

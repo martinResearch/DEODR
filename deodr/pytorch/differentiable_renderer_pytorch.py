@@ -80,7 +80,7 @@ class TorchDifferentiableRenderer2DFunc(torch.autograd.Function):
         scene.scene_2d.shade_b = np.zeros(scene.scene_2d.shade.shape)
         scene.scene_2d.colors_b = np.zeros(scene.scene_2d.colors.shape)
         scene.scene_2d.texture_b = np.zeros(scene.scene_2d.texture.shape)
-        differentiable_renderer_cython.renderSceneB(
+        differentiable_renderer_cython.renderSceneBCpp(
             scene.scene_2d, 1, ctx.image, ctx.z_buffer, image_b.numpy()
         )
         return (
