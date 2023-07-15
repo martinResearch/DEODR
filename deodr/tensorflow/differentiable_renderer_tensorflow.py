@@ -68,7 +68,9 @@ def TensorflowDifferentiableRender2D(
         scene.scene_2d.colors = np.array(colors)
 
         scene.scene_2d.depths = np.array(scene.scene_2d.depths)
-        differentiable_renderer_cython.renderSceneCpp(scene.scene_2d, 1, image, z_buffer)
+        differentiable_renderer_cython.renderSceneCpp(
+            scene.scene_2d, 1, image, z_buffer
+        )
 
         def backward(image_b: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             assert scene.scene_2d.colors is not None
