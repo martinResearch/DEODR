@@ -38,7 +38,7 @@ jobs:
       run: pipx run build --sdist
     - uses: actions/upload-artifact@v2
       with:
-      path: dist/*.tar.gz
+        path: dist/*.tar.gz
             
             
   upload_pypi:
@@ -48,8 +48,8 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-      name: artifact
-      path: dist
+        name: artifact
+        path: dist
 
     - name: Publish
       env:
