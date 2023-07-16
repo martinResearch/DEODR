@@ -31,6 +31,6 @@ setup(
     include_dirs=[np.get_include()],
     packages=find_packages(),
     package_data={"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]},
-    long_description=open('readme.md', 'r').read(),
-    long_description_content_type='text/markdown',
+    long_description=open("readme.md", "r").read(),
+    long_description_content_type="text/markdown",
 )
