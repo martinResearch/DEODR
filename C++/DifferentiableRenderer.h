@@ -48,9 +48,13 @@ using namespace std;
 	}
 
 void get_edge_xrange_from_ineq(double ineq[12], int width, int y, int &x_begin, int &x_end);
+
 inline void render_part_interpolated(double *image, double *z_buffer, int y_begin, int x_min, int x_max, int y_end, bool strict_edge, double *xy1_to_A, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, bool perspective_correct);
+
 inline void render_part_interpolated_B(double *image, double *image_B, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_A, double *xy1_to_A_B, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, bool perspective_correct);
+
 inline void render_part_textured_gouraud(double *image, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_UV, double *xy1_to_L, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, double *Texture, int *Texture_size, bool perspective_correct);
+
 inline void render_part_textured_gouraud_B(double *image, double *image_B, double *z_buffer, int x_min, int x_max, int y_begin, int y_end, bool strict_edge, double *xy1_to_UV, double *xy1_to_UV_B, double *xy1_to_L, double *xy1_to_L_B, double *xy1_to_Z, double *left_eq, double *right_eq, int width, int height, int sizeA, double *Texture, double *Texture_B, int *Texture_size, bool perspective_correct);
 
 struct Scene
@@ -98,13 +102,21 @@ void inv_matrix_3x3(double *S, double *T)
 	// compute transposed cofactors matrix
 
 	T[0] = (S[4] * S[8] - S[7] * S[5]);
+	
 	T[3] = -(S[3] * S[8] - S[6] * S[5]);
+	
 	T[6] = (S[3] * S[7] - S[6] * S[4]);
+	
 	T[1] = -(S[1] * S[8] - S[7] * S[2]);
+	
 	T[4] = (S[0] * S[8] - S[6] * S[2]);
+	
 	T[7] = -(S[0] * S[7] - S[6] * S[1]);
+	
 	T[2] = (S[1] * S[5] - S[4] * S[2]);
+	
 	T[5] = -(S[0] * S[5] - S[3] * S[2]);
+	
 	T[8] = (S[0] * S[4] - S[3] * S[1]);
 
 	// compute determinant
@@ -113,6 +125,7 @@ void inv_matrix_3x3(double *S, double *T)
 
 	// rescale the cofactor matrix to get the inverse matrix
 	for (int k = 0; k < 9; k++)
+		
 		T[k] *= inv_det;
 }
 
@@ -124,6 +137,7 @@ void inv_matrix_3x3(double *S, double *T)
 void inv_matrix_3x3_B(double *S, double *S_B, double *T, double *T_B)
 {
 	double Tp[9] = {0};
+	
 	double Tp_B[9] = {0};
 	//	S=	|S[0] S[1] S[2]|
 	//		|S[3] S[4] S[5]|
@@ -135,13 +149,21 @@ void inv_matrix_3x3_B(double *S, double *S_B, double *T, double *T_B)
 	// compute transposed cofactors matrix
 
 	Tp[0] = (S[4] * S[8] - S[7] * S[5]);
+	
 	Tp[3] = -(S[3] * S[8] - S[6] * S[5]);
+	
 	Tp[6] = (S[3] * S[7] - S[6] * S[4]);
+	
 	Tp[1] = -(S[1] * S[8] - S[7] * S[2]);
+	
 	Tp[4] = (S[0] * S[8] - S[6] * S[2]);
+	
 	Tp[7] = -(S[0] * S[7] - S[6] * S[1]);
+	
 	Tp[2] = (S[1] * S[5] - S[4] * S[2]);
+	
 	Tp[5] = -(S[0] * S[5] - S[3] * S[2]);
+	
 	Tp[8] = (S[0] * S[4] - S[3] * S[1]);
 
 	// compute determinant
@@ -150,12 +172,15 @@ void inv_matrix_3x3_B(double *S, double *S_B, double *T, double *T_B)
 
 	// rescale the cofactor matrix to get the inverse matrix
 	for (int k = 0; k < 9; k++)
+		
 		T[k] = Tp[k] * inv_det;
 
 	double inv_det_b = 0;
+	
 	for (int k = 0; k < 9; k++)
 	{
 		inv_det_b += Tp[k] * T_B[k];
+		
 		Tp_B[k] += inv_det * T_B[k];
 	}
 	// double t = (S[0] * Tp[0] + S[1] * Tp[3] + S[2] * Tp[6]);
@@ -163,71 +188,104 @@ void inv_matrix_3x3_B(double *S, double *S_B, double *T, double *T_B)
 	double t_B = inv_det_b * (-inv_det * inv_det); //?
 
 	S_B[0] += Tp[0] * t_B;
+	
 	Tp_B[0] += S[0] * t_B;
+	
 	S_B[1] += Tp[3] * t_B;
+	
 	Tp_B[3] += S[1] * t_B;
+
 	S_B[2] += Tp[6] * t_B;
+	
 	Tp_B[6] += S[2] * t_B;
 
 	//Tp[0]=(S[4]*S[8]-S[7]*S[5]);
 
 	S_B[4] += S[8] * Tp_B[0];
+	
 	S_B[8] += S[4] * Tp_B[0];
+	
 	S_B[7] += -S[5] * Tp_B[0];
+	
 	S_B[5] += -S[7] * Tp_B[0];
 
 	//Tp[3]=-(S[3]*S[8]-S[6]*S[5]);
 
 	S_B[3] += -S[8] * Tp_B[3];
+	
 	S_B[8] += -S[3] * Tp_B[3];
+	
 	S_B[6] += S[5] * Tp_B[3];
+	
 	S_B[5] += S[6] * Tp_B[3];
 
 	// Tp[6]=(S[3]*S[7]-S[6]*S[4]);
 
 	S_B[3] += S[7] * Tp_B[6];
+	
 	S_B[7] += S[3] * Tp_B[6];
+	
 	S_B[6] += -S[4] * Tp_B[6];
+	
 	S_B[4] += -S[6] * Tp_B[6];
 
 	//	Tp[1]=-(S[1]*S[8]-S[7]*S[2]);
 
 	S_B[1] += -S[8] * Tp_B[1];
+	
 	S_B[8] += -S[1] * Tp_B[1];
+	
 	S_B[7] += S[2] * Tp_B[1];
+	
 	S_B[2] += S[7] * Tp_B[1];
 
 	//	Tp[4]=(S[0]*S[8]-S[6]*S[2]);
 
 	S_B[0] += S[8] * Tp_B[4];
+	
 	S_B[8] += S[0] * Tp_B[4];
+
 	S_B[6] += -S[2] * Tp_B[4];
+	
 	S_B[2] += -S[6] * Tp_B[4];
 
 	//	Tp[7]=-(S[0]*S[7]-S[6]*S[1]);
 
 	S_B[0] += -S[7] * Tp_B[7];
+	
 	S_B[7] += -S[0] * Tp_B[7];
+	
 	S_B[6] += S[1] * Tp_B[7];
+	
 	S_B[1] += S[6] * Tp_B[7];
+	
 
 	//	Tp[2]=(S[1]*S[5]-S[4]*S[2]);
 	S_B[1] += S[5] * Tp_B[2];
+	
 	S_B[5] += S[1] * Tp_B[2];
+	
 	S_B[4] += -S[2] * Tp_B[2];
+	
 	S_B[2] += -S[4] * Tp_B[2];
 
 	//	Tp[5]=-(S[0]*S[5]-S[3]*S[2]);
 
 	S_B[0] += -S[5] * Tp_B[5];
+	
 	S_B[5] += -S[0] * Tp_B[5];
+	
 	S_B[3] += S[2] * Tp_B[5];
+	
 	S_B[2] += S[3] * Tp_B[5];
 
 	//	Tp[8]=(S[0]*S[4]-S[3]*S[1]);
 	S_B[0] += S[4] * Tp_B[8];
+	
 	S_B[4] += S[0] * Tp_B[8];
+	
 	S_B[3] += -S[1] * Tp_B[8];
+	
 	S_B[1] += -S[3] * Tp_B[8];
 }
 
@@ -236,7 +294,9 @@ inline void mul_matrix3x3_vect(double R[3], double M[9], double V[3])
 	for (int i = 0; i < 3; i++) //v:vertex , d:dimension
 	{
 		R[i] = 0;
+		
 		for (int j = 0; j < 3; j++)
+			
 			R[i] += M[3 * i + j] * V[j];
 	}
 }
@@ -246,6 +306,7 @@ inline void mul_matrix3x3_vect_B(double R_B[3], double M_B[9], const double V[3]
 	for (int i = 0; i < 3; i++) //v:vertex , d:dimension
 	{
 		for (int j = 0; j < 3; j++)
+			
 			M_B[3 * i + j] += R_B[i] * V[j];
 	}
 }
@@ -255,7 +316,9 @@ inline void mul_matrixNx3_vect(int N, double R[], double M[], double V[3])
 	for (int i = 0; i < N; i++) //v:vertex , d:dimension
 	{
 		R[i] = 0;
+		
 		for (int j = 0; j < 3; j++)
+			
 			R[i] += M[3 * i + j] * V[j];
 	}
 }
@@ -265,6 +328,7 @@ inline void mul_matrixNx3_vect_B(int N, double R_B[], double M_B[], const double
 	for (int i = 0; i < N; i++) //v:vertex , d:dimension
 	{
 		for (int j = 0; j < 3; j++)
+			
 			M_B[3 * i + j] += R_B[i] * V[j];
 	}
 }
@@ -274,7 +338,9 @@ inline void mul_vect_matrix3x3(double R[3], double V[3], double M[9])
 	for (int i = 0; i < 3; i++) //v:vertex , d:dimension
 	{
 		R[i] = 0;
+		
 		for (int j = 0; j < 3; j++)
+			
 			R[i] += M[3 * j + i] * V[j];
 	}
 }
@@ -287,6 +353,7 @@ inline void mul_vect_matrix3x3_B(const double R[3], const double R_B[3], const d
 		for (int j = 0; j < 3; j++)
 		{
 			M_B[3 * j + i] += R_B[i] * V[j];
+			
 			V_B[j] += R_B[i] * M[3 * j + i];
 		}
 		//	R[i]+=M[3*j+i]*V[j];
@@ -302,8 +369,11 @@ inline void mul_matrix(const int I, const int J, const int K, double *AB, double
 		for (int k = 0; k < K; k++)
 		{
 			double *ptr = &AB[K * i + k];
+			
 			*ptr = 0;
+			
 			for (int j = 0; j < J; j++)
+				
 				*ptr += A[i * J + j] * B[j * K + k];
 		}
 }
@@ -314,19 +384,27 @@ inline void mul_matrix_B(const int I, const int J, const int K, double *AB, doub
 // AB=A*B
 {
 	for (int i = 0; i < I; i++) //v:vertex , d:dimension
+		
 		for (int k = 0; k < K; k++)
 		{
 			double *ptr;
+			
 			ptr = &AB[K * i + k];
+			
 			*ptr = 0;
+			
 			for (int j = 0; j < J; j++)
+				
 				*ptr += A[i * J + j] * B[j * K + k];
 
 			ptr = &AB_B[K * i + k];
+			
 			for (int j = 0; j < J; j++)
+				
 			//*ptr+=A[i*J+j]*B[j*K+k];
 			{
 				A_B[i * J + j] += *ptr * B[j * K + k];
+				
 				B_B[j * K + k] += *ptr * A[i * J + j];
 			}
 		}
@@ -338,7 +416,9 @@ inline void mul_matrix3x3_vect(double R[3], const double **M, const double V[3])
 	for (int i = 0; i < 3; i++) //v:vertex , d:dimension
 	{
 		R[i] = 0;
+		
 		for (int j = 0; j < 3; j++)
+			
 			R[i] += M[j][i] * V[j];
 	}
 }
@@ -347,11 +427,15 @@ inline void mul_matrix_3x3(double AB[9], const double **A, const double B[3])
 // A is given one column after antother column
 {
 	for (int i = 0; i < 3; i++) //v:vertex , d:dimension
+		
 		for (int j = 0; j < 3; j++)
 		{
 			double *ptr = &AB[3 * i + j];
+			
 			*ptr = 0;
+			
 			for (int k = 0; k < 3; k++)
+				
 				*ptr += A[k][i] * B[3 * k + j];
 		}
 }
@@ -359,14 +443,18 @@ inline void mul_matrix_3x3(double AB[9], const double **A, const double B[3])
 inline double dot_prod(const double V1[3], const double V2[3])
 {
 	double R = 0;
+	
 	for (int i = 0; i < 3; i++)
+		
 		R += V1[i] * V2[i];
+	
 	return R;
 }
 
 inline void dot_prod_B(const double R_B, double V1_B[3], const double V2[3])
 {
 	for (int i = 0; i < 3; i++)
+		
 		V1_B[i] += R_B * V2[i];
 }
 
@@ -377,11 +465,13 @@ inline void Edge_equ3(double e[3], const double v1[2], const double v2[2], bool 
 	if (clockwise)
 	{
 		e[0] = (v1[1] - v2[1]);
+		
 		e[1] = (v2[0] - v1[0]);
 	}
 	else
 	{
 		e[0] = (v2[1] - v1[1]);
+		
 		e[1] = (v1[0] - v2[0]);
 	}
 
@@ -391,8 +481,11 @@ inline void Edge_equ3(double e[3], const double v1[2], const double v2[2], bool 
 double signedArea(double ij[3][2], bool clockwise)
 {
 	double ux = ij[1][0] - ij[0][0];
+	
 	double uy = ij[1][1] - ij[0][1];
+	
 	double vx = ij[2][0] - ij[0][0];
+	
 	double vy = ij[2][1] - ij[0][1];
 	return 0.5 * (ux * vy - vx * uy) * (clockwise ? 1 : -1);
 }
