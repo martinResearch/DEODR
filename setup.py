@@ -23,6 +23,7 @@ with open(os.path.join(os.path.dirname(__file__), "deodr", "__init__.py")) as fp
         raise RuntimeError("Unable to find own __version__ string")
 print(f"version = {version}")
 
+readme_file = os.path.join(os.path.dirname(__file__), "readme.md")
 setup(
     version=version,
     url="https://github.com/martinResearch/DEODR",
@@ -31,6 +32,6 @@ setup(
     include_dirs=[np.get_include()],
     packages=find_packages(),
     package_data={"deodr": ["*.pyx", "*.pxd", "data/*.*", "data/**/*.*"]},
-    long_description=open("readme.md", "r").read(),
+    long_description=open(readme_file, "r").read(),
     long_description_content_type="text/markdown",
 )

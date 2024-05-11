@@ -1,4 +1,5 @@
 """Implementation of triangulated meshes."""
+
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
@@ -195,7 +196,7 @@ class TriMesh:
         assert np.all(faces >= 0)
 
         self._faces = faces
-        self.nb_vertices = int(np.max(faces)) + 1
+        self.nb_vertices = vertices.shape[0]
         self.nb_faces = int(faces.shape[0])
 
         self._face_normals: Optional[np.ndarray] = None
@@ -243,8 +244,14 @@ class TriMesh:
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle.
         """
+        if not  self._adjacencies.is_closed:
+            raise (
+                BaseException(
+                    "The volume can only be computed for closed manifold surfaces"
+                )
+            )
         return (
-            (1 if self.clockwise else -1)
+            (-1 if self.clockwise else 1)
             * np.sum(
                 np.linalg.det(
                     np.dstack(
@@ -263,7 +270,7 @@ class TriMesh:
         """Check the mesh faces are properly oriented for the normals to point
         outward.
         """
-        if self.compute_volume() > 0:
+        if self.compute_volume() < 0:
             raise (
                 BaseException(
                     "The volume within the surface is negative. It seems that you faces"
@@ -510,11 +517,18 @@ class ColoredTriMesh(TriMesh):
         return trimesh.Trimesh(vertices=new_vertices, faces=new_faces, visual=visual)
 
     @staticmethod
-    def load(filename: str) -> "ColoredTriMesh":
+    def load(filename: str, process: bool = False) -> "ColoredTriMesh":
+        """Load a mesh from a file.
+        Args:
+            filename: The file to load the mesh from.
+            process: Whether to process the mesh to remove duplicated vertices and NaNs.
+        Returns:
+            The loaded mesh.
+        """
         import trimesh
 
         mesh_trimesh = trimesh.load(filename)
-        return ColoredTriMesh.from_trimesh(mesh_trimesh)
+        return ColoredTriMesh.from_trimesh(mesh_trimesh, process=process)
 
 
 def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
