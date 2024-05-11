@@ -1,4 +1,5 @@
 """Test using triangle soup rendering."""
+
 from typing import Any, Dict, List
 
 from deodr.examples.triangle_soup_fitting import run
@@ -11,9 +12,7 @@ def check_results(
     check_hashes: bool,
 ) -> None:
     for lkg_results in all_lkg_results:
-        valid = all(
-            losses[key] == value for key, value in lkg_results["losses"].items()
-        )
+        valid = all(losses[key] == value for key, value in lkg_results["losses"].items())
 
         if check_hashes:
             for key, value in lkg_results["hashes"].items():
@@ -25,9 +24,7 @@ def check_results(
 
 
 def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
-    losses, hashes = run(
-        nb_max_iter=50, display=False, clockwise=False, antialiase_error=False
-    )
+    losses, hashes = run(nb_max_iter=50, display=False, clockwise=False, antialiase_error=False)
 
     lkg_results = [
         {  # windows
@@ -48,9 +45,7 @@ def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
 
     check_results(lkg_results, losses, hashes, check_hashes)
 
-    losses, hashes = run(
-        nb_max_iter=50, display=False, clockwise=False, antialiase_error=True
-    )
+    losses, hashes = run(nb_max_iter=50, display=False, clockwise=False, antialiase_error=True)
 
     lkg_results = [
         {
@@ -72,9 +67,7 @@ def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
 
     check_results(lkg_results, losses, hashes, check_hashes)
 
-    losses, hashes = run(
-        nb_max_iter=50, display=False, clockwise=True, antialiase_error=False
-    )
+    losses, hashes = run(nb_max_iter=50, display=False, clockwise=True, antialiase_error=False)
 
     lkg_results = [
         {  # windows
@@ -94,9 +87,7 @@ def test_triangle_soup_fitting(check_hashes: bool = True) -> None:
     ]
 
     check_results(lkg_results, losses, hashes, check_hashes)
-    losses, hashes = run(
-        nb_max_iter=50, display=False, clockwise=True, antialiase_error=True
-    )
+    losses, hashes = run(nb_max_iter=50, display=False, clockwise=True, antialiase_error=True)
 
     lkg_results = [
         {

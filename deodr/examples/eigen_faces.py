@@ -1,4 +1,4 @@
-"""example fitting a texture mesh to an image using face images"""
+"""Example fitting a texture mesh to an image using face images."""
 
 from typing import Dict, Tuple
 
@@ -27,10 +27,8 @@ def main() -> None:
     # faces_pca.inverse_transform(coefs[[0]])
 
     # create a regular grid and a triangulation  of the 2D image
-    N = 5
-    points = np.column_stack(
-        [t.flatten() for t in np.meshgrid(np.arange(N + 1) / N, np.arange(N + 1) / N)]
-    )
+    n = 5
+    points = np.column_stack([t.flatten() for t in np.meshgrid(np.arange(n + 1) / n, np.arange(n + 1) / n)])
     tri = Delaunay(points)
     triangles = tri.simplices.astype(np.uint32)
     plt.triplot(points[:, 0], points[:, 1], triangles)
@@ -39,9 +37,7 @@ def main() -> None:
     # deform the grid
     max_displacement = 0.5
     np.random.seed(0)
-    points_deformed_gt = (
-        points + (np.random.rand(*points.shape) - 0.5) * max_displacement / N
-    )
+    points_deformed_gt = points + (np.random.rand(*points.shape) - 0.5) * max_displacement / n
     points_deformed_gt[on_border] = points[on_border]
     plt.triplot(points_deformed_gt[:, 0], points_deformed_gt[:, 1], triangles)
     # plt.show()
@@ -118,20 +114,14 @@ def main() -> None:
 
     rescale_factor = 10
 
-    def fun(
-        points_deformed: np.ndarray, pca_coefs: np.ndarray
-    ) -> Tuple[float, Dict[str, np.ndarray]]:
+    def fun(points_deformed: np.ndarray, pca_coefs: np.ndarray) -> Tuple[float, Dict[str, np.ndarray]]:
         ij = points_deformed * 64 - 0.5
         # face=faces_pca.inverse_transform(coefs[:,None])
-        face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape(
-            (64, 64)
-        )
+        face = (faces_pca.mean_ + pca_coefs.dot(faces_pca.components_)).reshape((64, 64))
         scene.ij = ij
         scene.texture = face[:, :, None]
         print("render")
-        image, z_buffer, diff_image, err = scene.render_compare_and_backward(
-            obs=image_gt, sigma=1
-        )
+        image, _, diff_image, err = scene.render_compare_and_backward(obs=image_gt, sigma=1)
         assert scene.ij_b is not None  # helping mypy
         print("np.max(np.abs(scene.ij_b))=%f" % np.max(np.abs(scene.ij_b)))
         print("E=%f" % err)
@@ -197,8 +187,8 @@ def main() -> None:
     lambdas = {"points_deformed": 0.0001, "pca_coefs": 0.5}
 
     for niter in range(nb_iter):
-        E, grads = fun(**variables)
-        print(f"iter{niter} E={E}")
+        energy, grads = fun(**variables)
+        print(f"iter{niter} E={energy}")
         for name in variables:
             variables[name] = variables[name] - lambdas[name] * grads[name]
 

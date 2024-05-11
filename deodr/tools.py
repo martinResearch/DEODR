@@ -21,9 +21,7 @@ def qrot(q: np.ndarray, v: np.ndarray) -> np.ndarray:
         return v + 2 * (q[3] * uv + uuv)
 
 
-def qrot_backward(
-    q: np.ndarray, v: np.ndarray, vr_b: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def qrot_backward(q: np.ndarray, v: np.ndarray, vr_b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     uv = np.cross(q[:3], v)
     v_b = vr_b.copy()
     q_b = np.zeros((4))
@@ -49,9 +47,7 @@ def normalize_backward(x: np.ndarray, xn_b: np.ndarray, axis: int = -1) -> np.nd
     return (xn_b + x * np.expand_dims(n_b, axis)) * np.expand_dims(inv_n, axis)
 
 
-def cross_backward(
-    u: np.ndarray, v: np.ndarray, c_b: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def cross_backward(u: np.ndarray, v: np.ndarray, c_b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     v_b = np.cross(c_b, u)
     u_b = np.cross(v, c_b)
     return u_b, v_b
@@ -73,9 +69,7 @@ def jacobian_finite_differences(
         nx_flat[d] = v
         jacobian[:, d] = (d1 - d2).flatten() / (2 * epsilon)
     v02 = func(x)
-    assert np.allclose(
-        v0, v02
-    ), "The value of the function changed. The function has a state or is non deterministic"
+    assert np.allclose(v0, v02), "The value of the function changed. The function has a state or is non deterministic"
     return jacobian
 
 

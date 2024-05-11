@@ -10,9 +10,13 @@ __all__ = [
 ]
 
 
-from .differentiable_renderer_pytorch import CameraPytorch  # type: ignore
-from .differentiable_renderer_pytorch import Scene3DPytorch  # type: ignore
+from .differentiable_renderer_pytorch import (  # type: ignore
+    CameraPytorch,
+    Scene3DPytorch,
+)
 from .laplacian_rigid_energy_pytorch import LaplacianRigidEnergyPytorch  # type: ignore
-from .mesh_fitter_pytorch import MeshDepthFitter  # type: ignore
-from .mesh_fitter_pytorch import MeshRGBFitterWithPose  # type: ignore
+from .mesh_fitter_pytorch import (  # type: ignore
+    MeshDepthFitter,
+    MeshRGBFitterWithPose,
+)
 from .triangulated_mesh_pytorch import ColoredTriMeshPytorch  # type: ignore

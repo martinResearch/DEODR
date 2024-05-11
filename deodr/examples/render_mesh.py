@@ -21,15 +21,12 @@ def default_scene(
     use_distortion: bool = True,
     integer_pixel_centers: bool = True,
 ) -> Tuple[Scene3D, Camera]:
-
     mesh = ColoredTriMesh.load(obj_file)
 
     # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()
     rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()
 
-    camera = differentiable_renderer.default_camera(
-        width, height, 80, mesh.vertices, rot
-    )
+    camera = differentiable_renderer.default_camera(width, height, 80, mesh.vertices, rot)
     if use_distortion:
         camera.distortion = np.array([-0.5, 0.5, 0, 0, 0])
 
@@ -43,9 +40,7 @@ def default_scene(
     return scene, camera
 
 
-def example_rgb(
-    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
-) -> np.ndarray:
+def example_rgb(display: bool = True, save_image: bool = False, width: int = 640, height: int = 480) -> np.ndarray:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
     image = scene.render(camera)
@@ -70,9 +65,7 @@ def normalize_unit_cube(v: np.ndarray) -> np.ndarray:
     return (nv - nv.min()) / (nv.max() - nv.min())
 
 
-def example_channels(
-    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
-) -> None:
+def example_channels(display: bool = True, save_image: bool = False, width: int = 640, height: int = 480) -> None:
     obj_file = os.path.join(deodr.data_path, "duck.obj")
     scene, camera = default_scene(obj_file, width=width, height=height)
 
@@ -88,27 +81,21 @@ def example_channels(
 
     if save_image:
         for name, v in channels.items():
-            image_file = os.path.abspath(
-                os.path.join(deodr.data_path, f"test/duck_{name}.png")
-            )
+            image_file = os.path.abspath(os.path.join(deodr.data_path, f"test/duck_{name}.png"))
             os.makedirs(os.path.dirname(image_file), exist_ok=True)
             image_uint8 = (normalize_unit_cube(v) * 255).astype(np.uint8)
             imageio.imwrite(image_file, image_uint8)
 
 
-def example_pyrender(
-    display: bool = True, save_image: bool = False, width: int = 640, height: int = 480
-) -> None:
+def example_pyrender(display: bool = True, save_image: bool = False, width: int = 640, height: int = 480) -> None:
     import deodr.opengl.pyrender
 
     obj_file = os.path.join(deodr.data_path, "duck.obj")
-    scene, camera = default_scene(
-        obj_file, use_distortion=False, width=width, height=height
-    )
+    scene, camera = default_scene(obj_file, use_distortion=False, width=width, height=height)
     scene.sigma = 0  # removing edge overdraw antialiasing
     if display:
         image_no_antialiasing = scene.render(camera)
-        image_pyrender, depth = deodr.opengl.pyrender.render(scene, camera)
+        image_pyrender, _ = deodr.opengl.pyrender.render(scene, camera)
         plt.figure()
         ax = plt.subplot(1, 3, 1)
         ax.set_title("deodr no antialiasing")
@@ -120,9 +107,7 @@ def example_pyrender(
 
         ax = plt.subplot(1, 3, 3)
         ax.set_title("difference")
-        ax.imshow(
-            np.abs(image_no_antialiasing - image_pyrender.astype(np.float64) / 255)
-        )
+        ax.imshow(np.abs(image_no_antialiasing - image_pyrender.astype(np.float64) / 255))
 
 
 def example_moderngl(display: bool = True, width: int = 640, height: int = 480) -> None:
@@ -145,10 +130,7 @@ def example_moderngl(display: bool = True, width: int = 640, height: int = 480) 
         moderngl_renderer = OffscreenRenderer()
         moderngl_renderer.set_scene(scene)
         image_moderngl = moderngl_renderer.render(camera)
-        diff = np.abs(
-            image_no_antialiasing.astype(np.float64) * 255
-            - image_moderngl.astype(np.float64)
-        )
+        diff = np.abs(image_no_antialiasing.astype(np.float64) * 255 - image_moderngl.astype(np.float64))
         if display:
             plt.figure()
             ax = plt.subplot(1, 3, 1)

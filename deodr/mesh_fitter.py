@@ -57,12 +57,8 @@ class MeshDepthFitter:
 
         self.reset()
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -94,9 +90,7 @@ class MeshDepthFitter:
             focal = 2 * self.width
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
@@ -108,12 +102,8 @@ class MeshDepthFitter:
         self.iter = 0
 
     def render(self) -> np.ndarray:
-        q_normalized = normalize(
-            self.transform_quaternion
-        )  # that will lead to a gradient that is in the tangent space
-        vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transform_translation
-        )
+        q_normalized = normalize(self.transform_quaternion)  # that will lead to a gradient that is in the tangent space
+        vertices_transformed = qrot(q_normalized, self.vertices) + self.transform_translation
         self.mesh.set_vertices(vertices_transformed)
         self.depth_not_clipped = self.scene.render_depth(
             self.camera,
@@ -131,9 +121,7 @@ class MeshDepthFitter:
         vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self._vertices_b = qrot_backward(
-            q_normalized, self.vertices, vertices_transformed_b
-        )
+        q_normalized_b, self._vertices_b = qrot_backward(q_normalized, self.vertices, vertices_transformed_b)
         self.transform_quaternion_b = normalize_backward(
             self.transform_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangeant space
@@ -167,9 +155,7 @@ class MeshDepthFitter:
 
         inertia = self.inertia
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad, self.step_factor_vertices, self.step_max_vertices
-        )
+        step_vertices = mult_and_clamp(-grad, self.step_factor_vertices, self.step_max_vertices)
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * self.inertia + (1 - self.inertia) * step_vertices
         )
@@ -180,13 +166,9 @@ class MeshDepthFitter:
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
-        self.speed_quaternion = (1 - self.damping) * (
-            self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
-        )
+        self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * inertia + (1 - inertia) * step_quaternion)
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
         # update translation
         step_translation = mult_and_clamp(
             -self.transform_translation_b,
@@ -253,12 +235,8 @@ class MeshRGBFitterWithPose:
     def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -292,9 +270,7 @@ class MeshRGBFitterWithPose:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
@@ -306,19 +282,11 @@ class MeshRGBFitterWithPose:
         self.iter = 0
 
     def render(self) -> np.ndarray:
-        q_normalized = normalize(
-            self.transform_quaternion
-        )  # that will lead to a gradient that is in the tangent space
-        vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transform_translation
-        )
+        q_normalized = normalize(self.transform_quaternion)  # that will lead to a gradient that is in the tangent space
+        vertices_transformed = qrot(q_normalized, self.vertices) + self.transform_translation
         self.mesh.set_vertices(vertices_transformed)
-        self.scene.set_light(
-            light_directional=self.light_directional, light_ambient=self.light_ambient
-        )
-        self.mesh.set_vertices_colors(
-            np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
-        )
+        self.scene.set_light(light_directional=self.light_directional, light_ambient=self.light_ambient)
+        self.mesh.set_vertices_colors(np.tile(self.mesh_color, (self.mesh.nb_vertices, 1)))
         return self.scene.render(self.camera)
 
     def render_backward(self, image_b: np.ndarray) -> None:
@@ -332,9 +300,7 @@ class MeshRGBFitterWithPose:
         vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b = np.sum(vertices_transformed_b, axis=0)
         q_normalized = normalize(self.transform_quaternion)
-        q_normalized_b, self._vertices_b = qrot_backward(
-            q_normalized, self.vertices, vertices_transformed_b
-        )
+        q_normalized_b, self._vertices_b = qrot_backward(q_normalized, self.vertices, vertices_transformed_b)
         self.transform_quaternion_b = normalize_backward(
             self.transform_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangent space
@@ -368,12 +334,8 @@ class MeshRGBFitterWithPose:
         inertia = self.inertia
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad, self.step_factor_vertices, self.step_max_vertices
-        )
-        self.speed_vertices = (1 - self.damping) * (
-            self.speed_vertices * inertia + (1 - inertia) * step_vertices
-        )
+        step_vertices = mult_and_clamp(-grad, self.step_factor_vertices, self.step_max_vertices)
+        self.speed_vertices = (1 - self.damping) * (self.speed_vertices * inertia + (1 - inertia) * step_vertices)
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
         step_quaternion = mult_and_clamp(
@@ -381,13 +343,9 @@ class MeshRGBFitterWithPose:
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
-        self.speed_quaternion = (1 - self.damping) * (
-            self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
-        )
+        self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * inertia + (1 - inertia) * step_quaternion)
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
         # update translation
         step_translation = mult_and_clamp(
             -self.transform_translation_b,
@@ -406,15 +364,11 @@ class MeshRGBFitterWithPose:
         self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
         step = -self.light_ambient_b * 0.0001
-        self.speed_light_ambient = (1 - self.damping) * (
-            self.speed_light_ambient * inertia + (1 - inertia) * step
-        )
+        self.speed_light_ambient = (1 - self.damping) * (self.speed_light_ambient * inertia + (1 - inertia) * step)
         self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update mesh color
         step = -self.mesh_color_b * 0.00001
-        self.speed_mesh_color = (1 - self.damping) * (
-            self.speed_mesh_color * inertia + (1 - inertia) * step
-        )
+        self.speed_mesh_color = (1 - self.damping) * (self.speed_mesh_color * inertia + (1 - inertia) * step)
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1
@@ -474,12 +428,8 @@ class MeshRGBFitterWithPoseMultiFrame:
     def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -498,9 +448,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.speed_light_ambient = 0.0
         self.speed_mesh_color = np.zeros(self.mesh_color.shape)
 
-    def set_images(
-        self, mesh_images: List[np.ndarray], focal: Optional[float] = None
-    ) -> None:
+    def set_images(self, mesh_images: List[np.ndarray], focal: Optional[float] = None) -> None:
         self.width = mesh_images[0].shape[1]
         self.height = mesh_images[0].shape[0]
         assert mesh_images[0].ndim == 3
@@ -510,9 +458,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
@@ -532,9 +478,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = Camera(
             extrinsic=extrinsic,
@@ -546,19 +490,11 @@ class MeshRGBFitterWithPoseMultiFrame:
 
     def render(self, idframe: Optional[int] = None) -> np.ndarray:
         unormalized_quaternion = self.transform_quaternion[idframe]
-        q_normalized = normalize(
-            unormalized_quaternion
-        )  # that will lead to a gradient that is in the tangent space
-        vertices_transformed = (
-            qrot(q_normalized, self.vertices) + self.transform_translation[idframe]
-        )
+        q_normalized = normalize(unormalized_quaternion)  # that will lead to a gradient that is in the tangent space
+        vertices_transformed = qrot(q_normalized, self.vertices) + self.transform_translation[idframe]
         self.mesh.set_vertices(vertices_transformed)
-        self.scene.set_light(
-            light_directional=self.light_directional, light_ambient=self.light_ambient
-        )
-        self.mesh.set_vertices_colors(
-            np.tile(self.mesh_color, (self.mesh.nb_vertices, 1))
-        )
+        self.scene.set_light(light_directional=self.light_directional, light_ambient=self.light_ambient)
+        self.mesh.set_vertices_colors(np.tile(self.mesh_color, (self.mesh.nb_vertices, 1)))
         image = self.scene.render(self.camera)
         self.store_backward["render"] = (idframe, unormalized_quaternion, q_normalized)
         return image
@@ -584,17 +520,13 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.light_ambient_b += self.scene.light_ambient_b
         vertices_transformed_b = self.scene.mesh._vertices_b
         self.transform_translation_b[idframe] += np.sum(vertices_transformed_b, axis=0)
-        q_normalized_b, _vertices_b = qrot_backward(
-            q_normalized, self.vertices, vertices_transformed_b
-        )
+        q_normalized_b, _vertices_b = qrot_backward(q_normalized, self.vertices, vertices_transformed_b)
         self._vertices_b += _vertices_b
         self.transform_quaternion_b[idframe] += normalize_backward(
             unormalized_quaternion, q_normalized_b
         )  # that will lead to a gradient that is in the tangent space
 
-    def energy_data(
-        self, vertices: np.ndarray
-    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
+    def energy_data(self, vertices: np.ndarray) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
         self.vertices = vertices
         images: List[np.ndarray] = []
         diff_images: List[np.ndarray] = []
@@ -604,9 +536,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         for idframe in range(self.nb_frames):
             image = self.render(idframe=idframe)
 
-            diff_image = np.sum(
-                (image[idframe] - self.mesh_images[idframe]) ** 2, axis=2
-            )
+            diff_image = np.sum((image[idframe] - self.mesh_images[idframe]) ** 2, axis=2)
             images.append(image)
             diff_images.append(diff_image)
 
@@ -618,9 +548,7 @@ class MeshRGBFitterWithPoseMultiFrame:
 
         return energy_data, images, diff_images
 
-    def step(
-        self, check_gradient: bool = False
-    ) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
+    def step(self, check_gradient: bool = False) -> Tuple[float, List[np.ndarray], List[np.ndarray]]:
         self.vertices = self.vertices - np.mean(self.vertices, axis=0)[None, :]
 
         self.nb_frames = len(self.mesh_images)
@@ -637,9 +565,7 @@ class MeshRGBFitterWithPoseMultiFrame:
             def func(x: np.ndarray) -> np.ndarray:
                 return np.array(self.rigid_energy.evaluate(x)[0])
 
-            check_jacobian_finite_differences(
-                grad_rigidity.flatten(), func, self.vertices
-            )
+            check_jacobian_finite_differences(grad_rigidity.flatten(), func, self.vertices)
 
             def func(x: np.ndarray) -> np.ndarray:
                 return np.array(self.energy_data(x)[0])
@@ -648,14 +574,10 @@ class MeshRGBFitterWithPoseMultiFrame:
             check_jacobian_finite_differences(grad_data.flatten(), func, self.vertices)
 
         energy = energy_data + energy_rigid
-        print(
-            f"iter {self.iter} Energy={energy} : EData={energy_data} E_rigid={energy_rigid}"
-        )
+        print(f"iter {self.iter} Energy={energy} : EData={energy_data} E_rigid={energy_rigid}")
 
         if self.iter < 500:
-            self._vertices_b = (
-                self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
-            )
+            self._vertices_b = self._vertices_b - np.mean(self._vertices_b, axis=0)[None, :]
         # update v
         grad = self._vertices_b + grad_rigidity
 
@@ -665,13 +587,9 @@ class MeshRGBFitterWithPoseMultiFrame:
         inertia = self.inertia
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad, self.step_factor_vertices, self.step_max_vertices
-        )
+        step_vertices = mult_and_clamp(-grad, self.step_factor_vertices, self.step_max_vertices)
 
-        self.speed_vertices = (1 - self.damping) * (
-            self.speed_vertices * inertia + (1 - inertia) * step_vertices
-        )
+        self.speed_vertices = (1 - self.damping) * (self.speed_vertices * inertia + (1 - inertia) * step_vertices)
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
 
@@ -680,13 +598,9 @@ class MeshRGBFitterWithPoseMultiFrame:
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
-        self.speed_quaternion = (1 - self.damping) * (
-            self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
-        )
+        self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * inertia + (1 - inertia) * step_quaternion)
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
         # update translation
         step_translation = mult_and_clamp(
             -self.transform_translation_b,
@@ -711,9 +625,7 @@ class MeshRGBFitterWithPoseMultiFrame:
         self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update mesh color
         step = -self.mesh_color_b * 0.00001
-        self.speed_mesh_color = (1 - self.damping) * (
-            self.speed_mesh_color * inertia + (1 - inertia) * step
-        )
+        self.speed_mesh_color = (1 - self.damping) * (self.speed_mesh_color * inertia + (1 - inertia) * step)
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1

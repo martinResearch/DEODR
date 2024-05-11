@@ -30,9 +30,7 @@ def run(
     file_folder = os.path.dirname(__file__)
 
     depth_image = np.fliplr(
-        np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32)
-        .reshape(240, 320)
-        .astype(np.float64)
+        np.fromfile(os.path.join(deodr.data_path, "depth.bin"), dtype=np.float32).reshape(240, 320).astype(np.float64)
     )
     depth_image = depth_image[20:-20, 60:-60]
     max_depth = 450
@@ -41,20 +39,18 @@ def run(
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = deodr.read_obj(obj_file)
-    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=0).subdivise(
-        n_subdivision
-    )
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=0).subdivise(n_subdivision)
 
     euler_init = np.array([0.1, 0.1, 0.1])
     translation_init = np.zeros(3)
 
-    MeshDepthFittersSelector = {
+    mesh_depth_fitter_selector = {
         "none": MeshDepthFitter,
         "pytorch": PytorchMeshDepthFitter,
         "tensorflow": TensorFlowMeshDepthFitter,
     }
 
-    hand_fitter: MeshDepthFitter = MeshDepthFittersSelector[dl_library](  # type: ignore
+    hand_fitter: MeshDepthFitter = mesh_depth_fitter_selector[dl_library](  # type: ignore
         mesh.vertices, mesh.faces, euler_init, translation_init, cregu=1000
     )
     distortion = np.array([1, 0, 0, 0, 0])
@@ -74,9 +70,7 @@ def run(
         energies.append(energy)
         durations.append(time.time() - start)
         if save_images or display:
-            combined_image = np.column_stack(
-                (depth_image, synthetic_depth, 3 * diff_image)
-            )
+            combined_image = np.column_stack((depth_image, synthetic_depth, 3 * diff_image))
         if display:
             cv2.imshow("animation", cv2.resize(combined_image, None, fx=2, fy=2))
         if save_images:
@@ -105,9 +99,7 @@ def run(
 
     if plot_curves:
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iter_folder, "depth_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(
@@ -117,9 +109,7 @@ def run(
                 )
         plt.legend()
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iter_folder, "depth_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iter_folder, "depth_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(json_data["energies"], label=json_data["label"])

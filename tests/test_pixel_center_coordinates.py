@@ -1,13 +1,12 @@
 """Test using rgb mesh rendering."""
 
-
 import numpy as np
 
 from deodr.differentiable_renderer import Scene2D
 
 
 def test_upper_left_pixel_center_coordinates() -> None:
-    """Testing  that pixel center coordinates:
+    """Testing pixel center coordinates.
 
     pixel centers are at integer coordinates when integer_pixel_centers=True with
         upper left at (0, 0)
@@ -62,14 +61,10 @@ def test_upper_left_pixel_center_coordinates() -> None:
         texture = np.ones((2, 2, 1))
         background_color = np.array([0])
 
-        for integer_point_coordinates, point_coordinates in zip(
-            integer_points_coordinates, points_coordinates
-        ):
-            ij = np.array([[-eps, -eps], [-eps, eps], [eps, -eps]]) + np.array(
-                point_coordinates
-            )
+        for integer_point_coordinates, point_coordinates in zip(integer_points_coordinates, points_coordinates):
+            ij = np.array([[-eps, -eps], [-eps, eps], [eps, -eps]]) + np.array(point_coordinates)
 
-            scene2D = Scene2D(
+            scene_2d = Scene2D(
                 ij=ij,
                 faces=faces,
                 faces_uv=faces_uv,
@@ -92,12 +87,10 @@ def test_upper_left_pixel_center_coordinates() -> None:
                 integer_pixel_centers=integer_pixel_centers,
             )
 
-            image, _ = scene2D.render(sigma=0)
+            image, _ = scene_2d.render(sigma=0)
 
             expected_image = np.zeros((height, width, 1))
-            expected_image[
-                integer_point_coordinates[1], integer_point_coordinates[0], 0
-            ] = 1
+            expected_image[integer_point_coordinates[1], integer_point_coordinates[0], 0] = 1
             assert np.allclose(expected_image, image)
 
 

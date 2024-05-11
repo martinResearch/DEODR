@@ -35,8 +35,7 @@
 # up to date version of that script can found on
 # https://github.com/martinResearch/markdownLatex
 
-"""Script to render latex figure for each equation found in readme.md"""
-
+"""Script to render latex figure for each equation found in readme.md."""
 
 import os
 import re
@@ -58,9 +57,7 @@ else:
     raise Exception("wrong number of arguments")
 
 
-def formula_as_file(
-    formula: str, file: str, negate: bool = False, header: str = ""
-) -> None:
+def formula_as_file(formula: str, file: str, negate: bool = False, header: str = "") -> None:
     laxtex_tmp_file = os.path.join(dirpath, "tmp_equation.tex")
     pdf_tmp_file = os.path.join(dirpath, "tmp_equation.pdf")
     with open(laxtex_tmp_file, "w") as latexfile:
@@ -72,9 +69,7 @@ def formula_as_file(
         latexfile.write(f" {formula}")
         latexfile.write("\n\\end{document}  ")
     os.system('pdflatex -output-directory="%s"  %s' % (dirpath, laxtex_tmp_file))
-    if file.startswith("https://rawgithub.com") or file.startswith(
-        "https://raw.githack.com"
-    ):
+    if file.startswith("https://rawgithub.com") or file.startswith("https://raw.githack.com"):
         file = "./" + re.findall(r"""/master/(.*)""", file)[0]
     if file.endswith("svg"):
         os.system(f"pdf2svg {pdf_tmp_file} {file}")

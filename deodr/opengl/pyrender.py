@@ -44,18 +44,12 @@ def deodr_directional_light_to_pyrender(
     assert deodr_directional_light.shape == (3,)
     directional_light_intensity = np.linalg.norm(deodr_directional_light)
     if directional_light_intensity > 0:
-        directional_light_direction = (
-            deodr_directional_light / directional_light_intensity
-        )
-        directional_light_rotation = min_rotation(
-            np.array([0, 0, -1]), directional_light_direction
-        )
+        directional_light_direction = deodr_directional_light / directional_light_intensity
+        directional_light_rotation = min_rotation(np.array([0, 0, -1]), directional_light_direction)
         pose = np.zeros((4, 4))
         pose[:3, :3] = directional_light_rotation
         pose[3, 3] = 1
-        directional_light = pyrender.light.DirectionalLight(
-            intensity=directional_light_intensity
-        )
+        directional_light = pyrender.light.DirectionalLight(intensity=directional_light_intensity)
     else:
         directional_light = None
         pose = None
@@ -70,9 +64,7 @@ def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
     # trimesh and pyrender do to handle faces indices for texture
     # that are different from face indices for the 3d vertices
     # we need to duplicate vertices
-    faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
-        deodr_mesh.faces, deodr_mesh.faces_uv
-    )
+    faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(deodr_mesh.faces, deodr_mesh.faces_uv)
     vertices = deodr_mesh.vertices[mask_v]
     deodr_mesh.compute_vertex_normals()
     vertex_normals = deodr_mesh.vertex_normals[mask_v]
@@ -88,9 +80,7 @@ def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
     poses = None
     color_0 = None
     if material is None:
-        base_color_texture = pyrender.texture.Texture(
-            source=deodr_mesh.texture, source_channels="RGB"
-        )
+        base_color_texture = pyrender.texture.Texture(source=deodr_mesh.texture, source_channels="RGB")
         material = pyrender.MetallicRoughnessMaterial(
             alphaMode="BLEND",
             baseColorFactor=[1, 1, 1, 1.0],
@@ -115,9 +105,7 @@ def deodr_mesh_to_pyrender(deodr_mesh: ColoredTriMesh) -> pyrender.Mesh:
 
 
 def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray]:
-    assert (
-        deodr_scene.mesh is not None
-    ), "You need a mesh in the scene you want to render"
+    assert deodr_scene.mesh is not None, "You need a mesh in the scene you want to render"
     """Render a deodr scene using pyrender"""
     if deodr_scene.background_image is not None:
         bg_color = deodr_scene.background_image[0, 0]
@@ -130,9 +118,7 @@ def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray
             )
     else:
         bg_color = deodr_scene.background_color
-    pyrender_scene = pyrender.Scene(
-        ambient_light=deodr_scene.light_ambient * np.ones((3)), bg_color=bg_color
-    )
+    pyrender_scene = pyrender.Scene(ambient_light=deodr_scene.light_ambient * np.ones((3)), bg_color=bg_color)
 
     if camera.distortion is not None:
         raise (BaseException("cameras with distortion not handled yet with pyrender"))
@@ -147,9 +133,7 @@ def render(deodr_scene: Scene3D, camera: Camera) -> Tuple[np.ndarray, np.ndarray
 
     # convert to pyrender directional light parameterization
     assert deodr_scene.light_directional is not None
-    directional_light, directional_light_pose = deodr_directional_light_to_pyrender(
-        deodr_scene.light_directional
-    )
+    directional_light, directional_light_pose = deodr_directional_light_to_pyrender(deodr_scene.light_directional)
     if directional_light is not None:
         pyrender_scene.add(directional_light, pose=directional_light_pose)
 

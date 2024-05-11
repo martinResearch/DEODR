@@ -11,7 +11,7 @@ from deodr.triangulated_mesh import TriMesh
 
 
 class LaplacianRigidEnergy:
-    """Class that implements an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
+    """As-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
 
     def __init__(self, mesh: TriMesh, vertices: np.ndarray, cregu: float):
         self.cT = scipy.sparse.kron(
@@ -28,11 +28,7 @@ class LaplacianRigidEnergy:
             return_labels=True,
         )
         if n_components > 1:
-            raise (
-                BaseException(
-                    "You have more than one connected component in your mesh."
-                )
-            )
+            raise (BaseException("You have more than one connected component in your mesh."))
 
     def evaluate(
         self,

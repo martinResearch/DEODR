@@ -3,8 +3,8 @@
 import os
 import re
 
-import numpy as np
 from Cython.Build import cythonize
+import numpy as np
 from setuptools import Extension, find_packages, setup
 
 extension = Extension(

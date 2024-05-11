@@ -17,9 +17,7 @@ class TriMeshAdjacenciesTensorflow(TriMeshAdjacencies):
     def __init__(self, faces: np.ndarray):
         super().__init__(faces)
         self.faces_tf = tf.constant(faces)
-        self._vertices_faces_tf = scipy_sparse_matrix_to_tensorflow(
-            self._vertices_faces
-        )
+        self._vertices_faces_tf = scipy_sparse_matrix_to_tensorflow(self._vertices_faces)
 
     def compute_face_normals(self, vertices: tf.Tensor) -> tf.Tensor:
         tris = tf.gather(vertices, self.faces)

@@ -43,9 +43,7 @@ def test_depth_image_hand_fitting_numpy() -> None:
 
 
 def test_depth_image_hand_fitting_tensorflow() -> None:
-    tf.config.set_visible_devices(
-        [], "GPU"
-    )  # Running on CPU to get determinisic results
+    tf.config.set_visible_devices([], "GPU")  # Running on CPU to get determinisic results
 
     energies = run(
         dl_library="tensorflow",

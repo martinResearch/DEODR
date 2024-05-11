@@ -1,9 +1,10 @@
 #! /usr/bin/env python
-"""Function to oad wavefront OBJ files
+"""Function to oad wavefront OBJ files.
 
 See http://www.fileformat.info/format/wavefrontobj/.
 At the moment only v and f keywords are supported
 """
+
 from typing import List, Tuple
 
 import numpy as np
@@ -14,14 +15,13 @@ def read_obj(filename: str) -> Tuple[np.ndarray, np.ndarray]:
 
     At the moment only v and f keywords are supported
     """
-
     faces = []
     vertices = []
     fid = open(filename, "r")
     node_counter = 0
     while True:
         line = fid.readline()
-        if line == "":
+        if not line:
             break
         while line.endswith("\\"):
             # Remove backslash and concatenate with next line
@@ -55,4 +55,4 @@ def save_obj(filename: str, vertices: np.ndarray, faces: np.ndarray) -> None:
         for vertex in vertices:
             f.write(f"v {vertex[0]:08f} {vertex[1]:08f} {vertex[2]:08f}\n")
         for face in faces:
-            f.write(f"f {face[0]+1} {face[1]+1} {face[2]+1}\n")
+            f.write(f"f {face[0] + 1} {face[1] + 1} {face[2] + 1}\n")

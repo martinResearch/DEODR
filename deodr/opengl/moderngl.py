@@ -14,9 +14,7 @@ from deodr.triangulated_mesh import ColoredTriMesh
 from . import shaders as opengl_shaders
 
 
-def opencv_to_opengl_perspective(
-    camera: Camera, znear: float, zfar: float, integer_pixel_centers: bool
-) -> np.ndarray:
+def opencv_to_opengl_perspective(camera: Camera, znear: float, zfar: float, integer_pixel_centers: bool) -> np.ndarray:
     # https://blog.noctua-software.com/opencv-opengl-projection-matrix.html
     fx = camera.intrinsic[0, 0]
     fy = camera.intrinsic[1, 1]
@@ -24,19 +22,19 @@ def opencv_to_opengl_perspective(
     cy = camera.intrinsic[1, 2]
 
     if integer_pixel_centers:
-        # If integer_pixel_centers is False, then deodr rendering is cnot onsistent with opengl without an 0.5 offset here
+        # If integer_pixel_centers is False, then deodr rendering is
+        # consistent with opengl without an 0.5 offset here
         cx2 = cx + 0.5
         cy2 = cy + 0.5
     else:
-        # If integer_pixel_centers is False, then deodr rendering is consistent with opengl without need for an offset here
+        # If integer_pixel_centers is False, then deodr rendering is
+        # consistent with opengl without need for an offset here
         cx2 = cx
         cy2 = cy
 
     width = camera.width
     height = camera.height
-    np.testing.assert_array_equal(
-        [[fx, 0, cx], [0, fy, cy], [0, 0, 1]], camera.intrinsic
-    )
+    np.testing.assert_array_equal([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], camera.intrinsic)
     return np.array(
         [
             [2.0 * fx / width, 0, 0, 0],
@@ -79,9 +77,7 @@ class OffscreenRenderer:
 
     def set_light(self, light_directional: np.ndarray, light_ambient: float) -> None:
         assert light_directional.shape == (3,)
-        self.shader_program["light_directional"].value = tuple(
-            light_directional
-        )  # type :ignore
+        self.shader_program["light_directional"].value = tuple(light_directional)  # type :ignore
         self.shader_program["light_ambient"].value = light_ambient
 
     def set_mesh(self, mesh: ColoredTriMesh) -> None:
@@ -92,9 +88,9 @@ class OffscreenRenderer:
 
         vertices = mesh.vertices[mesh.faces].reshape(-1, 3)
         min_max = np.stack((vertices.min(axis=0), vertices.max(axis=0)))
-        self.bounding_box_corners = np.stack(
-            np.meshgrid(min_max[:, 0], min_max[:, 1], min_max[:, 2]), axis=-1
-        ).reshape(-1, 3)
+        self.bounding_box_corners = np.stack(np.meshgrid(min_max[:, 0], min_max[:, 1], min_max[:, 2]), axis=-1).reshape(
+            -1, 3
+        )
         normals = mesh.vertex_normals[mesh.faces].reshape(-1, 3)
         uv = mesh.uv[mesh.faces_uv].reshape(-1, 2)
         moderngl_uv = np.column_stack(
@@ -144,9 +140,6 @@ class OffscreenRenderer:
                 )
             )
         )
-
-        #
-
         self.shader_program["intrinsic"].write(intrinsic.astype("f4").tobytes())
         self.shader_program["extrinsic"].write(extrinsic.T.astype("f4").tobytes())
         if camera.distortion is None:
@@ -176,11 +169,7 @@ class OffscreenRenderer:
         # of the xyz point cloud using unit8 opengl type
 
         # Framebuffers
-        if (
-            (self.fbo is None)
-            or (self.fbo.height != camera.height)
-            or (self.fbo.width != camera.width)
-        ):
+        if (self.fbo is None) or (self.fbo.height != camera.height) or (self.fbo.width != camera.width):
             self.fbo = ctx.framebuffer(
                 ctx.renderbuffer((camera.width, camera.height)),
                 ctx.depth_renderbuffer((camera.width, camera.height)),
@@ -193,6 +182,4 @@ class OffscreenRenderer:
         self.texture.use()
         self.vao.render()
         data = self.fbo.read(components=3, alignment=1)
-        return np.frombuffer(data, dtype=np.uint8).reshape(
-            camera.height, camera.width, 3
-        )
+        return np.frombuffer(data, dtype=np.uint8).reshape(camera.height, camera.width, 3)

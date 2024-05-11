@@ -37,9 +37,7 @@ class TriMeshAdjacencies:
         i = self.faces.flatten()
         j = np.tile(np.arange(self.nb_faces)[:, None], [1, 3]).flatten()
         v = np.ones((self.nb_faces, 3)).flatten()
-        self._vertices_faces = sparse.coo_matrix(
-            (v, (i, j)), shape=(self.nb_vertices, self.nb_faces)
-        )
+        self._vertices_faces = sparse.coo_matrix((v, (i, j)), shape=(self.nb_vertices, self.nb_faces))
         id_faces = np.hstack(
             (
                 np.arange(self.nb_faces),
@@ -48,15 +46,11 @@ class TriMeshAdjacencies:
             )
         )
         self.clockwise = clockwise
-        edges = np.vstack(
-            (self.faces[:, [0, 1]], self.faces[:, [1, 2]], self.faces[:, [2, 0]])
-        )
+        edges = np.vstack((self.faces[:, [0, 1]], self.faces[:, [1, 2]], self.faces[:, [2, 0]]))
 
         id_edge_tmp, edge_increase = self.id_edge(edges)
 
-        _, id_edge, unique_counts = np.unique(
-            id_edge_tmp, return_inverse=True, return_counts=True
-        )
+        _, id_edge, unique_counts = np.unique(id_edge_tmp, return_inverse=True, return_counts=True)
 
         self.nb_edges = np.max(id_edge) + 1
         self.edges = np.zeros((self.nb_edges, 2), dtype=np.uint32)
@@ -66,9 +60,7 @@ class TriMeshAdjacencies:
         np.add.at(nb_inc, id_edge, edge_increase)
         nb_dec = np.zeros((self.nb_edges))
         np.add.at(nb_dec, id_edge, ~edge_increase)
-        self.is_manifold = (
-            np.all(unique_counts <= 2) and np.all(nb_inc <= 1) and np.all(nb_dec <= 1)
-        )
+        self.is_manifold = np.all(unique_counts <= 2) and np.all(nb_inc <= 1) and np.all(nb_dec <= 1)
         self.is_closed = self.is_manifold and np.all(unique_counts == 2)
 
         self.edges_vertices_ones = sparse.coo_matrix(
@@ -90,12 +82,8 @@ class TriMeshAdjacencies:
                 np.full((self.nb_faces), 2),
             )
         )
-        self.faces_edges = sparse.coo_matrix(
-            (id_edge, (id_faces, v)), shape=(self.nb_faces, 3)
-        ).todense()
-        self.adjacency_vertices = (
-            (self._vertices_faces * self._vertices_faces.T) > 0
-        ) - sparse.eye(self.nb_vertices)
+        self.faces_edges = sparse.coo_matrix((id_edge, (id_faces, v)), shape=(self.nb_faces, 3)).todense()
+        self.adjacency_vertices = ((self._vertices_faces * self._vertices_faces.T) > 0) - sparse.eye(self.nb_vertices)
 
         self.degree_v_f = self._vertices_faces.dot(np.ones((self.nb_faces)))
 
@@ -103,17 +91,14 @@ class TriMeshAdjacencies:
             np.ones((self.nb_vertices))
         )  # degree_v_e(i)=j means that the vertex i appears in j edges
         self.laplacian = (
-            sparse.diags([self.degree_v_e], [0], (self.nb_vertices, self.nb_vertices))
-            - self.adjacency_vertices
+            sparse.diags([self.degree_v_e], [0], (self.nb_vertices, self.nb_vertices)) - self.adjacency_vertices
         )
         self.hasBoundaries = np.any(np.sum(self.edges_faces_ones, axis=1) == 1)
         assert np.all(self.laplacian * np.ones((self.nb_vertices)) == 0)
         self.store_backward: Dict[str, Any] = {}
 
     def boundary_edges(self) -> np.ndarray:
-        is_boundary_edge = np.array(np.sum(self.edges_faces_ones, axis=1) == 1).squeeze(
-            axis=1
-        )
+        is_boundary_edge = np.array(np.sum(self.edges_faces_ones, axis=1) == 1).squeeze(axis=1)
         return self.edges[is_boundary_edge, :]
 
     def id_edge(self, idv: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -166,7 +151,9 @@ class TriMeshAdjacencies:
         return self._vertices_faces.T * n_b
 
     def edge_on_silhouette(self, vertices_2d: np.ndarray) -> np.ndarray:
-        """Compute the a boolean for each of edges of each face that is true if
+        """Return True if edge on the silhouette.
+
+        Compute the a boolean for each of edges of each face that is true if
         and only if the edge is one the silhouette of the mesh given a view point
         """
         assert vertices_2d.ndim == 2
@@ -210,9 +197,7 @@ class TriMesh:
             self.compute_adjacencies()
 
     def compute_adjacencies(self) -> None:
-        self._adjacencies = TriMeshAdjacencies(
-            self.faces, self.clockwise, nb_vertices=self.nb_vertices
-        )
+        self._adjacencies = TriMeshAdjacencies(self.faces, self.clockwise, nb_vertices=self.nb_vertices)
 
         if self._adjacencies.is_closed:
             self.check_orientation()
@@ -245,11 +230,7 @@ class TriMesh:
         simplices formed by joining the origin and the vertices of each triangle.
         """
         if not self._adjacencies.is_closed:
-            raise (
-                BaseException(
-                    "The volume can only be computed for closed manifold surfaces"
-                )
-            )
+            raise (BaseException("The volume can only be computed for closed manifold surfaces"))
         return (
             (-1 if self.clockwise else 1)
             * np.sum(
@@ -293,9 +274,7 @@ class TriMesh:
         return self._face_normals
 
     def compute_vertex_normals(self) -> None:
-        self._vertex_normals = self.adjacencies.compute_vertex_normals(
-            self.face_normals
-        )
+        self._vertex_normals = self.adjacencies.compute_vertex_normals(self.face_normals)
 
     @property
     def vertex_normals(self) -> np.ndarray:
@@ -303,19 +282,14 @@ class TriMesh:
 
         face normals evaluation is done in a lazy manner.
         """
-
         if self._vertex_normals is None:
             self.compute_vertex_normals()
         assert self._vertex_normals is not None
         return self._vertex_normals
 
     def compute_vertex_normals_backward(self, vertex_normals_b: np.ndarray) -> None:
-        self._face_normals_b = self.adjacencies.compute_vertex_normals_backward(
-            vertex_normals_b
-        )
-        self._vertices_b += self.adjacencies.compute_face_normals_backward(
-            self._face_normals_b
-        )
+        self._face_normals_b = self.adjacencies.compute_vertex_normals_backward(vertex_normals_b)
+        self._vertices_b += self.adjacencies.compute_face_normals_backward(self._face_normals_b)
 
     def edge_on_silhouette(self, points_2d: np.ndarray) -> np.ndarray:
         """Compute the a boolean for each of edges that is true if and only if
@@ -355,14 +329,10 @@ class ColoredTriMesh(TriMesh):
         self.nb_colors = nb_colors
         if nb_colors is None:
             if texture is None:
-                assert (
-                    colors is not None
-                ), "You need to provide at least on among nb_colors, texture or colors"
+                assert colors is not None, "You need to provide at least on among nb_colors, texture or colors"
                 self.nb_colors = colors.shape[1]
             else:
-                assert (
-                    texture is not None
-                ), "You need to provide at least on among nb_colors, texture or colors"
+                assert texture is not None, "You need to provide at least on among nb_colors, texture or colors"
                 self.nb_colors = texture.shape[2]
 
         self.vertices_colors_b: Optional[np.ndarray] = None
@@ -389,15 +359,14 @@ class ColoredTriMesh(TriMesh):
         ax.quiver(x, y, z, u, v, w, length=0.03, normalize=True, color=[0, 1, 0])
 
     def subdivise(self, n_iter: int) -> "ColoredTriMesh":
-        """loop subdivision.
+        """Loop subdivision.
 
-        https://graphics.stanford.edu/~mdfisher/subdivision.html"""
+        https://graphics.stanford.edu/~mdfisher/subdivision.html
+        """
         return loop_subdivision(self, n_iter)
 
     @staticmethod
-    def from_trimesh(
-        mesh: Trimesh, compute_adjacencies: bool = True
-    ) -> "ColoredTriMesh":  # inspired from pyrender
+    def from_trimesh(mesh: Trimesh, compute_adjacencies: bool = True) -> "ColoredTriMesh":  # inspired from pyrender
         """Get the vertex colors, texture coordinates, and material properties
         from a :class:`~trimesh.base.Trimesh`.
         """
@@ -416,9 +385,7 @@ class ColoredTriMesh(TriMesh):
 
         # Process face colors
         elif mesh.visual.kind == "face":
-            raise BaseException(
-                "not supported yet, will need antialiasing at the seams"
-            )
+            raise BaseException("not supported yet, will need antialiasing at the seams")
 
         # Process texture colors
         elif mesh.visual.kind == "texture":
@@ -446,9 +413,7 @@ class ColoredTriMesh(TriMesh):
         # unmerge_faces texture.py), making the surface not watertight, while there
         # were only seems in the texture.
 
-        vertices, return_index, inv_ids = np.unique(
-            mesh.vertices, axis=0, return_index=True, return_inverse=True
-        )
+        vertices, return_index, inv_ids = np.unique(mesh.vertices, axis=0, return_index=True, return_inverse=True)
         faces = inv_ids[mesh.faces].astype(np.uint32)
         if colors is not None:
             colors2 = colors[return_index, :]
@@ -481,9 +446,7 @@ class ColoredTriMesh(TriMesh):
         # largely inspired from trimesh's load_obj function
 
         if self.vertices_colors is not None:
-            raise BaseException(
-                "Conversion to trimesh with per vertex color not support yet"
-            )
+            raise BaseException("Conversion to trimesh with per vertex color not support yet")
 
         v = self.vertices
         faces = self.faces
@@ -498,9 +461,7 @@ class ColoredTriMesh(TriMesh):
                 1 - ((self.uv[:, 1] + 0.5) / self.texture.shape[0]),
             )
         )
-        new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(
-            faces, faces_tex
-        )
+        new_faces, mask_v, mask_vt = trimesh.visual.texture.unmerge_faces(faces, faces_tex)
         assert np.allclose(v[faces], v[mask_v][new_faces])
         assert new_faces.max() < len(v[mask_v])
 
@@ -519,9 +480,11 @@ class ColoredTriMesh(TriMesh):
     @staticmethod
     def load(filename: str, process: bool = False) -> "ColoredTriMesh":
         """Load a mesh from a file.
+
         Args:
             filename: The file to load the mesh from.
             process: Whether to process the mesh to remove duplicated vertices and NaNs.
+
         Returns:
             The loaded mesh.
         """
@@ -536,27 +499,22 @@ class ColoredTriMesh(TriMesh):
 def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
     """Loop subdivision.
 
-    https://graphics.stanford.edu/~mdfisher/subdivision.html"""
-
+    https://graphics.stanford.edu/~mdfisher/subdivision.html
+    """
     if n_iter == 0:
         return mesh
 
     if n_iter > 1:
         mesh = loop_subdivision(mesh, n_iter - 1)
 
-    edge_mid_points = (
-        mesh.adjacencies.edges_faces_ones
-        * (mesh.adjacencies._vertices_faces.T * mesh.vertices)
-        / 8
-    ) + (1 / 8) * np.sum(mesh.vertices[mesh.adjacencies.edges, :], axis=1)
+    edge_mid_points = (mesh.adjacencies.edges_faces_ones * (mesh.adjacencies._vertices_faces.T * mesh.vertices) / 8) + (
+        1 / 8
+    ) * np.sum(mesh.vertices[mesh.adjacencies.edges, :], axis=1)
 
     # edge_mid_points = 0.5 * np.sum(self.vertices[self.adjacencies.edges, :], axis=1)
 
     beta = (3 / 8) * (1 / mesh.adjacencies.degree_v_e)
-    moved_points = (
-        beta[:, None] * (mesh.adjacencies.adjacency_vertices * mesh.vertices)
-        + (5 / 8) * mesh.vertices
-    )
+    moved_points = beta[:, None] * (mesh.adjacencies.adjacency_vertices * mesh.vertices) + (5 / 8) * mesh.vertices
     # moved_points = self.vertices
 
     new_vertices = np.vstack((moved_points, edge_mid_points))
@@ -592,9 +550,7 @@ def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
     if mesh.uv is not None:
         raise BaseException("Textured mesh not supported yet in subdivision.")
     if mesh.vertices_colors is not None:
-        edge_mid_points_colors = np.mean(
-            mesh.vertices_colors[mesh.adjacencies.edges, :], axis=1
-        )
+        edge_mid_points_colors = np.mean(mesh.vertices_colors[mesh.adjacencies.edges, :], axis=1)
         new_colors = np.vstack((mesh.vertices_colors, edge_mid_points_colors))
     else:
         new_colors = None

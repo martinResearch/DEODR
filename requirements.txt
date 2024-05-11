@@ -18,7 +18,6 @@ pytest-xvfb
 radon
 pip-tools
 mypy
-black
-flake8
+ruff
 
 

@@ -33,22 +33,18 @@ def run(
     max_iter: int = 100,
     n_subdivision: int = 0,
 ) -> List[float]:
-    MeshFittersSelector = {
+    mesh_fitter_selector = {
         "none": MeshRGBFitterWithPose,
         "pytorch": PyTorchMeshRGBFitterWithPose,
         "tensorflow": TensorflowTorchMeshRGBFitterWithPose,
     }
 
-    hand_image = (
-        imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
-    )
+    hand_image = imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255
 
     obj_file = os.path.join(deodr.data_path, "hand.obj")
     faces, vertices = read_obj(obj_file)
 
-    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(
-        n_subdivision
-    )
+    mesh = ColoredTriMesh(faces.copy(), vertices=vertices, nb_colors=3).subdivise(n_subdivision)
 
     default_color = np.array([0.4, 0.3, 0.25])
     default_light_directional = -np.array([0.1, 0.5, 0.4])
@@ -58,7 +54,7 @@ def run(
     # centering vertices
     mesh.set_vertices(mesh.vertices - translation_init[None, :])
 
-    hand_fitter: MeshRGBFitterWithPose = MeshFittersSelector[dl_library](  # type: ignore
+    hand_fitter: MeshRGBFitterWithPose = mesh_fitter_selector[dl_library](  # type: ignore
         mesh.vertices,
         mesh.faces,
         default_color=default_color,
@@ -102,9 +98,7 @@ def run(
         energies.append(energy)
         durations.append(time.time() - start)
         if display or save_images:
-            combined_image = np.column_stack(
-                (hand_image, image, np.tile(diff_image[:, :, None], (1, 1, 3)))
-            )
+            combined_image = np.column_stack((hand_image, image, np.tile(diff_image[:, :, None], (1, 1, 3))))
         if display:
             cv2.imshow(
                 "animation",
@@ -141,9 +135,7 @@ def run(
     # compare with previous runs
     if plot_curves:
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iterfolder, "rgb_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(
@@ -155,9 +147,7 @@ def run(
                 plt.ylabel("energies")
         plt.legend()
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iterfolder, "rgb_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iterfolder, "rgb_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(json_data["energies"], label=json_data["label"])

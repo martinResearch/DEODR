@@ -22,9 +22,7 @@ def create_example_scene(
     clockwise: bool = False,
     textured_ratio: float = 0.5,
 ) -> Scene2D:
-    material = (
-        imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
-    )
+    material = imread(os.path.join(deodr.data_path, "trefle.jpg")).astype(np.float64) / 255
     height_material = material.shape[0]
     width_material = material.shape[1]
 
@@ -33,15 +31,9 @@ def create_example_scene(
 
     triangles = []
     for _ in range(n_tri):
-        tmp = scale_matrix.dot(
-            np.random.rand(2, 1).dot(np.ones((1, 3)))
-            + 0.5 * (-0.5 + np.random.rand(2, 3))
-        )
+        tmp = scale_matrix.dot(np.random.rand(2, 1).dot(np.ones((1, 3))) + 0.5 * (-0.5 + np.random.rand(2, 3)))
         while np.abs(np.linalg.det(np.vstack((tmp, np.ones((3)))))) < 1500:
-            tmp = scale_matrix.dot(
-                np.random.rand(2, 1).dot(np.ones((1, 3)))
-                + 0.5 * (-0.5 + np.random.rand(2, 3))
-            )
+            tmp = scale_matrix.dot(np.random.rand(2, 1).dot(np.ones((1, 3))) + 0.5 * (-0.5 + np.random.rand(2, 3)))
 
         if np.linalg.det(np.vstack((tmp, np.ones((3))))) > 0:
             tmp = np.fliplr(tmp)
@@ -99,9 +91,7 @@ def create_example_scene(
     scene["texture"] = material
     scene["nb_colors"] = 3
     scene["background_color"] = None
-    scene["background_image"] = np.tile(
-        np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1)
-    )
+    scene["background_image"] = np.tile(np.array([0.3, 0.5, 0.7])[None, None, :], (height, width, 1))
     scene["perspective_correct"] = False
     scene["backface_culling"] = True
     return Scene2D(**scene)
@@ -122,9 +112,7 @@ def run(
     image_target = np.zeros((scene_gt.height, scene_gt.width, scene_gt.nb_colors))
 
     z_buffer = np.zeros((scene_gt.height, scene_gt.width))
-    differentiable_renderer_cython.renderSceneCpp(
-        scene_gt, sigma, image_target, z_buffer
-    )
+    differentiable_renderer_cython.renderSceneCpp(scene_gt, sigma, image_target, z_buffer)
 
     n_vertices = len(scene_gt.depths)
 
@@ -142,17 +130,11 @@ def run(
     max_uv = np.array(scene_gt.texture.shape[:2]) - 1
 
     scene_init = copy.deepcopy(scene_gt)
-    scene_init.ij = (
-        scene_gt.ij + np.random.randn(n_vertices, 2) * displacement_magnitude_ij
-    )
-    scene_init.uv = (
-        scene_gt.uv + np.random.randn(n_vertices, 2) * displacement_magnitude_uv
-    )
+    scene_init.ij = scene_gt.ij + np.random.randn(n_vertices, 2) * displacement_magnitude_ij
+    scene_init.uv = scene_gt.uv + np.random.randn(n_vertices, 2) * displacement_magnitude_uv
     scene_init.uv = np.maximum(scene_init.uv, 0)
     scene_init.uv = np.minimum(scene_init.uv, max_uv)
-    scene_init.colors = (
-        scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
-    )
+    scene_init.colors = scene_gt.colors + np.random.randn(n_vertices, 3) * displacement_magnitude_colors
 
     hashes: List[str] = []
 
@@ -165,7 +147,7 @@ def run(
 
     losses: List[float] = []
     for niter in range(nb_max_iter):
-        image, depth, loss_image, loss = scene_iter.render_compare_and_backward(
+        image, _, loss_image, loss = scene_iter.render_compare_and_backward(
             sigma=sigma, antialiase_error=antialiase_error, obs=image_target
         )
         hashes.append(hashlib.sha256(image.tobytes()).hexdigest())

@@ -1,15 +1,12 @@
 """Test texture coordinates regarding 0.5 texel shift."""
 
-
 import numpy as np
 
 from deodr.differentiable_renderer import Scene2D
 
 
 def test_texture_coordinates() -> None:
-    texture = np.array(
-        [[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float64
-    )
+    texture = np.array([[[1, 0, 0], [0, 1, 0]], [[0, 0, 1], [1, 1, 1]]], dtype=np.float64)
 
     # coordinate of upper left pixel center is (0,0)
     # coordinate of the upper left texture pixel center (texel) is (0, 0)
@@ -41,7 +38,7 @@ def test_texture_coordinates() -> None:
 
         # using strict_edge == True so that the pixel that are exactly on the edge
         # are drawn
-        scene2D = Scene2D(
+        scene_2d = Scene2D(
             ij=ij,
             faces=faces,
             faces_uv=faces_uv,
@@ -63,7 +60,7 @@ def test_texture_coordinates() -> None:
             clockwise=clockwise,
         )
 
-        image, _ = scene2D.render(sigma=0)
+        image, _ = scene_2d.render(sigma=0)
         assert np.allclose(image[0, :, :], [0, 0, 0])
         assert np.allclose(image[:, 0, :], [0, 0, 0])
         assert np.allclose(image[1, 1, :], [1, 0, 0])

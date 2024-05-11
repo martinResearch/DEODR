@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""deodr
-
-Discontinuity-Edge-Overdraw Differentiable Rendering
+"""DEODR (Discontinuity-Edge-Overdraw Differentiable Rendering).
 
 If you use this library please cite
 Model-based 3D Hand Pose Estimation from Monocular Video.
@@ -9,6 +7,7 @@ M. de la Gorce, N. Paragios and David Fleet. PAMI 2011
 
 Martin de La Gorce. 2019.
 """
+
 __version__ = "0.2.2"
 
 __all__ = [

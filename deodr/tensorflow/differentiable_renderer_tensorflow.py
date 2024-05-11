@@ -20,9 +20,7 @@ class CameraTensorflow(Camera):
         width: int,
         distortion: Optional[np.ndarray] = None,
     ):
-        super().__init__(
-            extrinsic, intrinsic, height, width, distortion=distortion, checks=False
-        )
+        super().__init__(extrinsic, intrinsic, height, width, distortion=distortion, checks=False)
 
     def world_to_camera(self, points_3d: tf.Tensor) -> tf.Tensor:
         assert isinstance(points_3d, tf.Tensor)
@@ -59,18 +57,14 @@ def TensorflowDifferentiableRender2D(
     ) -> Tuple[tf.Tensor, Callable[[tf.Tensor], Tuple[tf.Tensor, tf.Tensor]]]:
         # using inner function as we don't differentiate w.r.t scene
         nb_color_channels = colors.shape[1]
-        image = np.empty(
-            (scene.scene_2d.height, scene.scene_2d.width, nb_color_channels)
-        )
+        image = np.empty((scene.scene_2d.height, scene.scene_2d.width, nb_color_channels))
         z_buffer = np.empty((scene.scene_2d.height, scene.scene_2d.width))
         scene.scene_2d.ij = np.array(ij)  # should automatically detached according to
         # https://pytorch.org/docs/master/notes/extending.html
         scene.scene_2d.colors = np.array(colors)
 
         scene.scene_2d.depths = np.array(scene.scene_2d.depths)
-        differentiable_renderer_cython.renderSceneCpp(
-            scene.scene_2d, 1, image, z_buffer
-        )
+        differentiable_renderer_cython.renderSceneCpp(scene.scene_2d, 1, image, z_buffer)
 
         def backward(image_b: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             assert scene.scene_2d.colors is not None
@@ -79,17 +73,11 @@ def TensorflowDifferentiableRender2D(
             scene.scene_2d.shade_b = np.zeros(scene.scene_2d.shade.shape)
             scene.scene_2d.colors_b = np.zeros(scene.scene_2d.colors.shape)
             scene.scene_2d.texture_b = np.zeros(scene.scene_2d.texture.shape)
-            image_copy = (
-                image.copy()
-            )  # making a copy to avoid removing antialiasing on the image returned by
+            image_copy = image.copy()  # making a copy to avoid removing antialiasing on the image returned by
             # the forward pass (the c++ back-propagation undoes antialiasing), could be
             # optional if we don't care about getting aliased images
-            differentiable_renderer_cython.renderSceneBCpp(
-                scene.scene_2d, 1, image_copy, z_buffer, image_b.numpy()
-            )
-            return tf.constant(scene.scene_2d.ij_b), tf.constant(
-                scene.scene_2d.colors_b
-            )
+            differentiable_renderer_cython.renderSceneBCpp(scene.scene_2d, 1, image_copy, z_buffer, image_b.numpy())
+            return tf.constant(scene.scene_2d.ij_b), tf.constant(scene.scene_2d.colors_b)
 
         return tf.convert_to_tensor(image), backward
 
@@ -111,19 +99,12 @@ class Scene3DTensorflow(Scene3D):
     def _compute_vertices_colors_with_illumination(self) -> tf.Tensor:
         assert self.mesh is not None, "You need to provide a mesh first."
         vertices_luminosity = (
-            tf.nn.relu(
-                -tf.reduce_sum(
-                    self.mesh.vertex_normals * self.light_directional, axis=1
-                )
-            )
-            + self.light_ambient
+            tf.nn.relu(-tf.reduce_sum(self.mesh.vertex_normals * self.light_directional, axis=1)) + self.light_ambient
         )
         return self.mesh.vertices_colors * vertices_luminosity[:, None]
 
     def _render_2d(self) -> tf.Tensor:
         return (
-            TensorflowDifferentiableRender2D(
-                self.scene_2d.ij, self.scene_2d.colors, self
-            ),
+            TensorflowDifferentiableRender2D(self.scene_2d.ij, self.scene_2d.colors, self),
             self.scene_2d.depths,
         )

@@ -9,8 +9,8 @@ import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import torch
 
-from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
 from .. import LaplacianRigidEnergy
+from . import CameraPytorch, LaplacianRigidEnergyPytorch, Scene3DPytorch
 from .triangulated_mesh_pytorch import ColoredTriMeshPytorch as ColoredTriMesh
 
 
@@ -57,19 +57,11 @@ class MeshDepthFitterEnergy(torch.nn.Module):
         self.Vinit = copy.copy(self.mesh.vertices)
         self.Hfactorized = None
         self.Hpreconditioner = None
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler_init
-        ).as_quat()
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler_init).as_quat()
         self.transform_translation_init = translation_init
-        self._vertices = torch.nn.Parameter(
-            torch.tensor(self.Vinit, dtype=torch.float64)
-        )
-        self.quaternion = torch.nn.Parameter(
-            torch.tensor(self.transform_quaternion_init, dtype=torch.float64)
-        )
-        self.translation = torch.nn.Parameter(
-            torch.tensor(self.transform_translation_init, dtype=torch.float64)
-        )
+        self._vertices = torch.nn.Parameter(torch.tensor(self.Vinit, dtype=torch.float64))
+        self.quaternion = torch.nn.Parameter(torch.tensor(self.transform_quaternion_init, dtype=torch.float64))
+        self.translation = torch.nn.Parameter(torch.tensor(self.transform_translation_init, dtype=torch.float64))
 
     def set_max_depth(self, max_depth: float) -> None:
         self.max_depth = max_depth
@@ -93,9 +85,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         t = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, t))
         self.camera = CameraPytorch(
             extrinsic=extrinsic,
@@ -118,9 +108,7 @@ class MeshDepthFitterEnergy(torch.nn.Module):
             depth_scale=depth_scale,
         )
         depth = torch.clamp(depth, 0, self.max_depth)
-        diff_image = torch.sum(
-            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
-        )
+        diff_image = torch.sum((depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2)
         self.depth = depth
         self.diff_image = diff_image
         energy_data = torch.sum(diff_image)
@@ -145,9 +133,7 @@ class MeshDepthFitterPytorchOptim:
         cregu: float = 2000,
         lr: float = 0.8,
     ):
-        self.energy = MeshDepthFitterEnergy(
-            vertices, faces, euler_init, translation_init, cregu
-        )
+        self.energy = MeshDepthFitterEnergy(vertices, faces, euler_init, translation_init, cregu)
         params = self.energy.parameters()
         self.optimizer = torch.optim.LBFGS(params, lr=0.8, max_iter=1)
         # self.optimizer = torch.optim.SGD(params, lr=0.000005, momentum=0.1,
@@ -229,12 +215,8 @@ class MeshDepthFitter:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -267,9 +249,7 @@ class MeshDepthFitter:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = CameraPytorch(
             extrinsic=extrinsic,
@@ -284,22 +264,14 @@ class MeshDepthFitter:
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
         # vertices_with_grad = self.vertices.clone().requires_grad(True)
         vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)
-        vertices_with_grad_centered = (
-            vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
-        )
-        quaternion_with_grad = torch.tensor(
-            self.transform_quaternion, dtype=torch.float64, requires_grad=True
-        )
-        translation_with_grad = torch.tensor(
-            self.transform_translation, dtype=torch.float64, requires_grad=True
-        )
+        vertices_with_grad_centered = vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
+        quaternion_with_grad = torch.tensor(self.transform_quaternion, dtype=torch.float64, requires_grad=True)
+        translation_with_grad = torch.tensor(self.transform_translation, dtype=torch.float64, requires_grad=True)
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
         )  # that will lead to a gradient that is in the tangent space
-        vertices_with_grad_transformed = (
-            qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
-        )
+        vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
 
         self.mesh.set_vertices(vertices_with_grad_transformed)
 
@@ -307,9 +279,7 @@ class MeshDepthFitter:
         depth = self.scene.render_depth(self.camera, depth_scale=depth_scale)
         depth = torch.clamp(depth, 0, self.max_depth)
 
-        diff_image = torch.sum(
-            (depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2
-        )
+        diff_image = torch.sum((depth - torch.tensor(self.mesh_image[:, :, None])) ** 2, dim=2)
         loss = torch.sum(diff_image)
 
         loss.backward()
@@ -329,9 +299,7 @@ class MeshDepthFitter:
         grad = grad_data + grad_rigidity
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad, self.step_factor_vertices, self.step_max_vertices
-        )
+        step_vertices = mult_and_clamp(-grad, self.step_factor_vertices, self.step_max_vertices)
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * self.inertia + (1 - self.inertia) * step_vertices
         )
@@ -346,9 +314,7 @@ class MeshDepthFitter:
             self.speed_quaternion * self.inertia + (1 - self.inertia) * step_quaternion
         )
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
         # update translation
 
         step_translation = mult_and_clamp(
@@ -357,8 +323,7 @@ class MeshDepthFitter:
             self.step_max_translation,
         )
         self.speed_translation = (1 - self.damping) * (
-            self.speed_translation * self.inertia
-            + (1 - self.inertia) * step_translation
+            self.speed_translation * self.inertia + (1 - self.inertia) * step_translation
         )
         self.transform_translation = self.transform_translation + self.speed_translation
 
@@ -421,12 +386,8 @@ class MeshRGBFitterWithPose:
     def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -460,9 +421,7 @@ class MeshRGBFitterWithPose:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = CameraPytorch(
             extrinsic=extrinsic,
@@ -476,41 +435,25 @@ class MeshRGBFitterWithPose:
     def step(self) -> Tuple[float, np.ndarray, np.ndarray]:
         self.vertices = self.vertices - torch.mean(self.vertices, dim=0)[None, :]
         vertices_with_grad = self.vertices.clone().detach().requires_grad_(True)
-        vertices_with_grad_centered = (
-            vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
-        )
-        quaternion_with_grad = torch.tensor(
-            self.transform_quaternion, dtype=torch.float64, requires_grad=True
-        )
-        translation_with_grad = torch.tensor(
-            self.transform_translation, dtype=torch.float64, requires_grad=True
-        )
+        vertices_with_grad_centered = vertices_with_grad - torch.mean(vertices_with_grad, dim=0)[None, :]
+        quaternion_with_grad = torch.tensor(self.transform_quaternion, dtype=torch.float64, requires_grad=True)
+        translation_with_grad = torch.tensor(self.transform_translation, dtype=torch.float64, requires_grad=True)
 
-        light_directional_with_grad = torch.tensor(
-            self.light_directional, dtype=torch.float64, requires_grad=True
-        )
-        light_ambient_with_grad = torch.tensor(
-            self.light_ambient, dtype=torch.float64, requires_grad=True
-        )
-        mesh_color_with_grad = torch.tensor(
-            self.mesh_color, dtype=torch.float64, requires_grad=True
-        )
+        light_directional_with_grad = torch.tensor(self.light_directional, dtype=torch.float64, requires_grad=True)
+        light_ambient_with_grad = torch.tensor(self.light_ambient, dtype=torch.float64, requires_grad=True)
+        mesh_color_with_grad = torch.tensor(self.mesh_color, dtype=torch.float64, requires_grad=True)
 
         q_normalized = (
             quaternion_with_grad / quaternion_with_grad.norm()
         )  # that will lead to a gradient that is in the tangent space
-        vertices_with_grad_transformed = (
-            qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
-        )
+        vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
         self.mesh.set_vertices(vertices_with_grad_transformed)
 
         self.scene.set_light(
             light_directional=light_directional_with_grad,
             light_ambient=light_ambient_with_grad,
         )
-        self.mesh.set_vertices_colors(
-            mesh_color_with_grad.repeat([self.mesh.nb_vertices, 1])
-        )
+        self.mesh.set_vertices_colors(mesh_color_with_grad.repeat([self.mesh.nb_vertices, 1]))
 
         image = self.scene.render(self.camera)
 
@@ -525,7 +468,7 @@ class MeshRGBFitterWithPose:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices)
         energy = energy_data + energy_rigid.numpy()
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -536,12 +479,8 @@ class MeshRGBFitterWithPose:
         inertia = self.inertia
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad.numpy(), self.step_factor_vertices, self.step_max_vertices
-        )
-        self.speed_vertices = (1 - self.damping) * (
-            self.speed_vertices * inertia + (1 - inertia) * step_vertices
-        )
+        step_vertices = mult_and_clamp(-grad.numpy(), self.step_factor_vertices, self.step_max_vertices)
+        self.speed_vertices = (1 - self.damping) * (self.speed_vertices * inertia + (1 - inertia) * step_vertices)
         self.vertices = self.vertices + torch.tensor(self.speed_vertices)
         # update rotation
         step_quaternion = mult_and_clamp(
@@ -549,13 +488,9 @@ class MeshRGBFitterWithPose:
             self.step_factor_quaternion,
             self.step_max_quaternion,
         )
-        self.speed_quaternion = (1 - self.damping) * (
-            self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
-        )
+        self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * inertia + (1 - inertia) * step_quaternion)
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
 
         # update translation
         step_translation = mult_and_clamp(
@@ -575,15 +510,11 @@ class MeshRGBFitterWithPose:
         self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
         step = -light_ambient_with_grad.grad.numpy() * 0.0001
-        self.speed_light_ambient = (1 - self.damping) * (
-            self.speed_light_ambient * inertia + (1 - inertia) * step
-        )
+        self.speed_light_ambient = (1 - self.damping) * (self.speed_light_ambient * inertia + (1 - inertia) * step)
         self.light_ambient = self.light_ambient + self.speed_light_ambient
         # update mesh color
         step = -mesh_color_with_grad.grad.numpy() * 0.00001
-        self.speed_mesh_color = (1 - self.damping) * (
-            self.speed_mesh_color * inertia + (1 - inertia) * step
-        )
+        self.speed_mesh_color = (1 - self.damping) * (self.speed_mesh_color * inertia + (1 - inertia) * step)
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1

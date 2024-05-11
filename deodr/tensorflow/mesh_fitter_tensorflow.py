@@ -8,8 +8,8 @@ import scipy.sparse.linalg
 import scipy.spatial.transform.rotation
 import tensorflow as tf
 
-from . import CameraTensorflow, LaplacianRigidEnergyTensorflow, Scene3DTensorflow
 from .. import LaplacianRigidEnergy
+from . import CameraTensorflow, LaplacianRigidEnergyTensorflow, Scene3DTensorflow
 from .triangulated_mesh_tensorflow import ColoredTriMeshTensorflow as ColoredTriMesh
 
 
@@ -64,12 +64,8 @@ class MeshDepthFitter:
         self.set_mesh_transform_init(euler=euler_init, translation=translation_init)
         self.reset()
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -102,9 +98,7 @@ class MeshDepthFitter:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
@@ -129,16 +123,12 @@ class MeshDepthFitter:
             tape.watch(quaternion_with_grad)
             tape.watch(translation_with_grad)
 
-            vertices_with_grad_centered = (
-                vertices_with_grad - tf.reduce_mean(vertices_with_grad, axis=0)[None, :]
-            )
+            vertices_with_grad_centered = vertices_with_grad - tf.reduce_mean(vertices_with_grad, axis=0)[None, :]
 
             q_normalized = quaternion_with_grad / tf.norm(
                 quaternion_with_grad
             )  # that will lead to a gradient that is in the tangeant space
-            vertices_with_grad_transformed = (
-                qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
-            )
+            vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
 
             self.mesh.set_vertices(vertices_with_grad_transformed)
 
@@ -149,9 +139,7 @@ class MeshDepthFitter:
             )
             depth = tf.clip_by_value(depth, 0, self.max_depth)
 
-            diff_image = tf.reduce_sum(
-                (depth - tf.constant(self.mesh_image[:, :, None])) ** 2, axis=2
-            )
+            diff_image = tf.reduce_sum((depth - tf.constant(self.mesh_image[:, :, None])) ** 2, axis=2)
             loss = tf.reduce_sum(diff_image)
 
             trainable_variables = [
@@ -159,9 +147,7 @@ class MeshDepthFitter:
                 quaternion_with_grad,
                 translation_with_grad,
             ]
-            vertices_grad, quaternion_grad, translation_grad = tape.gradient(
-                loss, trainable_variables
-            )
+            vertices_grad, quaternion_grad, translation_grad = tape.gradient(loss, trainable_variables)
 
         energy_data = loss.numpy()
 
@@ -179,9 +165,7 @@ class MeshDepthFitter:
         grad = grad_data + grad_rigidity
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad.numpy(), self.step_factor_vertices, self.step_max_vertices
-        )
+        step_vertices = mult_and_clamp(-grad.numpy(), self.step_factor_vertices, self.step_max_vertices)
         self.speed_vertices = (1 - self.damping) * (
             self.speed_vertices * self.inertia + (1 - self.inertia) * step_vertices
         )
@@ -197,17 +181,14 @@ class MeshDepthFitter:
         )
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
         # update translation
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
         step_translation = mult_and_clamp(
             -translation_grad.numpy(),
             self.step_factor_translation,
             self.step_max_translation,
         )
         self.speed_translation = (1 - self.damping) * (
-            self.speed_translation * self.inertia
-            + (1 - self.inertia) * step_translation
+            self.speed_translation * self.inertia + (1 - self.inertia) * step_translation
         )
         self.transform_translation = self.transform_translation + self.speed_translation
 
@@ -270,12 +251,8 @@ class MeshRGBFitterWithPose:
     def set_background_color(self, background_color: np.ndarray) -> None:
         self.scene.set_background_color(background_color)
 
-    def set_mesh_transform_init(
-        self, euler: np.ndarray, translation: np.ndarray
-    ) -> None:
-        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler(
-            "zyx", euler
-        ).as_quat()
+    def set_mesh_transform_init(self, euler: np.ndarray, translation: np.ndarray) -> None:
+        self.transform_quaternion_init = scipy.spatial.transform.Rotation.from_euler("zyx", euler).as_quat()
         self.transform_translation_init = translation
 
     def reset(self) -> None:
@@ -309,9 +286,7 @@ class MeshRGBFitterWithPose:
 
         rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
         trans = -rot.T.dot(self.camera_center)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
         extrinsic = np.column_stack((rot, trans))
         self.camera = CameraTensorflow(
             extrinsic=extrinsic,
@@ -329,9 +304,7 @@ class MeshRGBFitterWithPose:
             translation_with_grad = tf.constant(self.transform_translation)
 
             light_directional_with_grad = tf.constant(self.light_directional)
-            light_ambient_with_grad = tf.constant(
-                [self.light_ambient], dtype=np.float64
-            )
+            light_ambient_with_grad = tf.constant([self.light_ambient], dtype=np.float64)
             mesh_color_with_grad = tf.constant(self.mesh_color)
 
             tape.watch(vertices_with_grad)
@@ -342,31 +315,23 @@ class MeshRGBFitterWithPose:
             tape.watch(light_ambient_with_grad)
             tape.watch(mesh_color_with_grad)
 
-            vertices_with_grad_centered = (
-                vertices_with_grad - tf.reduce_mean(vertices_with_grad, axis=0)[None, :]
-            )
+            vertices_with_grad_centered = vertices_with_grad - tf.reduce_mean(vertices_with_grad, axis=0)[None, :]
 
             q_normalized = quaternion_with_grad / tf.norm(
                 quaternion_with_grad
             )  # that will lead to a gradient that is in the tangeant space
-            vertices_with_grad_transformed = (
-                qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
-            )
+            vertices_with_grad_transformed = qrot(q_normalized, vertices_with_grad_centered) + translation_with_grad
             self.mesh.set_vertices(vertices_with_grad_transformed)
 
             self.scene.set_light(
                 light_directional=light_directional_with_grad,
                 light_ambient=light_ambient_with_grad,
             )
-            self.mesh.set_vertices_colors(
-                tf.tile(mesh_color_with_grad[None, :], [self.mesh.nb_vertices, 1])
-            )
+            self.mesh.set_vertices_colors(tf.tile(mesh_color_with_grad[None, :], [self.mesh.nb_vertices, 1]))
 
             image = self.scene.render(self.camera)
 
-            diff_image = tf.reduce_sum(
-                (image - tf.constant(self.mesh_image)) ** 2, axis=2
-            )
+            diff_image = tf.reduce_sum((image - tf.constant(self.mesh_image)) ** 2, axis=2)
             loss = tf.reduce_sum(diff_image)
 
             trainable_variables = [
@@ -393,7 +358,7 @@ class MeshRGBFitterWithPose:
         (
             energy_rigid,
             grad_rigidity,
-            approx_hessian_rigidity,
+            _,
         ) = self.rigid_energy.evaluate(self.vertices)
         energy = energy_data + energy_rigid.numpy()
         print("Energy=%f : EData=%f E_rigid=%f" % (energy, energy_data, energy_rigid))
@@ -404,28 +369,16 @@ class MeshRGBFitterWithPose:
         inertia = self.inertia
 
         # update vertices
-        step_vertices = mult_and_clamp(
-            -grad.numpy(), self.step_factor_vertices, self.step_max_vertices
-        )
-        self.speed_vertices = (1 - self.damping) * (
-            self.speed_vertices * inertia + (1 - inertia) * step_vertices
-        )
+        step_vertices = mult_and_clamp(-grad.numpy(), self.step_factor_vertices, self.step_max_vertices)
+        self.speed_vertices = (1 - self.damping) * (self.speed_vertices * inertia + (1 - inertia) * step_vertices)
         self.vertices = self.vertices + self.speed_vertices
         # update rotation
-        step_quaternion = mult_and_clamp(
-            -quaternion_grad, self.step_factor_quaternion, self.step_max_quaternion
-        )
-        self.speed_quaternion = (1 - self.damping) * (
-            self.speed_quaternion * inertia + (1 - inertia) * step_quaternion
-        )
+        step_quaternion = mult_and_clamp(-quaternion_grad, self.step_factor_quaternion, self.step_max_quaternion)
+        self.speed_quaternion = (1 - self.damping) * (self.speed_quaternion * inertia + (1 - inertia) * step_quaternion)
         self.transform_quaternion = self.transform_quaternion + self.speed_quaternion
         # update translation
-        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(
-            self.transform_quaternion
-        )
-        step_translation = mult_and_clamp(
-            -translation_grad, self.step_factor_translation, self.step_max_translation
-        )
+        self.transform_quaternion = self.transform_quaternion / np.linalg.norm(self.transform_quaternion)
+        step_translation = mult_and_clamp(-translation_grad, self.step_factor_translation, self.step_max_translation)
         self.speed_translation = (1 - self.damping) * (
             self.speed_translation * inertia + (1 - inertia) * step_translation
         )
@@ -438,15 +391,11 @@ class MeshRGBFitterWithPose:
         self.light_directional = self.light_directional + self.speed_light_directional
         # update ambient light
         step = -light_ambient_grad * 0.0001
-        self.speed_light_ambient = (1 - self.damping) * (
-            self.speed_light_ambient * inertia + (1 - inertia) * step
-        )
+        self.speed_light_ambient = (1 - self.damping) * (self.speed_light_ambient * inertia + (1 - inertia) * step)
         self.light_ambient = self.light_ambient + self.speed_light_ambient.numpy()[0]  # type: ignore
         # update mesh color
         step = -mesh_color_grad * 0.00001
-        self.speed_mesh_color = (1 - self.damping) * (
-            self.speed_mesh_color * inertia + (1 - inertia) * step
-        )
+        self.speed_mesh_color = (1 - self.damping) * (self.speed_mesh_color * inertia + (1 - inertia) * step)
         self.mesh_color = self.mesh_color + self.speed_mesh_color
 
         self.iter += 1

@@ -1,0 +1,39 @@
+line-length = 120
+
+[lint.flake8-quotes]
+inline-quotes = "double"
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.isort]
+force-sort-within-sections=true
+known-first-party= ["deodr"]
+section-order= ["future", "standard-library", "third-party", "first-party", "local-folder"]
+order-by-type=false
+
+[lint]
+preview = true
+select = ["D", "E", "F", "B", "W", "N", "A", "Q", "PL", "I"]
+ignore = [
+"PLR2004", # magic value comparison
+"PLW1514", # unspecified encoding in open
+"PLR0913", # Too many arguments in function definition
+"PLR0915", # Too many statements
+"PLR0912", # Too many branches
+"PLR0917", # too many positional args
+"PLR0914", # Too many local variables
+"PLR6201", # Use a `set` literal when testing for membership
+"PLR6301", # Method `_generate_tag` could be a function, class method, or static method
+"PLC0415", # `import` should be at the top-level of a file
+"PLR0904", # Too many public methods
+"PLR6104", # use *= etc
+"D102", 
+"D103", 
+"D105",
+"D107", 
+"D205",
+"D212",
+"N802",
+"B028"
+]

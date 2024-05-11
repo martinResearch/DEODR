@@ -41,9 +41,7 @@ def run(
     default_light_ambient = 0.6
     # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
-    euler_init = np.row_stack(
-        [np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)]
-    )
+    euler_init = np.row_stack([np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)])
 
     vertices = vertices - np.mean(vertices, axis=0)
     t_init = np.array([0, -0.2, 0.2])
@@ -137,9 +135,7 @@ def run(
     # compare with previous runs
     if plot_curves:
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iter_folder, "rgb_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iter_folder, "rgb_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(
@@ -151,9 +147,7 @@ def run(
                 plt.ylabel("energies")
         plt.legend()
         plt.figure()
-        for file in glob.glob(
-            os.path.join(iter_folder, "rgb_image_fitting_result_*.json")
-        ):
+        for file in glob.glob(os.path.join(iter_folder, "rgb_image_fitting_result_*.json")):
             with open(file, "r") as fp:
                 json_data = json.load(fp)
                 plt.plot(json_data["energies"], label=json_data["label"])

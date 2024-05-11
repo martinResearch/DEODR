@@ -26,16 +26,15 @@ jobs:
         pip install -r requirements.txt
         pip freeze
 
-    - name: Black
+    - name: Ruff format
       run: |
-        pip install black
-        black --check --diff .
+        pip install ruff
+        ruff format --check .
 
-    - name: Lint with flake8
+    - name: Lint with Ruff
       run: |
-        pip install flake8 pep8-naming flake8-bugbear flake8-builtins flake8-docstrings flake8-import-order
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --radon-max-cc 16
+        pip install ruff
+        ruff .
 
     - name: Mypy
       run: |

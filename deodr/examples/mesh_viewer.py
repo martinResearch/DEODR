@@ -74,9 +74,7 @@ class Interactor:
             )
             self.camera.extrinsic = np.column_stack((n_rotation, nt))
 
-    def mouse_callback(
-        self, event: int, x: int, y: int, flags: int, param: Any
-    ) -> None:
+    def mouse_callback(self, event: int, x: int, y: int, flags: int, param: Any) -> None:
         if event == 0 and flags == 0:
             return
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -147,9 +145,7 @@ class Interactor:
         if self.right_is_down and not (self.ctrl_is_down):
             if self.mode in ["camera_centered", "object_centered_trackball"]:
                 if np.abs(self.y_last - y) >= np.abs(self.x_last - x):
-                    self.camera.extrinsic[2, 3] += self.z_translation_speed * (
-                        self.y_last - y
-                    )
+                    self.camera.extrinsic[2, 3] += self.z_translation_speed * (self.y_last - y)
                 else:
                     self.rotate(
                         np.array(
@@ -169,17 +165,12 @@ class Interactor:
         if self.middle_is_down or (self.left_is_down and self.ctrl_is_down):
             # translation
 
-            object_depth = (
-                self.camera.extrinsic[2, :3].dot(self.object_center)
-                + self.camera.extrinsic[2, 3]
-            )
+            object_depth = self.camera.extrinsic[2, :3].dot(self.object_center) + self.camera.extrinsic[2, 3]
 
             tx = self.xy_translation_speed * object_depth * (x - self.x_last)
             ty = self.xy_translation_speed * object_depth * (y - self.y_last)
 
-            self.object_center -= (
-                self.camera.extrinsic[0, :3] * tx + self.camera.extrinsic[1, :3] * ty
-            )
+            self.object_center -= self.camera.extrinsic[0, :3] * tx + self.camera.extrinsic[1, :3] * ty
             self.camera.extrinsic[0, 3] += tx
             self.camera.extrinsic[1, 3] += ty
             self.x_last = x
@@ -188,41 +179,27 @@ class Interactor:
     def print_help(self) -> None:
         help_str = "" + "Mouse:\n"
         if self.mode == "object_centered_trackball":
-            help_str += (
-                "mouse left + vertical motion: rotate object along camera x axis\n"
-            )
-            help_str += (
-                "mouse left + horizontal motion: rotate object along camera y axis\n"
-            )
-            help_str += (
-                "mouse right + vertical motion: translate object along camera z axis\n"
-            )
-            help_str += (
-                "mouse right + horizontal motion: rotate object along camera z axis\n"
-            )
+            help_str += "mouse left + vertical motion: rotate object along camera x axis\n"
+            help_str += "mouse left + horizontal motion: rotate object along camera y axis\n"
+            help_str += "mouse right + vertical motion: translate object along camera z axis\n"
+            help_str += "mouse right + horizontal motion: rotate object along camera z axis\n"
             help_str += "CTRL + mouse left + vertical motion: translate object along camera y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate object along camera x axis\n"
 
         else:
-            help_str += (
-                "mouse right + vertical motion: translate camera along its z axis\n"
-            )
-            help_str += (
-                "mouse right + horizontal motion: rotate camera along its z axis\n"
-            )
+            help_str += "mouse right + vertical motion: translate camera along its z axis\n"
+            help_str += "mouse right + horizontal motion: rotate camera along its z axis\n"
             help_str += "mouse left + vertical motion: rotate camera along its x axis\n"
-            help_str += (
-                "mouse left + horizontal motion: rotate camera along its y axis\n"
-            )
+            help_str += "mouse left + horizontal motion: rotate camera along its y axis\n"
             help_str += "CTRL + mouse left + vertical motion: translate camera along its y axis\n"
             help_str += "CTRL + mouse left + horizontal motion: translate camera along its x axis\n"
-        help_str += (
-            "SHIFT + mouse left + vertical motion: change the camera field of view\n"
-        )
+        help_str += "SHIFT + mouse left + vertical motion: change the camera field of view\n"
         print(help_str)
 
 
 class Viewer:
+    """Interactive 3D viewer."""
+
     def __init__(
         self,
         file_or_mesh: Union[str, ColoredTriMesh],
@@ -282,9 +259,7 @@ class Viewer:
     ) -> None:
         self.light_directional = np.array(light_directional)
         self.light_ambient = light_ambient
-        self.scene.set_light(
-            light_directional=self.light_directional, light_ambient=light_ambient
-        )
+        self.scene.set_light(light_directional=self.light_directional, light_ambient=light_ambient)
 
     def setup_moderngl(self) -> None:
         self.offscreen_renderer = OffscreenRenderer()
@@ -292,9 +267,7 @@ class Viewer:
         self.scene.mesh.compute_vertex_normals()
         self.offscreen_renderer.set_scene(self.scene)
 
-    def set_background_color(
-        self, background_color: Tuple[float, float, float]
-    ) -> None:
+    def set_background_color(self, background_color: Tuple[float, float, float]) -> None:
         self.scene.set_background_color(background_color)
 
     def display_texture_map(self) -> None:
@@ -323,12 +296,8 @@ class Viewer:
                     " can be string or trimesh.base.Trimesh"
                 )
             )
-        self.object_center = 0.5 * (
-            self.mesh.vertices.max(axis=0) + self.mesh.vertices.min(axis=0)
-        )
-        self.object_radius = np.max(
-            self.mesh.vertices.max(axis=0) - self.mesh.vertices.min(axis=0)
-        )
+        self.object_center = 0.5 * (self.mesh.vertices.max(axis=0) + self.mesh.vertices.min(axis=0))
+        self.object_radius = np.max(self.mesh.vertices.max(axis=0) - self.mesh.vertices.min(axis=0))
         self.scene.set_mesh(self.mesh)
 
     def recenter_camera(self) -> None:
@@ -337,9 +306,7 @@ class Viewer:
         translation = -rotation.T.dot(camera_center)
         extrinsic = np.column_stack((rotation, translation))
         focal = 0.5 * self.width / np.tan(0.5 * self.horizontal_fov * np.pi / 180)
-        intrinsic = np.array(
-            [[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]]
-        )
+        intrinsic = np.array([[focal, 0, self.width / 2], [0, focal, self.height / 2], [0, 0, 1]])
 
         distortion = [0, 0, 0, 0, 0]
         self.camera = differentiable_renderer.Camera(
@@ -377,9 +344,7 @@ class Viewer:
             self.fps = 1 / (new_time - self.last_time)
         else:
             new_fps = 1 / (new_time - self.last_time)
-            self.fps = (
-                1 - self.fps_exp_average_decay
-            ) * self.fps + self.fps_exp_average_decay * new_fps
+            self.fps = (1 - self.fps_exp_average_decay) * self.fps + self.fps_exp_average_decay * new_fps
         self.last_time = new_time
 
     def refresh(self) -> None:
@@ -532,10 +497,10 @@ class Viewer:
     def toggle_video_recording(self) -> None:
         """Start and stop video recording."""
         if not self.recording:
-            id = 0
-            while os.path.exists(self.video_pattern.format(**dict(id=id))):
-                id += 1
-            filename = self.video_pattern.format(**dict(id=id))
+            video_id = 0
+            while os.path.exists(self.video_pattern.format(**dict(id=video_id))):
+                video_id += 1
+            filename = self.video_pattern.format(**dict(id=video_id))
 
             self.video_writer = cv2.VideoWriter(
                 filename,
