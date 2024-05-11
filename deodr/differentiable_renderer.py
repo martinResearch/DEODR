@@ -1249,9 +1249,9 @@ class Scene3D:
 
         background_image = np.zeros((height, width, nb_colors))
         if "depth" in channels:
-            background_image[
-                :, :, ranges["depth"][0] : ranges["depth"][1]
-            ] = depths.max()
+            background_image[:, :, ranges["depth"][0] : ranges["depth"][1]] = (
+                depths.max()
+            )
 
         scene_2d = Scene2DBase(
             faces=soup_faces,

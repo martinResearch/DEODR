@@ -1,4 +1,5 @@
 """Implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
+
 import copy
 from typing import Tuple
 

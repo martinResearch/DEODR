@@ -1,4 +1,5 @@
 """Tensorflow implementation of an as-rigid-as-possible energy based on the difference of laplacian with a reference shape."""
+
 from typing import Tuple
 
 import numpy as np

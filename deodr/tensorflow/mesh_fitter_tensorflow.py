@@ -1,4 +1,5 @@
 """Modules containing Tensorflow classes to fit 3D meshes to images using differentiable rendering."""
+
 import copy
 from typing import Optional, Tuple, Union
 

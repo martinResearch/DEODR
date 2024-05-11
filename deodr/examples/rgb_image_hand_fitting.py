@@ -1,4 +1,5 @@
 """Example with fitting a colored hand mesh model to an image."""
+
 import datetime
 import glob
 import json

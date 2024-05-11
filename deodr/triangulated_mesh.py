@@ -10,7 +10,7 @@ from .tools import cross_backward, normalize, normalize_backward
 try:
     from trimesh.base import Trimesh
 except ImportError:
-    Trimesh = None
+    pass
 
 
 class TriMeshAdjacencies:
@@ -244,7 +244,7 @@ class TriMesh:
         surfaces is a closed manifold. This is done by summing the volumes of the
         simplices formed by joining the origin and the vertices of each triangle.
         """
-        if not  self._adjacencies.is_closed:
+        if not self._adjacencies.is_closed:
             raise (
                 BaseException(
                     "The volume can only be computed for closed manifold surfaces"
@@ -527,8 +527,10 @@ class ColoredTriMesh(TriMesh):
         """
         import trimesh
 
-        mesh_trimesh = trimesh.load(filename)
-        return ColoredTriMesh.from_trimesh(mesh_trimesh, process=process)
+        mesh_trimesh = trimesh.load_mesh(filename, process=process)
+        if not isinstance(mesh_trimesh, Trimesh):
+            raise BaseException("Only triangulated meshes are supported.")
+        return ColoredTriMesh.from_trimesh(mesh_trimesh)
 
 
 def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:

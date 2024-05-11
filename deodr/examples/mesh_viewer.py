@@ -306,8 +306,7 @@ class Viewer:
         if isinstance(file_or_mesh, str):
             if self.title is None:
                 self.title = file_or_mesh
-            mesh_trimesh = trimesh.load(file_or_mesh)
-            self.mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+            self.mesh = ColoredTriMesh.load(file_or_mesh)
         elif isinstance(file_or_mesh, trimesh.base.Trimesh):
             mesh_trimesh = file_or_mesh
             self.mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)

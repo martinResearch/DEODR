@@ -19,7 +19,7 @@ def main() -> None:
 
     faces_pca = decomposition.PCA(n_components=150, whiten=True)
     faces_pca.fit(faces.data)
-    plt.imshow(faces_pca.mean_.reshape(faces.images[0].shape), cmap=plt.cm.bone)
+    plt.imshow(faces_pca.mean_.reshape(faces.images[0].shape), cmap=plt.cm.grey)  # type: ignore
 
     # coefs = faces_pca.transform(faces.data)
     # print(faces)

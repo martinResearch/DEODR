@@ -7,7 +7,6 @@ import imageio.v3 as imageio
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation
-import trimesh
 
 import deodr
 from deodr import differentiable_renderer
@@ -22,9 +21,8 @@ def default_scene(
     use_distortion: bool = True,
     integer_pixel_centers: bool = True,
 ) -> Tuple[Scene3D, Camera]:
-    mesh_trimesh = trimesh.load(obj_file)
 
-    mesh = ColoredTriMesh.from_trimesh(mesh_trimesh)
+    mesh = ColoredTriMesh.load(obj_file)
 
     # rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()
     rot = Rotation.from_euler("xyz", [180, 0, 0], degrees=True).as_matrix()

@@ -2,6 +2,7 @@
 
 Note that pyrender does not support camera distortion.
 """
+
 from typing import Optional, Tuple
 
 import numpy as np

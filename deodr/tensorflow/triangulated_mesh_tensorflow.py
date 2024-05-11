@@ -1,4 +1,5 @@
 """Tensorflow implementation of a triangulated mesh."""
+
 from typing import Optional
 
 import numpy as np
