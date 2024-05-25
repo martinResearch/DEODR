@@ -5,8 +5,8 @@ DEODR (for Discontinuity-Edge-Overdraw based Differentiable Renderer) is a diffe
 The core triangle rasterization procedures and their adjoint are written in C for speed, while the vertices normals computation and camera projections are computed in either Python (numpy, pytorch or tensorflow) or Matlab in order to gain flexibility and improve the integration with automatic differentiation libraries. The core C++ differentiable renderer has been implemented in 2008 and described in [1,2]. Unlike most other differentiable renderers (except the recent SoftRas [8] and to some extend the differentiable ray/path tracing methods in [10] and [13]), the rendering is differentiable along the occlusion boundaries and no had-hoc approximation is needed in the backpropagation pass to deal with discontinuities along occlusion boundaries. This is achieved by using a differentiable antialiasing method called *Discontinuity-Edge-Overdraw* [3] that progressively blends the colour of the front triangle with the back triangle along occlusion boundaries.
 
 [![PyPI version](https://badge.fury.io/py/deodr.svg)](https://badge.fury.io/py/deodr)
-[![Build status](https://ci.appveyor.com/api/projects/status/mh640uc20poycuww?svg=true)](https://ci.appveyor.com/project/martinResearch/deodr)
-![Python package](https://github.com/martinResearch/DEODR/workflows/Python%20package/badge.svg)
+[![Build status](https://github.com/martinResearch/DEODR/actions/workflows/wheels.yml/badge.svg)
+![Python package](https://github.com/martinResearch/DEODR/actions/workflows/pythonpackage.yml/badge.svg)
 
 # Table of content
 
