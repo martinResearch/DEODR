@@ -189,8 +189,8 @@ def main() -> None:
     for niter in range(nb_iter):
         energy, grads = fun(**variables)
         print(f"iter{niter} E={energy}")
-        for name in variables:
-            variables[name] = variables[name] - lambdas[name] * grads[name]
+        for name, variable in variables.items():
+            variables[name] = variable - lambdas[name] * grads[name]
 
         variables["points_deformed"][on_border] = points[on_border]
 

@@ -1,7 +1,7 @@
 """Test using rgb_image hand fitting."""
 
 import numpy as np
-import tensorflow as tf
+import pytest
 
 from deodr.examples.rgb_image_hand_fitting import run
 
@@ -49,7 +49,10 @@ def test_rgb_image_hand_fitting_numpy() -> None:
     assert np.any(np.abs(np.array(possible_results) - energies[49]) < 1e-5)
 
 
+@pytest.mark.skip(reason="Tensorflow does nto support numpy 2.0 yet")
 def test_rgb_image_hand_fitting_tensorflow() -> None:
+    import tensorflow as tf
+
     tf.config.set_visible_devices([], "GPU")  # Running on CPU to get deterministic results
 
     energies = run(

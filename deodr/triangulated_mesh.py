@@ -546,7 +546,7 @@ def loop_subdivision(mesh: ColoredTriMesh, n_iter: int = 1) -> ColoredTriMesh:
             mesh.adjacencies.faces_edges[:, 2] + mesh.nb_vertices,
         )
     )
-    new_faces = np.row_stack((faces1, faces2, faces3, faces4))
+    new_faces = np.vstack((faces1, faces2, faces3, faces4))
     if mesh.uv is not None:
         raise BaseException("Textured mesh not supported yet in subdivision.")
     if mesh.vertices_colors is not None:

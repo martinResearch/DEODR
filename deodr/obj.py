@@ -45,8 +45,8 @@ def read_obj(filename: str) -> Tuple[np.ndarray, np.ndarray]:
                 cleaned_fields.append(v)
             faces.append(np.array(cleaned_fields))
 
-    faces_np = np.row_stack(faces)
-    vertices_np = np.row_stack(vertices)
+    faces_np = np.vstack(faces)
+    vertices_np = np.vstack(vertices)
     return faces_np, vertices_np
 
 

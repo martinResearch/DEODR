@@ -1,4 +1,5 @@
 python.exe -m venv python_venv
-.\python_venv\scripts\python.exe -m pip install --upgrade pip
-.\python_venv\scripts\pip.exe install -r requirements.txt
-.\python_venv\scripts\pip.exe install -e .
+call %~dp0/python_venv/Scripts/activate.bat
+pip install uv
+uv pip sync requirements.txt
+uv pip install -e .

@@ -8,7 +8,7 @@ M. de la Gorce, N. Paragios and David Fleet. PAMI 2011
 Martin de La Gorce. 2019.
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 __all__ = [
     "Scene2D",

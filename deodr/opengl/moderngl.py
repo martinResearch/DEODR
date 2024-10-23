@@ -128,7 +128,7 @@ class OffscreenRenderer:
         # texture.build_mipmaps()
 
     def set_camera(self, camera: Camera) -> None:
-        extrinsic = np.row_stack((camera.extrinsic, [0, 0, 0, 1]))
+        extrinsic = np.vstack((camera.extrinsic, [0, 0, 0, 1]))
 
         intrinsic = Matrix44(
             np.diag([1, -1, -1, 1]).dot(

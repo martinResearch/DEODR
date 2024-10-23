@@ -1,0 +1,26 @@
+-f https://download.pytorch.org/whl/cu121
+
+numpy>=2.0.2
+scipy
+Cython
+scikit-learn
+matplotlib
+imageio
+trimesh
+opencv-python>=4.8
+torch 
+torchvision 
+# tensorflow does not support numpy 2.0 yet https://github.com/tensorflow/tensorflow/issues/67291
+# tensorflow
+moderngl
+pyrr
+pyrender
+pytest-xvfb
+
+# devloppement
+radon
+pip-tools
+mypy
+ruff
+
+

@@ -41,7 +41,7 @@ def run(
     default_light_ambient = 0.6
     # default_light = {'directional':np.array([0.0,0.0,0.0]),'ambient':np.array([0.6])}
 
-    euler_init = np.row_stack([np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)])
+    euler_init = np.vstack([np.array([0, yrot, 0]) for yrot in np.linspace(-0.5, 0.5, 3)])
 
     vertices = vertices - np.mean(vertices, axis=0)
     t_init = np.array([0, -0.2, 0.2])
@@ -69,7 +69,7 @@ def run(
 
     hand_image = hand_images[0]
     background_color = np.median(
-        np.row_stack(
+        np.vstack(
             (
                 hand_image[:10, :10, :].reshape(-1, 3),
                 hand_image[-10:, :10, :].reshape(-1, 3),
@@ -97,7 +97,7 @@ def run(
         if display or save_images:
             combined_image = np.column_stack(
                 (
-                    np.row_stack(hand_images),
+                    np.vstack(hand_images),
                     image,
                     np.tile(np.minimum(diff_image, 1)[:, :, None], (1, 1, 3)),
                 )
