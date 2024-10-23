@@ -8,6 +8,7 @@ import tensorflow as tf
 from .. import differentiable_renderer_cython  # type: ignore
 from ..differentiable_renderer import Camera, Scene3D
 
+raise NotImplementedError("Tensorflow support has been dropped starting from version 0.2.3 until tensorflow-intel support numpy 2.0")
 
 class CameraTensorflow(Camera):
     """Tensorflow implementation of the camera class."""

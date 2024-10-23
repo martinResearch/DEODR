@@ -1,2 +1,2 @@
 numpy==2.0.2
-cython==0.29.32
+cython

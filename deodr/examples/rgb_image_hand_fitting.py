@@ -18,9 +18,9 @@ from deodr import ColoredTriMesh, read_obj
 from deodr.mesh_fitter import MeshRGBFitterWithPose
 from deodr.meshlab_io import export_meshlab
 from deodr.pytorch import MeshRGBFitterWithPose as PyTorchMeshRGBFitterWithPose
-from deodr.tensorflow import (
-    MeshRGBFitterWithPose as TensorflowTorchMeshRGBFitterWithPose,
-)
+# from deodr.tensorflow import (
+#     MeshRGBFitterWithPose as TensorflowTorchMeshRGBFitterWithPose,
+# )
 
 DlLibraryType = Literal["pytorch", "tensorflow", "none"]
 
@@ -36,7 +36,7 @@ def run(
     mesh_fitter_selector = {
         "none": MeshRGBFitterWithPose,
         "pytorch": PyTorchMeshRGBFitterWithPose,
-        "tensorflow": TensorflowTorchMeshRGBFitterWithPose,
+        # "tensorflow": TensorflowTorchMeshRGBFitterWithPose,
     }
 
     hand_image = imread(os.path.join(deodr.data_path, "hand.png")).astype(np.double) / 255

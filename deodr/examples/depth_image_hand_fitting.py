@@ -16,7 +16,7 @@ import deodr
 from deodr import ColoredTriMesh
 from deodr.mesh_fitter import MeshDepthFitter
 from deodr.pytorch import MeshDepthFitter as PytorchMeshDepthFitter
-from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
+# from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
 
 
 def run(
@@ -47,7 +47,7 @@ def run(
     mesh_depth_fitter_selector = {
         "none": MeshDepthFitter,
         "pytorch": PytorchMeshDepthFitter,
-        "tensorflow": TensorFlowMeshDepthFitter,
+        # "tensorflow": TensorFlowMeshDepthFitter,
     }
 
     hand_fitter: MeshDepthFitter = mesh_depth_fitter_selector[dl_library](  # type: ignore
