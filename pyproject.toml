@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "DEODR"
-version = "0.2.2"
+version = "0.2.3"
 description = "A differentiable 3D mesh renderer"
 authors = [  { name = "Martin de La Gorce", email = "martin.delgorce@gmail.com" }]
 requires-python = ">=3.9"
