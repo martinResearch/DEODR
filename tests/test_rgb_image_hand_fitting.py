@@ -1,10 +1,9 @@
 """Test using rgb_image hand fitting."""
 
 import numpy as np
-
+import pytest
 
 from deodr.examples.rgb_image_hand_fitting import run
-import pytest
 
 
 def test_rgb_image_hand_fitting_pytorch() -> None:

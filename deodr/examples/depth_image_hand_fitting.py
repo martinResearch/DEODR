@@ -16,6 +16,7 @@ import deodr
 from deodr import ColoredTriMesh
 from deodr.mesh_fitter import MeshDepthFitter
 from deodr.pytorch import MeshDepthFitter as PytorchMeshDepthFitter
+
 # from deodr.tensorflow import MeshDepthFitter as TensorFlowMeshDepthFitter
 
 

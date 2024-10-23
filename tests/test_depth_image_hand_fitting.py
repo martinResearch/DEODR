@@ -1,9 +1,9 @@
 """Test using depth image hand fitting."""
 
 import numpy as np
+import pytest
 
 from deodr.examples.depth_image_hand_fitting import run
-import pytest
 
 
 def test_depth_image_hand_fitting_pytorch() -> None:
