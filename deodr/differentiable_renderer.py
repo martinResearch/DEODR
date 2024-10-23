@@ -293,7 +293,7 @@ class Camera:
         return points_3d.dot(self.extrinsic[:3, :3].T) + self.extrinsic[:3, 3]
 
     def camera_to_world_mtx_4x4(self) -> np.ndarray:
-        return np.row_stack(
+        return np.vstack(
             (
                 np.column_stack((self.extrinsic[:, :3].T, self.get_center())),
                 np.array((0, 0, 0, 1)),

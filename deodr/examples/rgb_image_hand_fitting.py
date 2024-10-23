@@ -71,7 +71,7 @@ def run(
     hand_fitter.reset()
 
     background_color = np.median(
-        np.row_stack(
+        np.vstack(
             (
                 hand_image[:10, :10, :].reshape(-1, 3),
                 hand_image[-10:, :10, :].reshape(-1, 3),
